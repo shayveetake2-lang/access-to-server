@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access to Server</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+    
+    <div class="form-container">
+        <h2>Server Access</h2>
+        <form action="insert.php" method="POST">
+            <div class="input-group">
+                <input type="text" name="name" required placeholder="Name">
+            </div>
+            <div class="input-group">
+                <input type="email" name="email" required placeholder="Email">
+            </div>
+            <div class="input-group">
+                <textarea name="message" required placeholder="Message" rows="4"></textarea>
+            </div>
+            <button type="submit">Initialize Sequence</button>
+        </form>
+    </div>
+</body>
+</html>
+
