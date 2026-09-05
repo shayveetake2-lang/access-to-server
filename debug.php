@@ -4,20 +4,27 @@
 // 1. Test Database Connection
 $db_status = "Waiting...";
 $db_class = "pending";
-try {
-    $host = '127.0.0.1';
-    $port = '8889';
-    $dbname = 'access_db';
-    $username = 'root';
-    $password = 'root';
-    
-    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
-    $pdo = new PDO($dsn, $username, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    $db_status = "Connected successfully to access_db on port 8889.";
-    $db_class = "success";
-} catch (PDOException $e) {
-    $db_status = "Connection Failed: " . $e->getMessage();
-    $db_class = "error";
+$isM1 = (php_uname('m') === 'arm64');
+
+if ($isM1) {
+    $db_status = "Skipped (Testing on M1 Mac. MySQL is on the 2011 MacBook).";
+    $db_class = "warning";
+} else {
+    try {
+        $host = '127.0.0.1';
+        $port = '8889';
+        $dbname = 'access_db';
+        $username = 'root';
+        $password = 'root';
+        
+        $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+        $pdo = new PDO($dsn, $username, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $db_status = "Connected successfully to access_db on port 8889.";
+        $db_class = "success";
+    } catch (PDOException $e) {
+        $db_status = "Connection Failed: " . $e->getMessage();
+        $db_class = "error";
+    }
 }
 
 // 2. Test Shell Execution for Git in htdocs

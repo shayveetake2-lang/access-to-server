@@ -25,6 +25,8 @@ if (!function_exists('shell_exec') || !function_exists('popen')) {
 }
 $results[] = $gitCheck;
 
+$isM1 = (php_uname('m') === 'arm64');
+
 // 2. Database Check
 $dbCheck = [
     'name' => 'Database Check',
@@ -32,17 +34,22 @@ $dbCheck = [
     'message' => 'Successfully connected to MySQL and access_db exists.'
 ];
 
-try {
-    $pdo = new PDO('mysql:host=127.0.0.1;port=8889;dbname=access_db', 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-} catch (PDOException $e) {
-    $dbCheck['status'] = 'fail';
-    $dbCheck['message'] = 'DB Connection failed: ' . $e->getMessage();
-    if (strpos($e->getMessage(), 'Unknown database') !== false) {
-        $autoFixes[] = "Database 'access_db' does not exist. Run: `CREATE DATABASE access_db;` in MySQL.";
-    } elseif (strpos($e->getMessage(), 'Connection refused') !== false || strpos($e->getMessage(), 'No such file or directory') !== false) {
-         $autoFixes[] = "MySQL is not running on port 8889 or socket is missing. Start MySQL via MAMP.";
-    } else {
-        $autoFixes[] = "Check MySQL credentials. Expected: root/root on localhost:8889. Error: " . $e->getMessage();
+if ($isM1) {
+    $dbCheck['status'] = 'skip';
+    $dbCheck['message'] = 'Skipped (Testing on M1 Mac. MySQL is on the 2011 MacBook).';
+} else {
+    try {
+        $pdo = new PDO('mysql:host=127.0.0.1;port=8889;dbname=access_db', 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    } catch (PDOException $e) {
+        $dbCheck['status'] = 'fail';
+        $dbCheck['message'] = 'DB Connection failed: ' . $e->getMessage();
+        if (strpos($e->getMessage(), 'Unknown database') !== false) {
+            $autoFixes[] = "Database 'access_db' does not exist. Run: `CREATE DATABASE access_db;` in MySQL.";
+        } elseif (strpos($e->getMessage(), 'Connection refused') !== false || strpos($e->getMessage(), 'No such file or directory') !== false) {
+             $autoFixes[] = "MySQL is not running on port 8889 or socket is missing. Start MySQL via MAMP.";
+        } else {
+            $autoFixes[] = "Check MySQL credentials. Expected: root/root on localhost:8889. Error: " . $e->getMessage();
+        }
     }
 }
 $results[] = $dbCheck;
@@ -54,13 +61,18 @@ $plexCheck = [
     'message' => 'Plex Media Server is reachable on localhost:32400.'
 ];
 
-$plexSock = @fsockopen('localhost', 32400, $errno, $errstr, 2);
-if (!$plexSock) {
-    $plexCheck['status'] = 'fail';
-    $plexCheck['message'] = "Cannot connect to Plex on port 32400: $errstr ($errno)";
-    $autoFixes[] = "Start Plex Media Server, or verify it is listening on localhost:32400. Check firewall rules blocking port 32400.";
+if ($isM1) {
+    $plexCheck['status'] = 'skip';
+    $plexCheck['message'] = 'Skipped (Testing on M1 Mac. Plex is on the 2011 MacBook).';
 } else {
-    fclose($plexSock);
+    $plexSock = @fsockopen('localhost', 32400, $errno, $errstr, 2);
+    if (!$plexSock) {
+        $plexCheck['status'] = 'fail';
+        $plexCheck['message'] = "Cannot connect to Plex on port 32400: $errstr ($errno)";
+        $autoFixes[] = "Start Plex Media Server, or verify it is listening on localhost:32400. Check firewall rules blocking port 32400.";
+    } else {
+        fclose($plexSock);
+    }
 }
 $results[] = $plexCheck;
 
@@ -114,6 +126,9 @@ $results[] = $deployCheck;
         .check-fail {
             border-left-color: #ff4c4c;
         }
+        .check-skip {
+            border-left-color: #f59e0b;
+        }
         .check-header {
             display: flex;
             justify-content: space-between;
@@ -138,6 +153,10 @@ $results[] = $deployCheck;
         .status-fail {
             background: rgba(255, 76, 76, 0.2);
             color: #ff4c4c;
+        }
+        .status-skip {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
         }
         .check-message {
             color: #ccc;
