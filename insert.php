@@ -28,16 +28,16 @@ try {
             $content = trim(file_get_contents("php://input"));
             $decoded = json_decode($content, true);
             $name = isset($decoded['name']) ? htmlspecialchars(strip_tags($decoded['name'])) : '';
-            $email = isset($decoded['email']) ? filter_var($decoded['email'], FILTER_SANITIZE_EMAIL) : '';
+            $contact = isset($decoded['contact']) ? htmlspecialchars(strip_tags($decoded['contact'])) : '';
             $message = isset($decoded['message']) ? htmlspecialchars(strip_tags($decoded['message'])) : '';
         } else {
             // Sanitize and retrieve POST data
             $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
-            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $contact = filter_input(INPUT_POST, 'contact', FILTER_SANITIZE_STRING);
             $message = filter_input(INPUT_POST, 'message', FILTER_SANITIZE_STRING);
         }
 
-        if (empty($name) || empty($email) || empty($message)) {
+        if (empty($name) || empty($contact) || empty($message)) {
             http_response_code(400);
             echo json_encode(["status" => "error", "message" => "All fields are required."]);
             exit;
@@ -50,7 +50,7 @@ try {
         // Execute the statement
         $stmt->execute([
             ':name' => $name,
-            ':email' => $email,
+            ':email' => $contact,
             ':message' => $message
         ]);
 
