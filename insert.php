@@ -3,7 +3,7 @@
 require_once 'api/config/init.php';
 
 // MAMP Hardcoded Credentials
-$host = 'localhost';
+$host = '127.0.0.1';
 $port = '8889';
 $dbname = 'access_db';
 $username = 'root';

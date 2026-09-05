@@ -5,7 +5,7 @@
 $db_status = "Waiting...";
 $db_class = "pending";
 try {
-    $host = 'localhost';
+    $host = '127.0.0.1';
     $port = '8889';
     $dbname = 'access_db';
     $username = 'root';
