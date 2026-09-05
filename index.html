@@ -55,10 +55,8 @@
                 message: document.getElementById('message').value
             };
 
-            // Using the ZeroTier IP and MAMP's default Apache port 8888
-            // If the folder is hosted at http://10.247.192.231:8888/access-to-server/
-            // Update this path if the root is different
-            fetch('http://10.247.192.231:8888/access-to-server/insert.php', {
+            // Use a relative path so it works seamlessly regardless of the host IP
+            fetch('insert.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
