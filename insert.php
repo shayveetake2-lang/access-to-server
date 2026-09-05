@@ -1,5 +1,6 @@
 <?php
 // insert.php
+require_once 'api/config/init.php';
 
 // MAMP Hardcoded Credentials
 $host = 'localhost';
@@ -21,10 +22,26 @@ try {
 
     // Check if the form was submitted
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // Sanitize and retrieve POST data
-        $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
-        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-        $message = filter_input(INPUT_POST, 'message', FILTER_SANITIZE_STRING);
+        // Handle both standard POST data and JSON payloads
+        $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
+        if ($contentType === "application/json") {
+            $content = trim(file_get_contents("php://input"));
+            $decoded = json_decode($content, true);
+            $name = isset($decoded['name']) ? htmlspecialchars(strip_tags($decoded['name'])) : '';
+            $email = isset($decoded['email']) ? filter_var($decoded['email'], FILTER_SANITIZE_EMAIL) : '';
+            $message = isset($decoded['message']) ? htmlspecialchars(strip_tags($decoded['message'])) : '';
+        } else {
+            // Sanitize and retrieve POST data
+            $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $message = filter_input(INPUT_POST, 'message', FILTER_SANITIZE_STRING);
+        }
+
+        if (empty($name) || empty($email) || empty($message)) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "All fields are required."]);
+            exit;
+        }
 
         // Prepare the SQL statement
         $sql = "INSERT INTO user_inputs (name, email, message) VALUES (:name, :email, :message)";
@@ -38,35 +55,23 @@ try {
         ]);
 
         // Success feedback
-        echo "<!DOCTYPE html>
-        <html>
-        <head>
-            <title>Success</title>
-            <link rel='stylesheet' href='style.css'>
-            <style>
-                body { display: flex; justify-content: center; align-items: center; height: 100vh; }
-                .success-msg { text-align: center; background: rgba(31, 40, 51, 0.8); padding: 40px; border-radius: 15px; border: 1px solid #45a29e; animation: floatForm 6s infinite ease-in-out alternate;}
-                a { color: #66fcf1; text-decoration: none; border-bottom: 1px solid #66fcf1; display: inline-block; margin-top: 20px;}
-                a:hover { color: #fff; border-bottom-color: #fff; }
-            </style>
-        </head>
-        <body>
-            <div class='success-msg'>
-                <h2>Transmission Received</h2>
-                <p>Welcome to the server, " . htmlspecialchars($name) . ".</p>
-                <a href='index.html'>Return to Terminal</a>
-            </div>
-        </body>
-        </html>";
+        http_response_code(200);
+        echo json_encode([
+            "status" => "success",
+            "message" => "Transmission Received",
+            "name" => $name
+        ]);
 
     } else {
-        header("Location: index.html");
+        http_response_code(405);
+        echo json_encode(["status" => "error", "message" => "Method not allowed"]);
         exit;
     }
 
 } catch (PDOException $e) {
     // Error handling
-    die("Database connection failed: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Database connection failed: " . $e->getMessage()]);
 }
 ?>
 
