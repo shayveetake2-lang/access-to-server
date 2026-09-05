@@ -2,178 +2,233 @@
 // auto_debug.php
 
 $results = [];
-$auto_fixes = [];
+$autoFixes = [];
 
 // 1. Git & Deployer Check
-$git_output = @shell_exec('cd /Applications/MAMP/htdocs/access-to-server && git status 2>&1');
-if ($git_output !== null && strpos($git_output, 'branch') !== false) {
-    $results['git'] = ['status' => 'success', 'message' => 'Git execution successful. Output: ' . htmlspecialchars(substr($git_output, 0, 50)) . '...'];
+$gitCheck = [
+    'name' => 'Git & Deployer Check',
+    'status' => 'pass',
+    'message' => 'shell_exec and popen are available, and htdocs is accessible.'
+];
+
+if (!function_exists('shell_exec') || !function_exists('popen')) {
+    $gitCheck['status'] = 'fail';
+    $gitCheck['message'] = 'shell_exec or popen is disabled in PHP configuration.';
+    $autoFixes[] = "Remove 'shell_exec' and 'popen' from 'disable_functions' in your php.ini.";
 } else {
-    $results['git'] = ['status' => 'error', 'message' => 'Git execution failed or not a repo. Output: ' . htmlspecialchars($git_output)];
-    $auto_fixes[] = "<strong>Git Auto-Fix:</strong> If git is not found, you must add Git to the MAMP Apache PATH. If permission denied, run: <code>sudo chown -R _www:_www /Applications/MAMP/htdocs/</code> (or whatever user MAMP runs as).";
+    $testCmd = @shell_exec('cd ' . escapeshellarg(__DIR__) . ' && /usr/bin/git status 2>&1');
+    if ($testCmd === null || (strpos($testCmd, 'fatal') !== false && strpos($testCmd, 'not a git repository') === false)) {
+        $gitCheck['status'] = 'fail';
+        $gitCheck['message'] = 'Cannot execute git commands in ' . __DIR__ . '. Output: ' . htmlspecialchars($testCmd);
+        $autoFixes[] = "Check folder permissions or ensure git is installed and accessible to the web server.";
+    }
 }
+$results[] = $gitCheck;
 
 // 2. Database Check
+$dbCheck = [
+    'name' => 'Database Check',
+    'status' => 'pass',
+    'message' => 'Successfully connected to MySQL and access_db exists.'
+];
+
 try {
-    $pdo = new PDO("mysql:host=localhost;port=8889;dbname=access_db;charset=utf8mb4", 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    $results['db'] = ['status' => 'success', 'message' => 'Connected successfully to access_db on localhost:8889.'];
+    $pdo = new PDO('mysql:host=localhost;port=8889;dbname=access_db', 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 } catch (PDOException $e) {
-    $results['db'] = ['status' => 'error', 'message' => 'Database connection failed: ' . $e->getMessage()];
-    $auto_fixes[] = "<strong>Database Auto-Fix:</strong> Open MAMP and ensure the MySQL Server is started. Verify the port is exactly 8889. If the database 'access_db' doesn't exist, create it via phpMyAdmin.";
+    $dbCheck['status'] = 'fail';
+    $dbCheck['message'] = 'DB Connection failed: ' . $e->getMessage();
+    if (strpos($e->getMessage(), 'Unknown database') !== false) {
+        $autoFixes[] = "Database 'access_db' does not exist. Run: `CREATE DATABASE access_db;` in MySQL.";
+    } elseif (strpos($e->getMessage(), 'Connection refused') !== false || strpos($e->getMessage(), 'No such file or directory') !== false) {
+         $autoFixes[] = "MySQL is not running on port 8889 or socket is missing. Start MySQL via MAMP.";
+    } else {
+        $autoFixes[] = "Check MySQL credentials. Expected: root/root on localhost:8889. Error: " . $e->getMessage();
+    }
 }
+$results[] = $dbCheck;
 
 // 3. Plex Server Check
-$plex_socket = @fsockopen('127.0.0.1', 32400, $errno, $errstr, 2);
-if ($plex_socket) {
-    fclose($plex_socket);
-    $results['plex'] = ['status' => 'success', 'message' => 'Plex Media Server socket is listening on port 32400.'];
+$plexCheck = [
+    'name' => 'Plex Server Check',
+    'status' => 'pass',
+    'message' => 'Plex Media Server is reachable on localhost:32400.'
+];
+
+$plexSock = @fsockopen('localhost', 32400, $errno, $errstr, 2);
+if (!$plexSock) {
+    $plexCheck['status'] = 'fail';
+    $plexCheck['message'] = "Cannot connect to Plex on port 32400: $errstr ($errno)";
+    $autoFixes[] = "Start Plex Media Server, or verify it is listening on localhost:32400. Check firewall rules blocking port 32400.";
 } else {
-    $results['plex'] = ['status' => 'error', 'message' => 'Could not connect to Plex on 127.0.0.1:32400. Error: ' . $errstr];
-    $auto_fixes[] = "<strong>Plex Auto-Fix:</strong> Ensure Plex Media Server is launched on this machine. If it is running on a different machine, update the IP from 127.0.0.1 to the correct host.";
+    fclose($plexSock);
 }
+$results[] = $plexCheck;
 
 // 4. SSE Event Stream Check
-$sse_url = 'http://127.0.0.1:8888/access-to-server/deploy.php';
-$headers = @get_headers($sse_url);
-$sse_success = false;
-if ($headers) {
-    foreach ($headers as $header) {
-        if (stripos($header, 'Content-Type: text/event-stream') !== false) {
-            $sse_success = true;
-            break;
-        }
-    }
+$sseCheck = [
+    'name' => 'SSE Event Stream Check',
+    'status' => 'pass',
+    'message' => 'PHP environment is ready for SSE. Output buffering is off or flushable.'
+];
+
+$buffering = ini_get('output_buffering');
+if ($buffering && strtolower($buffering) !== 'off' && (int)$buffering > 0) {
+    $sseCheck['status'] = 'fail';
+    $sseCheck['message'] = 'PHP Output Buffering is enabled, which blocks text/event-stream (SSE) chunks from streaming in real-time.';
+    $autoFixes[] = "Set `output_buffering = Off` in your php.ini, OR add `while(ob_get_level()) ob_end_flush();` at the top of deploy.php before sending output.";
 }
 
-if ($sse_success) {
-    $results['sse'] = ['status' => 'success', 'message' => 'deploy.php successfully returns text/event-stream headers.'];
+$deployFile = __DIR__ . '/deploy.php';
+if (!file_exists($deployFile)) {
+    $sseCheck['status'] = 'fail';
+    $sseCheck['message'] = "deploy.php was not found in the project directory.";
+    $autoFixes[] = "Create deploy.php and ensure it contains: `header('Content-Type: text/event-stream'); header('Cache-Control: no-cache');`";
 } else {
-    if (!$headers || strpos($headers[0], '404') !== false) {
-        $results['sse'] = ['status' => 'error', 'message' => 'deploy.php was not found (404).'];
-        $auto_fixes[] = "<strong>SSE Auto-Fix:</strong> Create the `deploy.php` file in your project root with the correct SSE headers.";
-    } else {
-        $results['sse'] = ['status' => 'error', 'message' => 'deploy.php exists but does not output text/event-stream headers.'];
-        $auto_fixes[] = "<strong>SSE Auto-Fix:</strong> Add <code>header('Content-Type: text/event-stream');</code> and <code>header('Cache-Control: no-cache');</code> to deploy.php. Ensure output buffering is disabled with <code>ob_end_flush();</code>.";
+    $deployContent = file_get_contents($deployFile);
+    if (stripos($deployContent, 'text/event-stream') === false) {
+        $sseCheck['status'] = 'fail';
+        $sseCheck['message'] = "deploy.php does not seem to output text/event-stream headers.";
+        $autoFixes[] = "Add the following to deploy.php: `header('Content-Type: text/event-stream'); header('Cache-Control: no-cache');`";
     }
 }
+$results[] = $sseCheck;
 
-function getCssClass($status) {
-    return $status === 'success' ? 'border-left-color: #38b000;' : 'border-left-color: #d00000;';
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Diagnostics</title>
+    <title>Auto Debugger - Access to Server</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .diagnostic-panel {
-            text-align: left;
-            margin-top: 20px;
+        .debug-container {
+            position: relative;
+            z-index: 10;
+            width: 80%;
+            max-width: 800px;
+            margin: 5% auto;
+            padding: 30px;
+            background: rgba(31, 40, 51, 0.9);
+            border: 1px solid #45a29e;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.2);
+            backdrop-filter: blur(10px);
         }
-        .status-item {
-            background: rgba(31, 40, 51, 0.8);
+        .check-item {
+            margin-bottom: 20px;
             padding: 15px;
-            margin-bottom: 15px;
             border-radius: 8px;
-            border-left: 4px solid #45a29e;
+            background: rgba(11, 12, 16, 0.8);
+            border-left: 5px solid;
         }
-        .status-item h4 {
-            margin: 0 0 10px 0;
-            color: #66fcf1;
-            font-size: 1.2em;
+        .check-pass {
+            border-left-color: #45a29e;
         }
-        .status-item p {
-            margin: 0;
-            font-size: 1em;
-            color: #c5c6c7;
-            word-wrap: break-word;
+        .check-fail {
+            border-left-color: #ff4c4c;
         }
-        .auto-fix-panel {
-            background: rgba(208, 0, 0, 0.2);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #d00000;
-            margin-top: 30px;
-            text-align: left;
-        }
-        .auto-fix-panel h3 {
-            color: #ff4d4d;
-            margin-top: 0;
-        }
-        .auto-fix-panel ul {
-            color: #fff;
-            padding-left: 20px;
-        }
-        .auto-fix-panel li {
+        .check-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 10px;
         }
-        .auto-fix-panel code {
-            background: rgba(0,0,0,0.5);
-            padding: 2px 6px;
+        .check-name {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        .status-badge {
+            padding: 5px 10px;
             border-radius: 4px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .status-pass {
+            background: rgba(69, 162, 158, 0.2);
             color: #66fcf1;
+        }
+        .status-fail {
+            background: rgba(255, 76, 76, 0.2);
+            color: #ff4c4c;
+        }
+        .check-message {
+            color: #ccc;
+            font-size: 0.95em;
+        }
+        .autofix-panel {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 76, 76, 0.1);
+            border: 1px solid #ff4c4c;
+            border-radius: 10px;
+        }
+        .autofix-panel h3 {
+            color: #ff4c4c;
+            margin-top: 0;
+        }
+        .autofix-panel ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .autofix-panel li {
+            margin-bottom: 10px;
+            color: #e0e0e0;
+            font-family: monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <nav class="global-nav">
-        <a href="index.html">Deployer</a>
-        <a href="movies.html">Movie Portal</a>
-        <a href="debug.php">Diagnostics</a>
-        <a href="auto_debug.php" class="active">Auto Debug</a>
-    </nav>
-
     <div class="background">
         <div class="orb orb1"></div>
         <div class="orb orb2"></div>
         <div class="orb orb3"></div>
     </div>
     
-    <div class="form-container" style="width: 650px; margin-top: 80px;">
-        <h2>Automated Diagnostics</h2>
+    <nav class="global-nav">
+        <a href="index.html">Deployer</a>
+        <a href="movies.html">Movie Portal</a>
+        <a href="debug.php">Diagnostics</a>
+        <a href="auto_debug.php" class="active">Auto Debug</a>
+        <a href="help.html">Help</a>
+    </nav>
+
+    <div class="debug-container">
+        <h2>System Diagnostics</h2>
         
-        <div class="diagnostic-panel">
-            <div class="status-item" style="<?php echo getCssClass($results['git']['status']); ?>">
-                <h4>1. Git & Deployer Check</h4>
-                <p><?php echo $results['git']['message']; ?></p>
+        <?php foreach ($results as $result): ?>
+            <div class="check-item check-<?= $result['status'] ?>">
+                <div class="check-header">
+                    <span class="check-name"><?= htmlspecialchars($result['name']) ?></span>
+                    <span class="status-badge status-<?= $result['status'] ?>">
+                        <?= htmlspecialchars($result['status']) ?>
+                    </span>
+                </div>
+                <div class="check-message">
+                    <?= htmlspecialchars($result['message']) ?>
+                </div>
             </div>
-            
-            <div class="status-item" style="<?php echo getCssClass($results['db']['status']); ?>">
-                <h4>2. Database Check</h4>
-                <p><?php echo $results['db']['message']; ?></p>
-            </div>
-            
-            <div class="status-item" style="<?php echo getCssClass($results['plex']['status']); ?>">
-                <h4>3. Plex Server Check</h4>
-                <p><?php echo $results['plex']['message']; ?></p>
-            </div>
+        <?php endforeach; ?>
 
-            <div class="status-item" style="<?php echo getCssClass($results['sse']['status']); ?>">
-                <h4>4. SSE Event Stream Check</h4>
-                <p><?php echo $results['sse']['message']; ?></p>
+        <?php if (!empty($autoFixes)): ?>
+            <div class="autofix-panel">
+                <h3>🛠️ Auto-Fix Recommendations</h3>
+                <ul>
+                    <?php foreach ($autoFixes as $fix): ?>
+                        <li><?= htmlspecialchars($fix) ?></li>
+                    <?php endforeach; ?>
+                </ul>
             </div>
-        </div>
-
-        <?php if (!empty($auto_fixes)): ?>
-        <div class="auto-fix-panel">
-            <h3>Auto-Fix Recommendations</h3>
-            <p style="font-size: 0.9em; margin-bottom: 15px;">Copy the error below and paste it back into Copilot/Agent with: <em>"Apply the auto-fix patch for this error directly to my code."</em></p>
-            <ul>
-                <?php foreach ($auto_fixes as $fix): ?>
-                    <li><?php echo $fix; ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
         <?php else: ?>
-        <div class="status-item" style="border-left-color: #38b000; text-align: center; margin-top: 30px;">
-            <h4 style="margin: 0; color: #38b000;">All Systems Operational</h4>
-            <p>No auto-fixes required.</p>
-        </div>
+            <div class="autofix-panel" style="background: rgba(69, 162, 158, 0.1); border-color: #45a29e;">
+                <h3 style="color: #66fcf1;">✅ All Systems Operational</h3>
+                <p style="color: #ccc; margin: 0;">No issues detected. Your server environment is ready.</p>
+            </div>
         <?php endif; ?>
     </div>
 </body>
 </html>
-

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help - Access to Server</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .help-content {
+            text-align: left;
+            color: #c5c6c7;
+        }
+        .help-content h3 {
+            color: #66fcf1;
+            margin-top: 20px;
+            border-bottom: 1px solid #45a29e;
+            padding-bottom: 5px;
+        }
+        .help-content p, .help-content ul {
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+        .help-content ul {
+            padding-left: 20px;
+        }
+        .help-content li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="global-nav">
+        <a href="index.html">Deployer</a>
+        <a href="movies.html">Movie Portal</a>
+        <a href="debug.php">Diagnostics</a>
+        <a href="auto_debug.php">Auto Debug</a>
+        <a href="help.html" class="active">Help</a>
+    </nav>
+
+    <div class="background">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+    
+    <div class="form-container" style="width: 90%; max-width: 650px; margin-top: 120px;">
+        <h2>How to Use This Site</h2>
+        
+        <div class="help-content">
+            <h3>Deployer</h3>
+            <p>The Deployer is used to initialize a sequence by sending your details to the server.</p>
+            <ul>
+                <li>Enter your <strong>Name</strong>, <strong>Email</strong>, and a <strong>Message</strong>.</li>
+                <li>Click <strong>Initialize Sequence</strong>.</li>
+                <li>If successful, your data will be transmitted and you will receive a welcome message. Ensure your ZeroTier connection is active if you encounter issues.</li>
+            </ul>
+
+            <h3>Movie Portal</h3>
+            <p>The Movie Portal provides direct access to the Plex Media Server.</p>
+            <ul>
+                <li>Click the <strong>Launch Media Server</strong> button.</li>
+                <li>You will be redirected to Plex, where you can stream available media content.</li>
+            </ul>
+
+            <h3>Diagnostics</h3>
+            <p>The Diagnostics page helps you manually verify the health of the system.</p>
+            <ul>
+                <li>It checks if the MySQL database (access_db) is connected and running on port 8889.</li>
+                <li>It tests shell execution and verifies if Git is available.</li>
+                <li>It provides a manual checklist for you to verify ZeroTier network status and Plex routing.</li>
+            </ul>
+
+            <h3>Auto Debug</h3>
+            <p>The Auto Debug page performs automated health checks and offers auto-fix recommendations.</p>
+            <ul>
+                <li>It runs checks on Git/Deployer, Database, Plex Server, and SSE (Server-Sent Events) configurations.</li>
+                <li>If any check fails, you will see a detailed error and suggested solutions to fix the issue in your server environment.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

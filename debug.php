@@ -27,7 +27,7 @@ $output = [];
 $return_var = 0;
 
 // Test if we can run git status in the current directory
-exec("cd " . escapeshellarg(__DIR__) . " && git status 2>&1", $output, $return_var);
+exec("cd " . escapeshellarg(__DIR__) . " && /usr/bin/git status 2>&1", $output, $return_var);
 if ($return_var === 0) {
     $git_status = "Shell exec successful. " . implode(" ", array_slice($output, 0, 1));
     $git_class = "success";
@@ -117,6 +117,7 @@ $css_classes = [
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php" class="active">Diagnostics</a>
         <a href="auto_debug.php">Auto Debug</a>
+        <a href="help.html">Help</a>
     </nav>
 
     <div class="background">
@@ -125,7 +126,7 @@ $css_classes = [
         <div class="orb orb3"></div>
     </div>
     
-    <div class="form-container" style="width: 550px; margin-top: 80px;">
+    <div class="form-container" style="width: 90%; max-width: 550px; margin-top: 120px;">
         <h2>System Diagnostics</h2>
         
         <div class="diagnostic-panel">
