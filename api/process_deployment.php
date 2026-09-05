@@ -12,8 +12,8 @@ if (empty($projectName)) {
     exit;
 }
 
-// Define the root target directory (/Volumes/htdocs/webhost)
-$targetBaseDir = realpath(__DIR__ . '/../../') . '/webhost';
+// Define the root target directory (inside access-to-server)
+$targetBaseDir = realpath(__DIR__ . '/../') . '/webhost';
 
 // Create the webhost directory if it doesn't exist
 if (!is_dir($targetBaseDir)) {
@@ -50,7 +50,7 @@ if ($deployMethod === 'github') {
         echo json_encode([
             'status' => 'success', 
             'message' => 'Repository cloned successfully!',
-            'url' => '../webhost/' . $projectName . '/'
+            'url' => 'webhost/' . $projectName . '/'
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Failed to clone repository. Make sure it is public. Git output: ' . $output]);
@@ -85,7 +85,7 @@ if ($deployMethod === 'github') {
         echo json_encode([
             'status' => 'success', 
             'message' => 'Files extracted successfully!',
-            'url' => '../webhost/' . $projectName . '/'
+            'url' => 'webhost/' . $projectName . '/'
         ]);
     } else {
         // Clean up the created directory on failure
