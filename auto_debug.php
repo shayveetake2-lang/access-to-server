@@ -191,6 +191,7 @@ $results[] = $sseCheck;
     
     <nav class="global-nav">
         <a href="index.html">Deployer</a>
+        <a href="deploy.php">Host Website</a>
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php">Diagnostics</a>
         <a href="auto_debug.php" class="active">Auto Debug</a>
