@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Server</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .link-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .dashboard-link {
+            color: #66fcf1;
+            text-decoration: none;
+            border-bottom: 1px solid #66fcf1;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .dashboard-link:hover {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
+        .portal-btn {
+            margin-top: 20px;
+            padding: 20px;
+            font-size: 1.4em;
+        }
+    </style>
+</head>
+<body>
+    <div class="background">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+    
+    <div class="form-container">
+        <h2>Media Server</h2>
+        
+        <button class="portal-btn" onclick="window.location.href='https://app.plex.tv'">Launch Media Server</button>
+
+        <div class="link-container">
+            <a href="index.html" class="dashboard-link">Back to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>
