@@ -153,3 +153,41 @@ button:hover {
     box-shadow: 0 0 15px #66fcf1;
 }
 
+/* Global Navigation */
+.global-nav {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 30px;
+    background: rgba(31, 40, 51, 0.6);
+    padding: 15px 40px;
+    border-radius: 30px;
+    border: 1px solid #45a29e;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.1);
+    backdrop-filter: blur(10px);
+    animation: floatNav 8s infinite ease-in-out alternate;
+}
+
+@keyframes floatNav {
+    0% { transform: translateX(-50%) translateY(0px); }
+    100% { transform: translateX(-50%) translateY(-10px); }
+}
+
+.global-nav a {
+    color: #45a29e;
+    text-decoration: none;
+    font-size: 1.2em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    padding: 5px 10px;
+}
+
+.global-nav a:hover, .global-nav a.active {
+    color: #66fcf1;
+    text-shadow: 0 0 10px #66fcf1;
+}
