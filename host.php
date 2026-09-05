@@ -66,7 +66,7 @@
 <body>
     <nav class="global-nav">
         <a href="index.html">Deployer</a>
-        <a href="deploy.php" class="active">Host Website</a>
+        <a href="host.php" class="active">Host Website</a>
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php">Diagnostics</a>
         <a href="auto_debug.php">Auto Debug</a>

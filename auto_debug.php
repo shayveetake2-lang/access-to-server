@@ -64,34 +64,20 @@ if (!$plexSock) {
 }
 $results[] = $plexCheck;
 
-// 4. SSE Event Stream Check
-$sseCheck = [
-    'name' => 'SSE Event Stream Check',
+// 4. Deployment Script Check
+$deployCheck = [
+    'name' => 'Deployment API Check',
     'status' => 'pass',
-    'message' => 'PHP environment is ready for SSE. Output buffering is off or flushable.'
+    'message' => 'api/process_deployment.php exists and is ready.'
 ];
 
-$buffering = ini_get('output_buffering');
-if ($buffering && strtolower($buffering) !== 'off' && (int)$buffering > 0) {
-    $sseCheck['status'] = 'fail';
-    $sseCheck['message'] = 'PHP Output Buffering is enabled, which blocks text/event-stream (SSE) chunks from streaming in real-time.';
-    $autoFixes[] = "Set `output_buffering = Off` in your php.ini, OR add `while(ob_get_level()) ob_end_flush();` at the top of deploy.php before sending output.";
-}
-
-$deployFile = __DIR__ . '/deploy.php';
+$deployFile = __DIR__ . '/api/process_deployment.php';
 if (!file_exists($deployFile)) {
-    $sseCheck['status'] = 'fail';
-    $sseCheck['message'] = "deploy.php was not found in the project directory.";
-    $autoFixes[] = "Create deploy.php and ensure it contains: `header('Content-Type: text/event-stream'); header('Cache-Control: no-cache');`";
-} else {
-    $deployContent = file_get_contents($deployFile);
-    if (stripos($deployContent, 'text/event-stream') === false) {
-        $sseCheck['status'] = 'fail';
-        $sseCheck['message'] = "deploy.php does not seem to output text/event-stream headers.";
-        $autoFixes[] = "Add the following to deploy.php: `header('Content-Type: text/event-stream'); header('Cache-Control: no-cache');`";
-    }
+    $deployCheck['status'] = 'fail';
+    $deployCheck['message'] = "api/process_deployment.php was not found.";
+    $autoFixes[] = "Ensure the api/process_deployment.php file exists for the Host Website feature.";
 }
-$results[] = $sseCheck;
+$results[] = $deployCheck;
 
 ?>
 <!DOCTYPE html>
@@ -191,7 +177,7 @@ $results[] = $sseCheck;
     
     <nav class="global-nav">
         <a href="index.html">Deployer</a>
-        <a href="deploy.php">Host Website</a>
+        <a href="host.php">Host Website</a>
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php">Diagnostics</a>
         <a href="auto_debug.php" class="active">Auto Debug</a>
