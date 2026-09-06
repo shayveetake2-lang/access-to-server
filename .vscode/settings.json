@@ -1,10 +1,9 @@
 {
-    "git.autorefresh": true,
+    "git.autorefresh": false,
+    "git.autofetch": false,
     "git.autoStash": false,
     "git.confirmSync": false,
     "files.watcherExclude": {
-        "**/.git/objects/**": true,
-        "**/.git/subtree-cache/**": true,
-        "**/.git/index.lock": true
+        "**/.git/**": true
     }
 }
