@@ -27,34 +27,61 @@ $results[] = $gitCheck;
 
 $isM1 = (php_uname('m') === 'arm64');
 
-// 2. Database Check
+// 2. Database Connector Check
 $dbCheck = [
-    'name' => 'Database Check',
+    'name' => 'Database Architecture Check',
     'status' => 'pass',
-    'message' => 'Successfully connected to MySQL and access_db exists.'
+    'message' => 'Successfully connected to MySQL via centralized config/db_connect.php'
 ];
 
-if ($isM1) {
-    $dbCheck['status'] = 'skip';
-    $dbCheck['message'] = 'Skipped (Testing on M1 Mac. MySQL is on the 2011 MacBook).';
+if (!file_exists(__DIR__ . '/config/db_connect.php')) {
+    $dbCheck['status'] = 'fail';
+    $dbCheck['message'] = 'config/db_connect.php is missing.';
+    $autoFixes[] = "Create config/db_connect.php to match the new backend architecture.";
 } else {
-    try {
-        $pdo = new PDO('mysql:host=127.0.0.1;port=8889;dbname=access_db', 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    } catch (PDOException $e) {
-        $dbCheck['status'] = 'fail';
-        $dbCheck['message'] = 'DB Connection failed: ' . $e->getMessage();
-        if (strpos($e->getMessage(), 'Unknown database') !== false) {
-            $autoFixes[] = "Database 'access_db' does not exist. Run: `CREATE DATABASE access_db;` in MySQL.";
-        } elseif (strpos($e->getMessage(), 'Connection refused') !== false || strpos($e->getMessage(), 'No such file or directory') !== false) {
-             $autoFixes[] = "MySQL is not running on port 8889 or socket is missing. Start MySQL via MAMP.";
-        } else {
-            $autoFixes[] = "Check MySQL credentials. Expected: root/root on localhost:8889. Error: " . $e->getMessage();
+    if ($isM1) {
+        $dbCheck['status'] = 'skip';
+        $dbCheck['message'] = 'Skipped (Testing on M1 Mac. MySQL is on the 2011 MacBook).';
+    } else {
+        try {
+            require __DIR__ . '/config/db_connect.php';
+            if (!isset($pdo)) {
+                throw new Exception("PDO object not instantiated by db_connect.php");
+            }
+            $pdo->query("SELECT 1"); // Test query
+        } catch (Exception $e) {
+            $dbCheck['status'] = 'fail';
+            $dbCheck['message'] = 'DB Connection failed via db_connect.php: ' . $e->getMessage();
+            $autoFixes[] = "Check config/db_connect.php credentials or run db_setup.php if tables are missing.";
         }
     }
 }
 $results[] = $dbCheck;
 
-// 3. Plex Server Check
+// 3. SSE Deployment Engine Check
+$deployCheck = [
+    'name' => 'SSE Deployer Engine Check',
+    'status' => 'pass',
+    'message' => 'api/system/deploy.php exists and is ready.'
+];
+
+$deployFile = __DIR__ . '/api/system/deploy.php';
+if (!file_exists($deployFile)) {
+    $deployCheck['status'] = 'fail';
+    $deployCheck['message'] = "api/system/deploy.php was not found.";
+    $autoFixes[] = "Ensure the api/system/deploy.php file exists for the SSE terminal feature.";
+} else {
+    // Check if PIN security is implemented
+    $deploySource = file_get_contents($deployFile);
+    if (strpos($deploySource, '$deployPin') === false) {
+        $deployCheck['status'] = 'fail';
+        $deployCheck['message'] = "PIN security logic is missing in deploy.php.";
+        $autoFixes[] = "Add secure PIN validation to api/system/deploy.php.";
+    }
+}
+$results[] = $deployCheck;
+
+// 4. Plex Server Check
 $plexCheck = [
     'name' => 'Plex Server Check',
     'status' => 'pass',
@@ -76,20 +103,20 @@ if ($isM1) {
 }
 $results[] = $plexCheck;
 
-// 4. Deployment Script Check
-$deployCheck = [
+// 5. Deployment API Check
+$deployApiCheck = [
     'name' => 'Deployment API Check',
     'status' => 'pass',
     'message' => 'api/process_deployment.php exists and is ready.'
 ];
 
-$deployFile = __DIR__ . '/api/process_deployment.php';
-if (!file_exists($deployFile)) {
-    $deployCheck['status'] = 'fail';
-    $deployCheck['message'] = "api/process_deployment.php was not found.";
+$deployApiFile = __DIR__ . '/api/process_deployment.php';
+if (!file_exists($deployApiFile)) {
+    $deployApiCheck['status'] = 'fail';
+    $deployApiCheck['message'] = "api/process_deployment.php was not found.";
     $autoFixes[] = "Ensure the api/process_deployment.php file exists for the Host Website feature.";
 }
-$results[] = $deployCheck;
+$results[] = $deployApiCheck;
 
 ?>
 <!DOCTYPE html>

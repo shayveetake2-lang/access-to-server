@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Request</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="global-nav">
+        <a href="index.html">Deployer</a>
+        <a href="host.php">Host Website</a>
+        <a href="access.php" class="active">Access Request</a>
+        <a href="movies.html">Movie Portal</a>
+        <a href="debug.php">Diagnostics</a>
+        <a href="auto_debug.php">Auto Debug</a>
+        <a href="help.html">Help</a>
+    </nav>
+
+    <div class="background">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+    
+    <div class="form-container">
+        <h2>Server Access</h2>
+        <div id="success-message" style="display: none; text-align: center;">
+            <h3 style="color: #66fcf1; margin-bottom: 10px;">Transmission Received</h3>
+            <p id="success-text" style="color: #c5c6c7;"></p>
+            <a href="#" onclick="location.reload()" style="color: #66fcf1; text-decoration: none; border-bottom: 1px solid #66fcf1; display: inline-block; margin-top: 20px;">Return to Terminal</a>
+        </div>
+        <form id="access-form">
+            <div class="input-group">
+                <input type="text" id="name" name="name" required placeholder="Name">
+            </div>
+            <div class="input-group">
+                <input type="text" id="contact" name="contact" required placeholder="Contact Info">
+            </div>
+            <div class="input-group">
+                <textarea id="message" name="message" required placeholder="Message" rows="4"></textarea>
+            </div>
+            <button type="submit" id="submit-btn">Initialize Sequence</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('access-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = 'Transmitting...';
+            btn.disabled = true;
+
+            const formData = {
+                name: document.getElementById('name').value,
+                contact: document.getElementById('contact').value,
+                message: document.getElementById('message').value
+            };
+
+            // Use a relative path so it works seamlessly regardless of the host IP
+            fetch('insert.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('access-form').style.display = 'none';
+                    document.getElementById('success-message').style.display = 'block';
+                    document.getElementById('success-text').innerText = 'Welcome to the server, ' + data.name + '.';
+                } else {
+                    alert('Error: ' + data.message);
+                    btn.innerText = 'Initialize Sequence';
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert('Transmission failed. Ensure your ZeroTier connection is active and the server is running.');
+                console.error('Error:', error);
+                btn.innerText = 'Initialize Sequence';
+                btn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
+

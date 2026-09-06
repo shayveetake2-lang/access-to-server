@@ -1,25 +1,9 @@
 <?php
 // insert.php
 require_once 'api/config/init.php';
-
-// MAMP Hardcoded Credentials
-$host = '127.0.0.1';
-$port = '8889';
-$dbname = 'access_db';
-$username = 'root';
-$password = 'root';
+require_once __DIR__ . '/config/db_connect.php';
 
 try {
-    // Data Source Name for PDO
-    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
-    
-    // Create a PDO instance
-    $pdo = new PDO($dsn, $username, $password, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ]);
-
     // Check if the form was submitted
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle both standard POST data and JSON payloads
