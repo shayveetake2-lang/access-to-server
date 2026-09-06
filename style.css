@@ -245,3 +245,223 @@ button:disabled {
     margin-bottom:8px;
     color:#e2e8f0;
 }
+
+/* Anti-gravity zero-gravity floating animations */
+@keyframes antigravityFloat {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes antigravityFloatAlt {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+    100% { transform: translateY(0px); }
+}
+
+.float-card {
+    animation: antigravityFloat 6s ease-in-out infinite;
+}
+
+.float-card-alt {
+    animation: antigravityFloatAlt 7s ease-in-out 1s infinite;
+}
+
+/* Multi-panel Dashboard Layout */
+.dashboard-layout {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1000px;
+    margin: 120px auto 60px auto;
+    padding: 0 16px;
+    flex-wrap: wrap;
+}
+
+.dashboard-layout .form-container {
+    margin: 0;
+    flex: 1;
+    min-width: 320px;
+    max-width: 480px;
+    box-sizing: border-box;
+}
+
+/* Storage Capacity Progress Bar */
+.storage-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.storage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.storage-title {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.storage-percentage {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #66fcf1;
+}
+
+.storage-bar-track {
+    width: 100%;
+    height: 12px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin: 8px 0 12px 0;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.storage-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #66fcf1);
+    border-radius: 9999px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+    box-shadow: 0 0 10px rgba(102, 252, 241, 0.4);
+}
+
+.storage-bar-fill.warning {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.storage-bar-fill.danger {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.storage-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.storage-details span strong {
+    color: #f1f5f9;
+}
+
+/* Status Badges */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.pill-connected {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.pill-disconnected {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.pill-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+/* USB Warning Banner */
+.usb-alert-banner {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.4;
+}
+
+.usb-alert-warning {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fbbf24;
+}
+
+.usb-alert-danger {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #f87171;
+}
+
+.usb-alert-success {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #34d399;
+}
+
+/* File Upload Area inside USB Panel */
+.usb-drop-zone {
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 24px 16px;
+    text-align: center;
+    background: rgba(15, 23, 42, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.usb-drop-zone:hover, .usb-drop-zone.dragover {
+    border-color: #66fcf1;
+    background: rgba(102, 252, 241, 0.05);
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.1);
+}
+
+.usb-drop-zone input[type="file"] {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.usb-drop-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.usb-drop-text {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+}
+
+.usb-drop-subtext {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 4px;
+}
+

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deployment Interface</title>
+    <title>Deployment &amp; Storage Interface</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,35 +24,79 @@
         <div class="orb orb3"></div>
     </div>
     
-    <div class="form-container">
-        <div class="rules-panel">
-  <h3>House Rules &amp; Instructions</h3>
-  <ul>
-    <li><strong>Rule 1:</strong> Give your GitHub repository a unique name so you do not overwrite another person's folder.</li>
-    <li><strong>Rule 2:</strong> Always use relative paths for images and CSS (e.g., <code>images/pic.jpg</code>).</li>
-    <li><strong>Rule 3:</strong> Downtime is normal! If the 2011 Mac sleeps or the tunnel drops, the site will temporarily go offline.</li>
-  </ul>
-</div>
-<h2>Deployer Dashboard</h2>
-        
-        
+    <div class="dashboard-layout">
+        <!-- Panel 1: Deployment & Database Dashboard -->
+        <div class="form-container float-card">
+            <div class="rules-panel">
+                <h3>House Rules &amp; Instructions</h3>
+                <ul>
+                    <li><strong>Rule 1:</strong> Give your GitHub repository a unique name so you do not overwrite another person's folder.</li>
+                    <li><strong>Rule 2:</strong> Always use relative paths for images and CSS (e.g., <code>images/pic.jpg</code>).</li>
+                    <li><strong>Rule 3:</strong> Downtime is normal! If the 2011 Mac sleeps or the tunnel drops, the site will temporarily go offline.</li>
+                </ul>
+            </div>
+            
+            <h2>Deployer Dashboard</h2>
 
-        <div class="input-group" style="display: flex; gap: 10px;">
-            <input type="text" id="repo-url" placeholder="https://github.com/username/repo.git" required style="flex: 2;">
-            <input type="password" id="deploy-pin" placeholder="Deploy PIN" required style="flex: 1;">
+            <div class="input-group" style="display: flex; gap: 10px;">
+                <input type="text" id="repo-url" placeholder="https://github.com/username/repo.git" required style="flex: 2;">
+                <input type="password" id="deploy-pin" placeholder="Deploy PIN" required style="flex: 1;">
+            </div>
+            <button id="deploy-btn" onclick="startDeployment()">Initiate Deployment</button>
+            
+            <hr class="separator" style="margin: 28px 0; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+
+            <h2>Database Engine</h2>
+            <div class="input-group">
+                <input type="text" id="db-name" placeholder="Enter new database name (e.g. ios_app_db)">
+            </div>
+            <button id="db-btn" onclick="provisionDatabase()">Provision Database</button>
+
+            <div id="terminal" class="terminal" style="margin-top: 20px; background: rgba(11, 12, 16, 0.9); border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; height: 140px; overflow-y: auto; color: #66fcf1;">
+                <div id="output">System Ready. Awaiting coordinates.</div>
+            </div>
         </div>
-        <button id="deploy-btn" onclick="startDeployment()">Initiate Deployment</button>
-        
-        <hr class="separator">
 
-        <h2>Database Engine</h2>
-        <div class="input-group">
-            <input type="text" id="db-name" placeholder="Enter new database name (e.g. ios_app_db)">
-        </div>
-        <button id="db-btn" onclick="provisionDatabase()">Provision Database</button>
+        <!-- Panel 2: USB Drive Storage Management -->
+        <div class="form-container float-card-alt">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; text-align: left; font-size: 1.5rem; color: #f8fafc;">💾 USB Storage</h2>
+                <span id="usb-status-pill" class="status-pill pill-connected">Detecting...</span>
+            </div>
 
-        <div id="terminal" class="terminal">
-            <div id="output">System Ready. Awaiting coordinates.</div>
+            <!-- Dynamic Alert / Warning Banner -->
+            <div id="usb-warning-banner" class="usb-alert-banner usb-alert-warning" style="display: none;"></div>
+
+            <!-- Visual Storage Capacity Progress Bar -->
+            <div class="storage-box">
+                <div class="storage-header">
+                    <span class="storage-title">Storage Capacity</span>
+                    <span id="usb-percent-text" class="storage-percentage">--%</span>
+                </div>
+                <div class="storage-bar-track">
+                    <div id="usb-bar-fill" class="storage-bar-fill" style="width: 0%;"></div>
+                </div>
+                <div class="storage-details">
+                    <span>Used: <strong id="usb-used-text">--</strong></span>
+                    <span>Free: <strong id="usb-free-text">--</strong></span>
+                    <span>Total: <strong id="usb-total-text">--</strong></span>
+                </div>
+            </div>
+
+            <!-- HTML File Upload Form to /Volumes/USBDrive/ -->
+            <form id="usb-upload-form" onsubmit="event.preventDefault(); uploadUsbFile();">
+                <div class="usb-drop-zone" id="usb-drop-zone">
+                    <input type="file" id="usb-file-input" name="usb_file" onchange="handleUsbFileSelect(this)">
+                    <span class="usb-drop-icon">🛸</span>
+                    <div class="usb-drop-text" id="usb-file-name">Click or drag a file to upload</div>
+                    <div class="usb-drop-subtext">Destination: /Volumes/USBDrive/</div>
+                </div>
+                <button type="submit" id="usb-upload-btn" style="background: linear-gradient(135deg, #3b82f6, #66fcf1); font-weight: 600;">
+                    Transfer to USB Drive
+                </button>
+            </form>
+
+            <div id="usb-upload-msg" style="margin-top: 14px; font-size: 0.85rem; display: none;"></div>
         </div>
     </div>
 
@@ -71,10 +115,10 @@
         <div class="popup-content" style="max-width: 600px; text-align: left;">
             <h3 style="text-align: center;">Database Activated</h3>
             <p style="text-align: center;">Your database <strong id="created-db-name" style="color: #66fcf1;"></strong> is ready. Connect using the credentials below:</p>
-            <div class="terminal" style="height: 200px; margin-top: 15px;">
+            <div class="terminal" style="height: 200px; margin-top: 15px; background: rgba(11, 12, 16, 0.9); border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; overflow-y: auto;">
                 <div id="db-instructions" style="white-space: pre; color: #a8ffb2;"></div>
             </div>
-            <button onclick="closeDbPopup()" class="popup-btn popup-btn-close" style="width: 100%; text-align: center;">Acknowledge</button>
+            <button onclick="closeDbPopup()" class="popup-btn popup-btn-close" style="width: 100%; text-align: center; margin-top: 15px;">Acknowledge</button>
         </div>
     </div>
 
@@ -108,7 +152,6 @@
                 const formData = new FormData();
                 formData.append('db_name', dbName);
                 
-                // Adjusting path for root index.html
                 const response = await fetch('api/system/provision_db.php', {
                     method: 'POST',
                     body: formData
@@ -152,7 +195,6 @@
             deployBtn.disabled = true;
             output.innerHTML = 'Establishing secure link via ZeroTier tunnel...<br>';
 
-            // Open Server-Sent Events connection pointing to the new api path
             const eventSource = new EventSource('api/system/deploy.php?repo=' + encodeURIComponent(repoUrl) + '&pin=' + encodeURIComponent(deployPin));
 
             eventSource.onmessage = function(event) {
@@ -165,11 +207,8 @@
                     deployBtn.disabled = false;
                     
                     if (message.includes('Deployment Complete')) {
-                        // Extract repo name to build the URL
                         const parts = repoUrl.split('/');
                         let repoName = parts[parts.length - 1].replace('.git', '').replace(/[^a-zA-Z0-9_-]/g, '');
-                        // The server runs on port 8888
-                        // Assuming the live site serves from root or MAMP htdocs, we can use an absolute path or relative
                         const projectUrl = `/sites/${repoName}/`;
                         showPopup(projectUrl);
                     }
@@ -182,6 +221,195 @@
                 deployBtn.disabled = false;
             };
         }
+
+        /* -------------------------------------------------------------
+           USB Drive Management Panel (Capacity & File Upload)
+        ------------------------------------------------------------- */
+        let currentUsbState = { connected: false, is_full: false };
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes <= 0) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        async function loadUsbStatus() {
+            const pill    = document.getElementById('usb-status-pill');
+            const banner  = document.getElementById('usb-warning-banner');
+            const barFill = document.getElementById('usb-bar-fill');
+            const pctText = document.getElementById('usb-percent-text');
+            const usedTxt = document.getElementById('usb-used-text');
+            const freeTxt = document.getElementById('usb-free-text');
+            const totlTxt = document.getElementById('usb-total-text');
+            const upBtn   = document.getElementById('usb-upload-btn');
+
+            try {
+                const res = await fetch('usb_manager.php');
+                const data = await res.json();
+                currentUsbState = data;
+
+                if (!data.connected) {
+                    pill.className = 'status-pill pill-disconnected';
+                    pill.innerText = 'Unplugged';
+
+                    banner.className = 'usb-alert-banner usb-alert-danger';
+                    banner.innerHTML = '⚠️ <strong>Drive Unplugged:</strong> USB Drive is currently disconnected or unmounted at <code>/Volumes/USBDrive</code>.';
+                    banner.style.display = 'flex';
+
+                    barFill.style.width = '0%';
+                    barFill.className = 'storage-bar-fill';
+                    pctText.innerText = '0%';
+                    usedTxt.innerText = '0 B';
+                    freeTxt.innerText = '0 B';
+                    totlTxt.innerText = '0 B';
+
+                    upBtn.disabled = true;
+                    upBtn.innerText = 'USB Drive Disconnected';
+                    return;
+                }
+
+                // Drive is connected
+                if (data.is_full) {
+                    pill.className = 'status-pill pill-warning';
+                    pill.innerText = 'Drive Full';
+
+                    banner.className = 'usb-alert-banner usb-alert-warning';
+                    banner.innerHTML = '⚠️ <strong>Storage Full:</strong> USB Drive has less than 5 MB free space. Delete files before uploading.';
+                    banner.style.display = 'flex';
+
+                    upBtn.disabled = true;
+                    upBtn.innerText = 'USB Drive Full';
+                } else {
+                    pill.className = 'status-pill pill-connected';
+                    pill.innerText = '● Connected';
+                    banner.style.display = 'none';
+
+                    upBtn.disabled = false;
+                    upBtn.innerText = 'Transfer to USB Drive';
+                }
+
+                const pct = Math.min(100, Math.max(0, data.percent_used || 0));
+                pctText.innerText = pct + '%';
+                barFill.style.width = pct + '%';
+
+                if (pct >= 95 || data.is_full) {
+                    barFill.className = 'storage-bar-fill danger';
+                } else if (pct >= 80) {
+                    barFill.className = 'storage-bar-fill warning';
+                } else {
+                    barFill.className = 'storage-bar-fill';
+                }
+
+                usedTxt.innerText = data.used_formatted || '--';
+                freeTxt.innerText = data.free_formatted || '--';
+                totlTxt.innerText = data.total_formatted || '--';
+
+            } catch (err) {
+                pill.className = 'status-pill pill-disconnected';
+                pill.innerText = 'Offline';
+                banner.className = 'usb-alert-banner usb-alert-danger';
+                banner.innerHTML = '⚠️ <strong>Connection Error:</strong> Could not retrieve USB storage telemetry.';
+                banner.style.display = 'flex';
+                upBtn.disabled = true;
+            }
+        }
+
+        function handleUsbFileSelect(input) {
+            const fileNameEl = document.getElementById('usb-file-name');
+            const msgEl = document.getElementById('usb-upload-msg');
+            msgEl.style.display = 'none';
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                fileNameEl.innerHTML = `<strong>${file.name}</strong> <span style="color:#66fcf1;">(${formatBytes(file.size)})</span>`;
+            } else {
+                fileNameEl.innerText = 'Click or drag a file to upload';
+            }
+        }
+
+        async function uploadUsbFile() {
+            const fileInput = document.getElementById('usb-file-input');
+            const upBtn = document.getElementById('usb-upload-btn');
+            const msgEl = document.getElementById('usb-upload-msg');
+
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Please select a file to transfer to the USB Drive.');
+                return;
+            }
+
+            if (!currentUsbState.connected) {
+                alert('USB Drive is currently unplugged. Please connect it to the server first.');
+                return;
+            }
+
+            if (currentUsbState.is_full) {
+                alert('USB Drive is full. Please clear space before uploading.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const originalBtnText = upBtn.innerText;
+            upBtn.disabled = true;
+            upBtn.innerText = 'Transferring in Zero Gravity...';
+
+            msgEl.style.display = 'block';
+            msgEl.className = 'usb-alert-banner usb-alert-warning';
+            msgEl.innerText = `Uploading ${file.name}...`;
+
+            try {
+                const formData = new FormData();
+                formData.append('usb_file', file);
+
+                const response = await fetch('usb_manager.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    msgEl.className = 'usb-alert-banner usb-alert-success';
+                    msgEl.innerHTML = `✅ <strong>Transferred:</strong> ${result.message}`;
+                    // Reset input
+                    fileInput.value = '';
+                    document.getElementById('usb-file-name').innerText = 'Click or drag a file to upload';
+                    // Refresh storage bar
+                    loadUsbStatus();
+                } else {
+                    msgEl.className = 'usb-alert-banner usb-alert-danger';
+                    msgEl.innerHTML = `❌ <strong>Upload Failed:</strong> ${result.message}`;
+                }
+            } catch (err) {
+                msgEl.className = 'usb-alert-banner usb-alert-danger';
+                msgEl.innerHTML = '❌ <strong>Upload Error:</strong> Network connection lost or server error.';
+            } finally {
+                upBtn.disabled = false;
+                upBtn.innerText = originalBtnText;
+            }
+        }
+
+        // Drag & Drop visual feedback
+        const dropZone = document.getElementById('usb-drop-zone');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        // Initialize USB capacity on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsbStatus();
+        });
     </script>
 </body>
 </html>
