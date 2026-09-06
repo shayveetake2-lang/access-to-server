@@ -1,8 +1,8 @@
 <?php
 // /config/db_connect.php
 
-$host    = 'localhost';
-$port    = '8889';          // Specific to MAMP
+$host    = '127.0.0.1';
+$port    = '3307';          // SSH tunnel → MAMP MySQL on Pro
 $dbname  = 'access_db';
 $user    = 'root';          // MAMP default
 $pass    = 'root';          // MAMP default
@@ -20,13 +20,8 @@ try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (\PDOException $e) {
     error_log("Database Connection Error: " . $e->getMessage());
-    
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Database connection failed. Please check system logs.'
-    ]);
-    exit;
+    // Re-throw so callers (e.g. auto_debug.php) can catch gracefully
+    throw new \RuntimeException('Database connection failed: ' . $e->getMessage(), 0, $e);
 }
 ?>
+

@@ -48,8 +48,8 @@ if (empty($repoName)) {
     exit;
 }
 
-// Target Directory for macOS High Sierra MAMP
-$targetDir = "/Applications/MAMP/htdocs/" . preg_replace('/[^a-zA-Z0-9_-]/', '', $repoName);
+// Target Directory — inside the document root so sites are publicly accessible
+$targetDir = "/Applications/MAMP/htdocs/access-to-server/sites/" . preg_replace('/[^a-zA-Z0-9_-]/', '', $repoName);
 sendMsg("[INFO] Target Directory: " . $targetDir);
 
 // Sanitize inputs strictly using escapeshellarg

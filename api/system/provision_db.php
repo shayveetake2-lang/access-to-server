@@ -3,8 +3,8 @@
 header('Content-Type: application/json');
 
 // MAMP MySQL hardcoded credentials
-$host = 'localhost';
-$port = '8889';
+$host = '127.0.0.1';
+$port = '3307'; // SSH tunnel → MAMP MySQL on Pro
 $username = 'root';
 $password = 'root';
 

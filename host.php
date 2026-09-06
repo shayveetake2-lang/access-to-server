@@ -67,6 +67,7 @@
     <nav class="global-nav">
         <a href="index.html">Deployer</a>
         <a href="host.php" class="active">Host Website</a>
+        <a href="sites.php">Hosted Sites</a>
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php">Diagnostics</a>
         <a href="auto_debug.php">Auto Debug</a>
@@ -80,7 +81,15 @@
     </div>
     
     <div class="form-container">
-        <h2>Host Website</h2>
+        <div class="rules-panel">
+  <h3>House Rules &amp; Instructions</h3>
+  <ul>
+    <li><strong>Rule 1:</strong> Give your GitHub repository a unique name so you do not overwrite another person's folder.</li>
+    <li><strong>Rule 2:</strong> Always use relative paths for images and CSS (e.g., <code>images/pic.jpg</code>).</li>
+    <li><strong>Rule 3:</strong> Downtime is normal! If the 2011 Mac sleeps or the tunnel drops, the site will temporarily go offline.</li>
+  </ul>
+</div>
+<h2>Host Website</h2>
         <div id="success-message" style="display: none; text-align: center;">
             <h3 style="color: #4ade80; margin-bottom: 10px;">Deployment Successful!</h3>
             <p id="success-text" style="color: #f1f5f9; margin-bottom: 20px;"></p>

@@ -32,6 +32,7 @@
     <nav class="global-nav">
         <a href="index.html">Deployer</a>
         <a href="host.php">Host Website</a>
+        <a href="sites.php">Hosted Sites</a>
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php">Diagnostics</a>
         <a href="auto_debug.php">Auto Debug</a>
@@ -63,6 +64,15 @@
                 <li><strong>GitHub Repo:</strong> Paste the public URL of a GitHub repository to automatically clone it to your server.</li>
                 <li><strong>Upload .zip:</strong> Drag and drop a `.zip` file of your website to automatically extract it to the server.</li>
                 <li>Once deployed, click the provided <strong>Visit Live Site</strong> link to view your newly hosted website.</li>
+            </ul>
+
+            <h3>Hosted Sites</h3>
+            <p>The Hosted Sites page shows all websites currently live on the server — updated automatically after every deployment.</p>
+            <ul>
+                <li>Each card shows the <strong>site name</strong>, last updated time, and a <strong>Visit Live Site ↗</strong> button.</li>
+                <li>A <span style="color:#34d399;">● LIVE</span> badge means the site has an index file and is accessible.</li>
+                <li>A <span style="color:#fbbf24;">⚠ NO INDEX</span> badge means the folder exists but has no entry point — the site may be incomplete.</li>
+                <li>All sites are deployed to the <code>/sites/</code> subfolder on the server.</li>
             </ul>
 
             <h3>Movie Portal</h3>

@@ -3,27 +3,23 @@
 
 // 1. Test Database Connection
 $db_status = "Waiting...";
-$db_class = "pending";
-$isM1 = (php_uname('m') === 'arm64');
+$db_class  = "pending";
 
-if ($isM1) {
-    $db_status = "Skipped (Testing on M1 Mac. MySQL is on the 2011 MacBook).";
-    $db_class = "warning";
+// Check if MySQL tunnel is reachable on 3307
+$sock = @fsockopen('127.0.0.1', 3307, $errno, $errstr, 2);
+if (!$sock) {
+    $db_status = "MySQL tunnel not active on 127.0.0.1:3307. Start the SSH tunnel to enable this check.";
+    $db_class  = "warning";
 } else {
+    fclose($sock);
     try {
-        $host = '127.0.0.1';
-        $port = '8889';
-        $dbname = 'access_db';
-        $username = 'root';
-        $password = 'root';
-        
-        $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
-        $pdo = new PDO($dsn, $username, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $db_status = "Connected successfully to access_db on port 8889.";
-        $db_class = "success";
+        $dsn = "mysql:host=127.0.0.1;port=3307;dbname=access_db;charset=utf8mb4";
+        $pdo = new PDO($dsn, 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $db_status = "Connected successfully to access_db via SSH tunnel (port 3307).";
+        $db_class  = "success";
     } catch (PDOException $e) {
-        $db_status = "Connection Failed: " . $e->getMessage();
-        $db_class = "error";
+        $db_status = "Tunnel reachable but DB connection failed: " . $e->getMessage();
+        $db_class  = "error";
     }
 }
 
@@ -122,6 +118,7 @@ $css_classes = [
     <nav class="global-nav">
         <a href="index.html">Deployer</a>
         <a href="host.php">Host Website</a>
+        <a href="sites.php">Hosted Sites</a>
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php" class="active">Diagnostics</a>
         <a href="auto_debug.php">Auto Debug</a>

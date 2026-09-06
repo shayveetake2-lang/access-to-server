@@ -12,13 +12,13 @@ if (empty($projectName)) {
     exit;
 }
 
-// Define the root target directory (inside access-to-server)
-$targetBaseDir = realpath(__DIR__ . '/../') . '/webhost';
+// Define the target directory — /sites/ is inside the document root and visible to Hosted Sites page
+$targetBaseDir = realpath(__DIR__ . '/../') . '/sites';
 
-// Create the webhost directory if it doesn't exist
+// Create the sites directory if it doesn't exist
 if (!is_dir($targetBaseDir)) {
     if (!mkdir($targetBaseDir, 0755, true)) {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to create webhost base directory. Check permissions.']);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to create sites base directory. Check permissions.']);
         exit;
     }
 }
@@ -50,7 +50,7 @@ if ($deployMethod === 'github') {
         echo json_encode([
             'status' => 'success', 
             'message' => 'Repository cloned successfully!',
-            'url' => 'webhost/' . $projectName . '/'
+            'url' => 'sites/' . $projectName . '/'
         ]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Failed to clone repository. Make sure it is public. Git output: ' . $output]);
@@ -85,7 +85,7 @@ if ($deployMethod === 'github') {
         echo json_encode([
             'status' => 'success', 
             'message' => 'Files extracted successfully!',
-            'url' => 'webhost/' . $projectName . '/'
+            'url' => 'sites/' . $projectName . '/'
         ]);
     } else {
         // Clean up the created directory on failure

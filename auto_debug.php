@@ -25,7 +25,6 @@ if (!function_exists('shell_exec') || !function_exists('popen')) {
 }
 $results[] = $gitCheck;
 
-$isM1 = (php_uname('m') === 'arm64');
 
 // 2. Database Connector Check
 $dbCheck = [
@@ -39,12 +38,17 @@ if (!file_exists(__DIR__ . '/config/db_connect.php')) {
     $dbCheck['message'] = 'config/db_connect.php is missing.';
     $autoFixes[] = "Create config/db_connect.php to match the new backend architecture.";
 } else {
-    if ($isM1) {
+    // Check if the DB is reachable (works whether tunnel is active or direct MAMP)
+    $dbHost = '127.0.0.1';
+    $dbPort = 3307;
+    $sock = @fsockopen($dbHost, $dbPort, $errno, $errstr, 2);
+    if (!$sock) {
         $dbCheck['status'] = 'skip';
-        $dbCheck['message'] = 'Skipped (Testing on M1 Mac. MySQL is on the 2011 MacBook).';
+        $dbCheck['message'] = "MySQL tunnel not reachable on {$dbHost}:{$dbPort}. The SSH tunnel (Air → Pro) must be active and forwarding port 3307 to enable this check.";
     } else {
+        fclose($sock);
         try {
-            require __DIR__ . '/config/db_connect.php';
+            require_once __DIR__ . '/config/db_connect.php';
             if (!isset($pdo)) {
                 throw new Exception("PDO object not instantiated by db_connect.php");
             }
@@ -88,18 +92,13 @@ $plexCheck = [
     'message' => 'Plex Media Server is reachable on localhost:32400.'
 ];
 
-if ($isM1) {
-    $plexCheck['status'] = 'skip';
-    $plexCheck['message'] = 'Skipped (Testing on M1 Mac. Plex is on the 2011 MacBook).';
+$plexSock = @fsockopen('localhost', 32400, $errno, $errstr, 2);
+if (!$plexSock) {
+    $plexCheck['status'] = 'fail';
+    $plexCheck['message'] = "Cannot connect to Plex on port 32400: $errstr ($errno)";
+    $autoFixes[] = "Start Plex Media Server, or verify it is listening on localhost:32400. Check firewall rules blocking port 32400.";
 } else {
-    $plexSock = @fsockopen('localhost', 32400, $errno, $errstr, 2);
-    if (!$plexSock) {
-        $plexCheck['status'] = 'fail';
-        $plexCheck['message'] = "Cannot connect to Plex on port 32400: $errstr ($errno)";
-        $autoFixes[] = "Start Plex Media Server, or verify it is listening on localhost:32400. Check firewall rules blocking port 32400.";
-    } else {
-        fclose($plexSock);
-    }
+    fclose($plexSock);
 }
 $results[] = $plexCheck;
 
@@ -117,6 +116,30 @@ if (!file_exists($deployApiFile)) {
     $autoFixes[] = "Ensure the api/process_deployment.php file exists for the Host Website feature.";
 }
 $results[] = $deployApiCheck;
+
+// 6. Sites Directory Check
+$sitesCheck = [
+    'name'    => 'Hosted Sites Directory',
+    'status'  => 'pass',
+    'message' => 'sites/ directory exists and is writable. Deployed projects will appear in Hosted Sites.'
+];
+
+$sitesDir = __DIR__ . '/sites';
+if (!is_dir($sitesDir)) {
+    if (@mkdir($sitesDir, 0755, true)) {
+        $sitesCheck['status'] = 'pass';
+        $sitesCheck['message'] = 'sites/ directory was missing — created automatically. Ready for deployments.';
+    } else {
+        $sitesCheck['status'] = 'fail';
+        $sitesCheck['message'] = 'sites/ directory does not exist and could not be created. Check folder permissions.';
+        $autoFixes[] = "Manually create /sites/ inside the access-to-server folder and set permissions to 755.";
+    }
+} elseif (!is_writable($sitesDir)) {
+    $sitesCheck['status'] = 'fail';
+    $sitesCheck['message'] = 'sites/ directory exists but is not writable. Deployments will fail.';
+    $autoFixes[] = "Run: chmod 755 " . $sitesDir;
+}
+$results[] = $sitesCheck;
 
 ?>
 <!DOCTYPE html>
@@ -224,6 +247,7 @@ $results[] = $deployApiCheck;
     <nav class="global-nav">
         <a href="index.html">Deployer</a>
         <a href="host.php">Host Website</a>
+        <a href="sites.php">Hosted Sites</a>
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php">Diagnostics</a>
         <a href="auto_debug.php" class="active">Auto Debug</a>

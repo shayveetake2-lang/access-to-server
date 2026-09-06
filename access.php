@@ -10,6 +10,7 @@
     <nav class="global-nav">
         <a href="index.html">Deployer</a>
         <a href="host.php">Host Website</a>
+        <a href="sites.php">Hosted Sites</a>
         <a href="access.php" class="active">Access Request</a>
         <a href="movies.html">Movie Portal</a>
         <a href="debug.php">Diagnostics</a>

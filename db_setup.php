@@ -1,6 +1,6 @@
 <?php
-$host = 'localhost';
-$port = '8889';
+$host = '127.0.0.1';
+$port = '3307'; // SSH tunnel → MAMP MySQL on Pro
 $user = 'root';
 $pass = 'root';
 
@@ -60,3 +60,4 @@ try {
     echo "Error: " . $e->getMessage() . "\n";
 }
 ?>
+
