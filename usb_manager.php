@@ -222,3 +222,4 @@ if ($requestMethod === 'POST') {
 
 http_response_code(405);
 echo json_encode(['status' => 'error', 'message' => 'Method not allowed. Use GET or POST.']);
+
