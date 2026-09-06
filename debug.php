@@ -5,22 +5,16 @@
 $db_status = "Waiting...";
 $db_class  = "pending";
 
-// Check if MySQL tunnel is reachable on 3307
-$sock = @fsockopen('127.0.0.1', 3307, $errno, $errstr, 2);
-if (!$sock) {
-    $db_status = "MySQL tunnel not active on 127.0.0.1:3307. Start the SSH tunnel to enable this check.";
-    $db_class  = "warning";
-} else {
-    fclose($sock);
-    try {
-        $dsn = "mysql:host=127.0.0.1;port=3307;dbname=access_db;charset=utf8mb4";
-        $pdo = new PDO($dsn, 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $db_status = "Connected successfully to access_db via SSH tunnel (port 3307).";
+try {
+    require_once __DIR__ . '/config/db_connect.php';
+    if (isset($pdo)) {
+        $usedPort = isset($port) ? $port : 'default';
+        $db_status = "Connected successfully to access_db (port $usedPort).";
         $db_class  = "success";
-    } catch (PDOException $e) {
-        $db_status = "Tunnel reachable but DB connection failed: " . $e->getMessage();
-        $db_class  = "error";
     }
+} catch (\Exception $e) {
+    $db_status = "Connection Failed: " . $e->getMessage();
+    $db_class  = "error";
 }
 
 // 2. Test Shell Execution for Git in htdocs

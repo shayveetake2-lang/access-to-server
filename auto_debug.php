@@ -38,26 +38,19 @@ if (!file_exists(__DIR__ . '/config/db_connect.php')) {
     $dbCheck['message'] = 'config/db_connect.php is missing.';
     $autoFixes[] = "Create config/db_connect.php to match the new backend architecture.";
 } else {
-    // Check if the DB is reachable (works whether tunnel is active or direct MAMP)
-    $dbHost = '127.0.0.1';
-    $dbPort = 3307;
-    $sock = @fsockopen($dbHost, $dbPort, $errno, $errstr, 2);
-    if (!$sock) {
-        $dbCheck['status'] = 'skip';
-        $dbCheck['message'] = "MySQL tunnel not reachable on {$dbHost}:{$dbPort}. The SSH tunnel (Air → Pro) must be active and forwarding port 3307 to enable this check.";
-    } else {
-        fclose($sock);
-        try {
-            require_once __DIR__ . '/config/db_connect.php';
-            if (!isset($pdo)) {
-                throw new Exception("PDO object not instantiated by db_connect.php");
-            }
-            $pdo->query("SELECT 1"); // Test query
-        } catch (Exception $e) {
-            $dbCheck['status'] = 'fail';
-            $dbCheck['message'] = 'DB Connection failed via db_connect.php: ' . $e->getMessage();
-            $autoFixes[] = "Check config/db_connect.php credentials or run db_setup.php if tables are missing.";
+    try {
+        require_once __DIR__ . '/config/db_connect.php';
+        if (!isset($pdo)) {
+            throw new Exception("PDO object not instantiated by db_connect.php");
         }
+        $pdo->query("SELECT 1");
+        $usedPort = isset($port) ? $port : 'default';
+        $dbCheck['status'] = 'pass';
+        $dbCheck['message'] = "Successfully connected to MySQL via centralized config/db_connect.php (port $usedPort).";
+    } catch (Exception $e) {
+        $dbCheck['status'] = 'fail';
+        $dbCheck['message'] = 'DB Connection failed via db_connect.php: ' . $e->getMessage();
+        $autoFixes[] = "Check config/db_connect.php credentials or run db_setup.php if tables are missing.";
     }
 }
 $results[] = $dbCheck;
