@@ -124,7 +124,7 @@ if (is_dir($sitesDir)) {
             
             <!-- Left: Brand / Title & Navigation Tabs -->
             <div class="flex items-center gap-3.5 shrink-0 min-w-0">
-                <a href="index.html" class="flex items-center gap-3 shrink-0 group select-none">
+                <a href="index.html" class="flex items-center gap-3 shrink-0 group select-none cursor-pointer" title="Go to Server Console Dashboard">
                     <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/15 group-hover:scale-105 transition-transform shrink-0">
                         <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" />

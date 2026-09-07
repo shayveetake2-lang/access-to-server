@@ -81,20 +81,22 @@ if ($return_var === 0) {
     <div class="fixed top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-4xl h-36 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 blur-3xl pointer-events-none -z-10"></div>
     <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/75 backdrop-blur-xl transition-all">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-                <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/15">
-                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" /></svg>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-slate-100 tracking-tight text-base sm:text-lg">Server Console</span>
-                        <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700/60 uppercase tracking-wider">MBP 2011 Node</span>
+            <div class="flex items-center gap-3.5 shrink-0 min-w-0">
+                <a href="index.html" class="flex items-center gap-3 shrink-0 group select-none cursor-pointer" title="Go to Server Console Dashboard">
+                    <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/15 group-hover:scale-105 transition-transform shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" /></svg>
                     </div>
-                    <p class="text-[11px] text-slate-400 font-mono hidden md:block">ZeroTier Tunnel &bull; MAMP Apache &bull; Port 3307</p>
-                </div>
-                <nav class="hidden md:flex items-center gap-1 ml-4 px-1.5 py-1 rounded-xl bg-slate-900/80 border border-slate-800">
-                    <a href="debug.php" class="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-white shadow-sm border border-slate-700/60">Diagnostics</a>
-                    <a href="auto_debug.php" class="px-3 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">Auto Debug</a>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 whitespace-nowrap">
+                            <span class="font-bold text-slate-100 tracking-tight text-base sm:text-lg group-hover:text-white transition-colors">Server Console</span>
+                            <span class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800/90 text-cyan-400 border border-slate-700/60 uppercase tracking-wider">MBP 2011</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-mono hidden lg:block truncate whitespace-nowrap">ZeroTier Tunnel &bull; MAMP Apache &bull; Port 3307</p>
+                    </div>
+                </a>
+                <nav class="hidden sm:flex items-center gap-1 ml-1 px-1.5 py-1 rounded-xl bg-slate-900/80 border border-slate-800">
+                    <a href="debug.php" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-white shadow-sm border border-slate-700/60">Diagnostics</a>
+                    <a href="auto_debug.php" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">Auto Debug</a>
                 </nav>
             </div>
             <div class="flex items-center gap-2 sm:gap-3">
