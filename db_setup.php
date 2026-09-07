@@ -1,7 +1,18 @@
 <?php
 $host = '127.0.0.1';
-$port = '3307'; // SSH tunnel → MAMP MySQL on Pro
-$user = 'root';
+
+$port = '8889';
+$s8889 = @fsockopen('127.0.0.1', 8889, $errno, $errstr, 0.5);
+if ($s8889) {
+    fclose($s8889);
+    $port = '8889';
+} else {
+    $s3307 = @fsockopen('127.0.0.1', 3307, $errno, $errstr, 0.5);
+    if ($s3307) {
+        fclose($s3307);
+        $port = '3307';
+    }
+}
 $pass = 'root';
 
 try {
