@@ -92,6 +92,19 @@ if ($requestMethod === 'GET') {
 
 // 2. POST: Handle File Upload to USB Drive
 if ($requestMethod === 'POST') {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    if (empty($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+        http_response_code(401);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'Upload failed: Admin login required to transfer files to USB drive.'
+        ]);
+        exit;
+    }
+
     $storage = getUsbStorageStatus($usbMountPath);
 
     // Verify drive is connected
@@ -176,8 +189,74 @@ if ($requestMethod === 'POST') {
         exit;
     }
 
-    // Securely sanitize filename
+    // =========================================================
+    // Strict Extension & Executable RCE Security Validation
+    // =========================================================
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt', 'csv', 'docx', 'xlsx'];
+    $forbiddenExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'phar', 'exe', 'sh', 'cgi', 'pl', 'py', 'asp', 'aspx', 'jsp', 'bat', 'cmd', 'js', 'htaccess'];
+
     $rawName = basename($file['name']);
+    $parts = explode('.', strtolower($rawName));
+    $fileExt = strtolower(pathinfo($rawName, PATHINFO_EXTENSION));
+
+    // Reject missing extensions
+    if (empty($fileExt) || !in_array($fileExt, $allowedExtensions, true)) {
+        http_response_code(400);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => "Security Error: Invalid or prohibited file extension (.$fileExt). Only safe documents and images are allowed.",
+            'storage' => $storage
+        ]);
+        exit;
+    }
+
+    // Check for double extension attacks (e.g. payload.php.jpg)
+    foreach ($parts as $part) {
+        if (in_array($part, $forbiddenExtensions, true)) {
+            http_response_code(400);
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Security Error: Executable script patterns detected in filename. Upload rejected.',
+                'storage' => $storage
+            ]);
+            exit;
+        }
+    }
+
+    // =========================================================
+    // Strict MIME Type Validation via finfo
+    // =========================================================
+    $allowedMimeTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/pdf',
+        'text/plain',
+        'text/csv',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+
+    $detectedMime = '';
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $detectedMime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+    } elseif (function_exists('mime_content_type')) {
+        $detectedMime = mime_content_type($file['tmp_name']);
+    }
+
+    if (!empty($detectedMime) && !in_array($detectedMime, $allowedMimeTypes, true)) {
+        http_response_code(400);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => "Security Error: Disallowed MIME type detected ('$detectedMime'). Upload aborted.",
+            'storage' => $storage
+        ]);
+        exit;
+    }
+
+    // Securely sanitize filename
     // Strip control chars and dangerous traversal elements
     $cleanName = preg_replace('/[^\w\s\d\.\-_]/i', '', $rawName);
     $cleanName = trim($cleanName);

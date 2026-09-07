@@ -14,8 +14,50 @@ function sendMsg($msg) {
     flush();
 }
 
-$repoUrl = isset($_GET['repo']) ? trim($_GET['repo']) : '';
+// ==========================================
+// 1. IP Restriction Check (ZeroTier 10.247.192.x)
+// ==========================================
+$clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+if (strpos($clientIp, ',') !== false) {
+    $clientIp = trim(explode(',', $clientIp)[0]);
+}
 
+$zeroTierRange = '10.247.192.';
+$isZeroTier = strncmp($clientIp, $zeroTierRange, strlen($zeroTierRange)) === 0;
+$isLocalhost = ($clientIp === '127.0.0.1' || $clientIp === '::1');
+
+if (!$isZeroTier && !$isLocalhost) {
+    http_response_code(403);
+    sendMsg("HTTP 403 Forbidden: Access denied. Requests must originate from the ZeroTier private network (10.247.192.x).");
+    sendMsg("Deployment Aborted.");
+    exit;
+}
+
+// ==========================================
+// 2. Admin Authentication (Session or PIN)
+// ==========================================
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+$requestPin = $_SERVER['HTTP_X_DEPLOY_PIN']
+    ?? $headers['X-Deploy-PIN']
+    ?? $headers['x-deploy-pin']
+    ?? ($_POST['pin'] ?? '');
+
+$expectedPin = getenv('DEPLOY_PIN') ?: 'Secur3D3pl0yP1n!2026';
+$isSessionAdmin = !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+$isValidPin = !empty($requestPin) && hash_equals($expectedPin, $requestPin);
+
+if (!$isSessionAdmin && !$isValidPin) {
+    http_response_code(401);
+    sendMsg("HTTP 401 Unauthorized: Admin session or valid deployment PIN required.");
+    sendMsg("Deployment Aborted.");
+    exit;
+}
+
+$repoUrl = isset($_POST['repo']) ? trim($_POST['repo']) : (isset($_GET['repo']) ? trim($_GET['repo']) : '');
 
 if (empty($repoUrl)) {
     sendMsg("Error: Repository URL is missing.");

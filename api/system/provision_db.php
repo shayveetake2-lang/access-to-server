@@ -1,24 +1,18 @@
 <?php
 // provision_db.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 header('Content-Type: application/json');
 
-// MAMP MySQL hardcoded credentials
-$host = '127.0.0.1';
+require_once __DIR__ . '/../../config/config.php';
 
-$port = '8889';
-$s8889 = @fsockopen('127.0.0.1', 8889, $errno, $errstr, 0.5);
-if ($s8889) {
-    fclose($s8889);
-    $port = '8889';
-} else {
-    $s3307 = @fsockopen('127.0.0.1', 3307, $errno, $errstr, 0.5);
-    if ($s3307) {
-        fclose($s3307);
-        $port = '3307';
-    }
+// Ensure session admin authentication for database provisioning
+if (empty($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    http_response_code(401);
+    echo json_encode(["status" => "error", "message" => "Admin authentication required to provision databases."]);
+    exit;
 }
-$username = 'root';
-$password = 'root';
 
 $dbName = isset($_POST['db_name']) ? trim($_POST['db_name']) : '';
 
@@ -26,23 +20,24 @@ $dbName = isset($_POST['db_name']) ? trim($_POST['db_name']) : '';
 $dbName = preg_replace('/[^a-zA-Z0-9_]/', '', $dbName);
 
 if (empty($dbName)) {
+    http_response_code(400);
     echo json_encode(["status" => "error", "message" => "Invalid database name provided."]);
     exit;
 }
 
 try {
-    // Connect to MySQL server without specifying a database
-    $pdo = new PDO("mysql:host=$host;port=$port;charset=utf8mb4", $username, $password);
-    
-    // Set PDO error mode to exception
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = getDBConnection();
     
     // Create Database if it does not exist
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName`");
+    $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     
     echo json_encode(["status" => "success", "message" => "Database '$dbName' provisioned and ready."]);
 } catch (PDOException $e) {
+    http_response_code(500);
     echo json_encode(["status" => "error", "message" => "DB Error: " . $e->getMessage()]);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Server Error: " . $e->getMessage()]);
 }
 ?>
 
