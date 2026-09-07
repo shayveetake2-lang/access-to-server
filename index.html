@@ -152,8 +152,32 @@
                     </svg>
                 </button>
 
-                <!-- Tools Dropdown Menu Button -->
-                <div class="relative" id="nav-dropdown-wrapper">
+                <!-- Diagnostic Tool Button -->
+                <a 
+                    href="auto_debug.php" 
+                    title="Diagnostic Tool" 
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.492-3.053c.24-.294.577-.487.94-.539l2.716-.388a.75.75 0 00.58-1.127l-3.264-5.22a.75.75 0 00-1.11-.157l-1.92 1.92-3.265-5.22a.75.75 0 00-1.11-.157l-1.92 1.92 2.492-3.053c.24-.294.577-.487.94-.539l2.716-.388z" />
+                    </svg>
+                    <span>Diagnostics</span>
+                </a>
+
+                <!-- Host Website Button -->
+                <a 
+                    href="host.php" 
+                    title="Host a Website" 
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                    </svg>
+                    <span>Host Site</span>
+                </a>
+
+                <!-- Tools Dropdown Menu Button (Admin Only) -->
+                <div class="relative hidden" id="nav-dropdown-wrapper">
                     <button 
                         onclick="toggleNavMenu()" 
                         id="nav-menu-btn" 
@@ -1162,6 +1186,7 @@
             const dbLock = document.getElementById('db-lock-container');
             const usbForm = document.getElementById('usb-upload-form');
             const usbLock = document.getElementById('usb-lock-container');
+            const navDropdownWrapper = document.getElementById('nav-dropdown-wrapper');
 
             if (isLoggedIn) {
                 if (navBtnText) navBtnText.innerText = 'Admin Panel';
@@ -1172,6 +1197,7 @@
                 if (loginView) loginView.classList.add('hidden');
                 if (panelView) panelView.classList.remove('hidden');
                 if (userDisplay) userDisplay.innerText = user || 'admin';
+                if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
 
                 // Unlock Admin Forms
                 if (deployForm) deployForm.classList.remove('hidden');
@@ -1188,6 +1214,7 @@
 
                 if (loginView) loginView.classList.remove('hidden');
                 if (panelView) panelView.classList.add('hidden');
+                if (navDropdownWrapper) navDropdownWrapper.classList.add('hidden');
 
                 // Lock Admin Forms for non-logged-in users
                 if (deployForm) deployForm.classList.add('hidden');

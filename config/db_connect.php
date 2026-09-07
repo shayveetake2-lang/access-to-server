@@ -7,8 +7,8 @@
 $host = '127.0.0.1';
 $port = '8889'; // MAMP default MySQL port
 $db   = 'access_db';
-$user = 'admin';
-$pass = '123456789';
+$user = 'root';
+$pass = 'root';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
