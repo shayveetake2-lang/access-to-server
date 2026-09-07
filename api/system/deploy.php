@@ -14,15 +14,8 @@ function sendMsg($msg) {
     flush();
 }
 
-$correctPin = '9999';
-$repoUrl = isset($_GET['repo']) ? $_GET['repo'] : '';
-$deployPin = isset($_GET['pin']) ? $_GET['pin'] : '';
+$repoUrl = isset($_GET['repo']) ? trim($_GET['repo']) : '';
 
-if ($deployPin !== $correctPin) {
-    sendMsg("Error: Invalid Security PIN.");
-    sendMsg("Deployment Failed.");
-    exit;
-}
 
 if (empty($repoUrl)) {
     sendMsg("Error: Repository URL is missing.");

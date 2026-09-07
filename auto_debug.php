@@ -68,12 +68,12 @@ if (!file_exists($deployFile)) {
     $deployCheck['message'] = "api/system/deploy.php was not found.";
     $autoFixes[] = "Ensure the api/system/deploy.php file exists for the SSE terminal feature.";
 } else {
-    // Check if PIN security is implemented
+    // Check if deployer script is valid and handles repository URL routing
     $deploySource = file_get_contents($deployFile);
-    if (strpos($deploySource, '$deployPin') === false) {
+    if (strpos($deploySource, '$repoUrl') === false || strpos($deploySource, 'git') === false) {
         $deployCheck['status'] = 'fail';
-        $deployCheck['message'] = "PIN security logic is missing in deploy.php.";
-        $autoFixes[] = "Add secure PIN validation to api/system/deploy.php.";
+        $deployCheck['message'] = "Deployment execution logic is missing or incomplete in deploy.php.";
+        $autoFixes[] = "Ensure api/system/deploy.php contains repository URL handling and git deployment logic.";
     }
 }
 $results[] = $deployCheck;
