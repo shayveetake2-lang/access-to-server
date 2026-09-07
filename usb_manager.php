@@ -81,7 +81,7 @@ function getUsbStorageStatus($mountPath) {
     ];
 }
 
-$requestMethod = $_SERVER['REQUEST_METHOD'];
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 // 1. GET: Return USB Storage Capacity and Connection Status
 if ($requestMethod === 'GET') {

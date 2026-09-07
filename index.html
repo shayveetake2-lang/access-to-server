@@ -87,73 +87,88 @@
     <div class="fixed top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-4xl h-36 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 blur-3xl pointer-events-none -z-10"></div>
 
     <!-- 1. Top Navigation Bar -->
-    <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/75 backdrop-blur-xl transition-all">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4">
             
-            <!-- Left: Brand / Title -->
-            <div class="flex items-center gap-3.5">
-                <a href="index.html" class="flex items-center gap-3.5 group">
-                    <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/15 group-hover:shadow-cyan-500/40 transition-shadow">
+            <!-- Left: Brand / Title & Primary Navigation -->
+            <div class="flex items-center gap-3.5 shrink-0 min-w-0">
+                <a href="index.html" class="flex items-center gap-3 shrink-0 group select-none">
+                    <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/15 group-hover:scale-105 transition-transform shrink-0">
                         <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" />
                         </svg>
                     </div>
-                    <div>
-                        <div class="flex items-center gap-2">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 whitespace-nowrap">
                             <span class="font-bold text-slate-100 tracking-tight text-base sm:text-lg group-hover:text-white transition-colors">Server Console</span>
-                            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700/60 uppercase tracking-wider">
-                                MBP 2011 Node
+                            <span class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800/90 text-cyan-400 border border-slate-700/60 uppercase tracking-wider">
+                                MBP 2011
                             </span>
                         </div>
-                        <p class="text-[11px] text-slate-400 font-mono hidden md:block">ZeroTier Tunnel &bull; MAMP Apache &bull; Port 3307</p>
+                        <p class="text-[11px] text-slate-400 font-mono hidden lg:block truncate whitespace-nowrap">ZeroTier Tunnel &bull; MAMP Apache &bull; Port 3307</p>
                     </div>
                 </a>
 
                 <!-- Navigation Tabs (Deployer / Hosted Sites) -->
-                <nav class="hidden md:flex items-center gap-1 ml-4 px-1.5 py-1 rounded-xl bg-slate-900/80 border border-slate-800">
-                    <a href="index.html" class="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-white shadow-sm border border-slate-700/60">Deployer</a>
-                    <a href="sites.php" class="px-3 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">Hosted Sites</a>
+                <nav class="hidden sm:flex items-center gap-1 ml-1 px-1.5 py-1 rounded-xl bg-slate-900/80 border border-slate-800">
+                    <a href="index.html" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-white shadow-sm border border-slate-700/60">Deployer</a>
+                    <a href="sites.php" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">Hosted Sites</a>
                 </nav>
             </div>
 
-            <!-- Center/Right: Navigation & Status -->
-            <div class="flex items-center gap-2 sm:gap-3">
-                <!-- Glowing Green System Online Badge -->
-                <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-medium shadow-sm shadow-emerald-900/20">
-                    <span class="relative flex h-2 w-2">
+            <!-- Right: Interactive Status & Quick Actions -->
+            <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+                
+                <!-- Interactive System Online Button (Opens Hardware Node Modal) -->
+                <button 
+                    type="button" 
+                    id="sys-status-btn"
+                    onclick="openNodeModal()" 
+                    title="Click to view Server Hardware &amp; System Specs" 
+                    class="group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-emerald-950/60 hover:bg-emerald-900/70 border border-emerald-500/30 hover:border-emerald-400/60 text-emerald-400 hover:text-emerald-300 text-xs font-medium shadow-sm shadow-emerald-950/30 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
+                >
+                    <span class="relative flex h-2 w-2 shrink-0">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <span class="hidden sm:inline tracking-wide text-emerald-300 font-mono text-[11px] font-semibold">System Online</span>
-                </div>
-
-                <!-- Hosted Sites Primary Button (hidden on mobile, accessible via Tools dropdown) -->
-                <a href="sites.php" class="hidden sm:inline-flex group relative items-center gap-2 px-3.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-400/50 text-cyan-300 hover:text-cyan-200 text-xs font-semibold transition-all duration-200 shadow-sm shadow-cyan-950/20">
-                    <svg class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+                    <span class="hidden xs:inline tracking-wide text-emerald-300 font-mono text-[11px] font-semibold whitespace-nowrap">System Online</span>
+                    <svg class="w-3.5 h-3.5 text-emerald-400/70 group-hover:text-emerald-300 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
                     </svg>
-                    <span>Hosted Sites</span>
-                </a>
+                </button>
 
-                <!-- Database / Backend Primary Button -->
-                <button onclick="scrollToDatabase()" class="hidden sm:inline-flex group relative items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-300 hover:text-indigo-200 text-xs font-semibold transition-all duration-200 shadow-sm shadow-indigo-950/20 cursor-pointer">
-                    <svg class="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <!-- Database Shortcut Button -->
+                <button 
+                    type="button" 
+                    onclick="scrollToDatabase()" 
+                    class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-300 hover:text-indigo-200 text-xs font-semibold transition-all duration-200 shadow-sm shadow-indigo-950/20 cursor-pointer whitespace-nowrap"
+                >
+                    <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
                     </svg>
                     <span>+ Database</span>
                 </button>
 
-                <!-- Plex / Movie Portal Button (hidden on mobile, accessible via Tools dropdown) -->
-                <a href="http://10.247.192.231:32400/web" target="_blank" rel="noopener noreferrer" class="hidden md:inline-flex group relative items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-400/50 text-amber-300 hover:text-amber-200 text-xs font-semibold transition-all duration-200 shadow-sm shadow-amber-950/20">
-                    <svg class="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <!-- Plex / Movie Portal Button -->
+                <a 
+                    href="http://10.247.192.231:32400/web" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-400/50 text-amber-300 hover:text-amber-200 text-xs font-semibold transition-all duration-200 shadow-sm shadow-amber-950/20 whitespace-nowrap"
+                >
+                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                     </svg>
                     <span>Plex Portal</span>
                 </a>
 
-                <!-- Extra Quick Links Menu Button (Dropdown Toggle) -->
+                <!-- Tools Dropdown Menu Button -->
                 <div class="relative" id="nav-dropdown-wrapper">
-                    <button onclick="toggleNavMenu()" id="nav-menu-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors">
+                    <button 
+                        onclick="toggleNavMenu()" 
+                        id="nav-menu-btn" 
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                    >
                         <span>Tools</span>
                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -169,14 +184,17 @@
                             <a href="sites.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
                                 <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Hosted Sites
                             </a>
+                            <a href="http://10.247.192.231:32400/web" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Plex Media Portal
+                            </a>
                             <a href="host.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
                                 <span class="w-2 h-2 rounded-full bg-blue-400"></span> Host Website
                             </a>
-                            <a href="access.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span> Access Request
-                            </a>
                         </div>
                         <div class="py-1">
+                            <button onclick="openNodeModal(); toggleNavMenu();" class="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Hardware Node Specs
+                            </button>
                             <a href="debug.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
                                 <span class="w-2 h-2 rounded-full bg-amber-400"></span> Diagnostics
                             </a>
@@ -184,7 +202,7 @@
                                 <span class="w-2 h-2 rounded-full bg-purple-400"></span> Auto Debug
                             </a>
                             <a href="help.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Server Docs &amp; Help
+                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Server Docs &amp; Help
                             </a>
                         </div>
                     </div>
@@ -266,13 +284,159 @@
             </div>
         </section>
         
-        <!-- Dashboard Grid -->
+        <!-- Dashboard Grid: Responsive 2-Column Layout -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- LEFT COLUMN: Deployment Engine & Live Terminal (8 cols on large screens) -->
-            <div class="lg:col-span-8 space-y-6">
+            <!-- LEFT COLUMN: Compact USB Storage & Live Terminal Activity Log (5 cols on large screens) -->
+            <div class="order-2 lg:order-1 lg:col-span-5 space-y-6">
                 
-                <!-- 2. Deployment Engine Card -->
+                <!-- 1. Compact USB Storage Manager Card -->
+                <section class="rounded-2xl bg-slate-900/60 border border-slate-800/90 shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden relative">
+                    <!-- Subtle top gradient accent line -->
+                    <div class="h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"></div>
+
+                    <div class="p-4 sm:p-5">
+                        <!-- Card Header: Compact & Clean -->
+                        <div class="flex items-center justify-between gap-2 mb-3.5">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="font-bold text-slate-100 tracking-tight text-sm truncate">USB Drive Storage</h3>
+                                    <p class="text-[10px] text-slate-400 font-mono truncate">Flash drive partition</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Dynamic Status Pill -->
+                            <span id="usb-status-pill" class="shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                                Detecting...
+                            </span>
+                        </div>
+
+                        <!-- Dynamic Alert / Warning Banner -->
+                        <div id="usb-warning-banner" class="hidden mb-3 p-2.5 rounded-xl text-xs border font-medium"></div>
+
+                        <!-- Sleek Compact Storage Progress Bar -->
+                        <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 mb-3.5 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-[11px] font-medium text-slate-300">Space Used</span>
+                                <span id="usb-percent-text" class="font-mono font-bold text-cyan-400 tabular-nums text-xs">--%</span>
+                            </div>
+
+                            <!-- Progress Track -->
+                            <div class="h-2 w-full rounded-full bg-slate-800 overflow-hidden p-0.5 border border-slate-700/50">
+                                <div 
+                                    id="usb-bar-fill" 
+                                    class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-500" 
+                                    style="width: 0%;"
+                                ></div>
+                            </div>
+
+                            <!-- Metrics Figures -->
+                            <div class="grid grid-cols-3 gap-1 pt-1 border-t border-slate-800/60 text-center font-mono">
+                                <div>
+                                    <div class="text-[9px] text-slate-500 uppercase tracking-wider">Used</div>
+                                    <div id="usb-used-text" class="text-[11px] font-semibold text-slate-200 tabular-nums truncate">--</div>
+                                </div>
+                                <div class="border-x border-slate-800/60">
+                                    <div class="text-[9px] text-slate-500 uppercase tracking-wider">Free</div>
+                                    <div id="usb-free-text" class="text-[11px] font-semibold text-emerald-400 tabular-nums truncate">--</div>
+                                </div>
+                                <div>
+                                    <div class="text-[9px] text-slate-500 uppercase tracking-wider">Total</div>
+                                    <div id="usb-total-text" class="text-[11px] font-semibold text-slate-200 tabular-nums truncate">--</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Streamlined Compact Drag-and-Drop / Upload Form -->
+                        <form id="usb-upload-form" onsubmit="event.preventDefault(); uploadUsbFile();" class="space-y-2.5">
+                            <label 
+                                for="usb-file-input" 
+                                id="usb-drop-zone"
+                                class="flex items-center gap-3 p-3 border border-dashed border-slate-800 hover:border-cyan-500/70 rounded-xl bg-slate-950/40 hover:bg-slate-950/80 cursor-pointer transition-all duration-200 group"
+                            >
+                                <input 
+                                    type="file" 
+                                    id="usb-file-input" 
+                                    name="usb_file" 
+                                    class="hidden" 
+                                    onchange="handleUsbFileSelect(this)"
+                                >
+                                <div class="p-2 rounded-lg bg-slate-900 group-hover:bg-cyan-500/10 text-slate-400 group-hover:text-cyan-400 transition-colors shrink-0">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div id="usb-file-name" class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors truncate">
+                                        Choose or drop file here
+                                    </div>
+                                    <div class="text-[10px] text-slate-500 font-mono">
+                                        Transfers directly to USB partition
+                                    </div>
+                                </div>
+                            </label>
+
+                            <button 
+                                type="submit" 
+                                id="usb-upload-btn"
+                                class="w-full py-2 px-3 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-[0.99] transition-all duration-200 shadow-md shadow-emerald-900/30 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                </svg>
+                                <span>📤 Transfer to USB</span>
+                            </button>
+                        </form>
+
+                        <div id="usb-upload-msg" class="hidden mt-2.5 p-2.5 rounded-xl text-xs font-mono"></div>
+                    </div>
+                </section>
+
+                <!-- 2. Live Activity Log Card (Under USB Storage on Left Side) -->
+                <section class="rounded-2xl bg-surface-terminal border border-slate-800/90 shadow-2xl shadow-black/60 overflow-hidden">
+                    <!-- macOS-Style Window Header -->
+                    <div class="px-4 py-3 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <!-- macOS 3 Dots -->
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-rose-500/80 border border-rose-600/60 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-amber-500/80 border border-amber-600/60 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-emerald-500/80 border border-emerald-600/60 inline-block"></span>
+                            </div>
+                            <span class="text-[11px] font-mono text-slate-300 font-semibold ml-2 select-none flex items-center gap-1.5">
+                                <span>🖥️ Live Server Activity Log</span>
+                            </span>
+                        </div>
+
+                        <!-- Terminal Actions -->
+                        <div class="flex items-center gap-2">
+                            <button onclick="clearTerminal()" class="px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer" title="Clear console output">
+                                Clear
+                            </button>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900 border border-slate-800 text-cyan-400">
+                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                LIVE
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Inset Terminal Output Stream -->
+                    <div id="terminal" class="terminal p-4 font-mono text-xs leading-relaxed text-emerald-400 h-60 sm:h-72 overflow-y-auto terminal-scroll bg-[#040711] select-text">
+                        <div id="output" class="text-slate-400">🟢 Server is ready and online. When you launch a site or create a database, live step-by-step progress will display here...</div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Deployment Engine & Backend Database (7 cols on large screens) -->
+            <div class="order-1 lg:order-2 lg:col-span-7 space-y-6">
+                
+                <!-- 3. Deployment Engine Card -->
                 <section class="rounded-2xl bg-slate-900/60 border border-slate-800/90 shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden relative group">
                     <!-- Subtle top gradient accent line -->
                     <div class="h-1 w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500"></div>
@@ -375,7 +539,7 @@
                     </div>
                 </section>
 
-                <!-- 3. Backend & Database Engine Card (Prominent Dedicated Card) -->
+                <!-- 4. Backend & Database Engine Card (Prominent Dedicated Card) -->
                 <section id="database-section" class="rounded-2xl bg-slate-900/60 border border-slate-800/90 shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden relative group">
                     <!-- Glowing Indigo/Purple Top Accent Line -->
                     <div class="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
@@ -496,177 +660,6 @@
                             </div>
                         </details>
 
-                    </div>
-                </section>
-
-                <!-- 4. Live Activity Log Card -->
-                <section class="rounded-2xl bg-surface-terminal border border-slate-800/90 shadow-2xl shadow-black/60 overflow-hidden">
-                    <!-- macOS-Style Window Header -->
-                    <div class="px-4 py-3 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <!-- macOS 3 Dots -->
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-3 h-3 rounded-full bg-rose-500/80 border border-rose-600/60 inline-block"></span>
-                                <span class="w-3 h-3 rounded-full bg-amber-500/80 border border-amber-600/60 inline-block"></span>
-                                <span class="w-3 h-3 rounded-full bg-emerald-500/80 border border-emerald-600/60 inline-block"></span>
-                            </div>
-                            <span class="text-[11px] font-mono text-slate-300 font-semibold ml-2 select-none flex items-center gap-1.5">
-                                <span>🖥️ Live Server Activity Log</span>
-                            </span>
-                        </div>
-
-                        <!-- Terminal Actions -->
-                        <div class="flex items-center gap-2">
-                            <button onclick="clearTerminal()" class="px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors" title="Clear console output">
-                                Clear Log
-                            </button>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900 border border-slate-800 text-cyan-400">
-                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                                LIVE
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Inset Terminal Output Stream -->
-                    <div id="terminal" class="terminal p-4 sm:p-5 font-mono text-xs leading-relaxed text-emerald-400 h-44 sm:h-52 overflow-y-auto terminal-scroll bg-[#040711] select-text">
-                        <div id="output" class="text-slate-400">🟢 Server is ready and online. When you launch a site or create a database, live step-by-step progress will display here...</div>
-                    </div>
-                </section>
-
-            </div>
-
-            <!-- RIGHT COLUMN: USB Storage Manager Card (4 cols on large screens) -->
-            <div class="lg:col-span-4 space-y-6">
-                
-                <!-- 4. USB Storage Manager Card -->
-                <section class="rounded-2xl bg-slate-900/60 border border-slate-800/90 shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden relative">
-                    <!-- Subtle top gradient accent line -->
-                    <div class="h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"></div>
-
-                    <div class="p-6">
-                        <!-- Card Header -->
-                        <div class="flex items-center justify-between mb-5">
-                            <div class="flex items-center gap-2.5">
-                                <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-slate-100 tracking-tight text-base">USB Drive Storage</h3>
-                                    <p class="text-[11px] text-slate-400 font-mono">Plug flash drive into MacBook</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Dynamic Status Pill -->
-                            <span id="usb-status-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400 border border-slate-700">
-                                Detecting...
-                            </span>
-                        </div>
-
-                        <!-- Dynamic Alert / Warning Banner -->
-                        <div id="usb-warning-banner" class="hidden mb-4 p-3 rounded-xl text-xs border font-medium"></div>
-
-                        <!-- Modern Visual Storage Capacity Progress Bar -->
-                        <div class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 mb-5 space-y-3">
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="font-semibold text-slate-300">USB Space Available</span>
-                                <span id="usb-percent-text" class="font-mono font-bold text-cyan-400 tabular-nums">--%</span>
-                            </div>
-
-                            <!-- Progress Track -->
-                            <div class="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden p-0.5 border border-slate-700/50">
-                                <div 
-                                    id="usb-bar-fill" 
-                                    class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-500" 
-                                    style="width: 0%;"
-                                ></div>
-                            </div>
-
-                            <!-- Metrics Tabular Figures -->
-                            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/60 text-center font-mono">
-                                <div>
-                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider">Used</div>
-                                    <div id="usb-used-text" class="text-xs font-semibold text-slate-200 mt-0.5 tabular-nums">--</div>
-                                </div>
-                                <div class="border-x border-slate-800/60">
-                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider">Free</div>
-                                    <div id="usb-free-text" class="text-xs font-semibold text-emerald-400 mt-0.5 tabular-nums">--</div>
-                                </div>
-                                <div>
-                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider">Total</div>
-                                    <div id="usb-total-text" class="text-xs font-semibold text-slate-200 mt-0.5 tabular-nums">--</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Modern Drag-and-Drop Zone & Upload Form -->
-                        <form id="usb-upload-form" onsubmit="event.preventDefault(); uploadUsbFile();" class="space-y-4">
-                            
-                            <!-- Drop Zone Box -->
-                            <label 
-                                for="usb-file-input" 
-                                id="usb-drop-zone"
-                                class="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-800 hover:border-cyan-500/70 rounded-xl bg-slate-950/40 hover:bg-slate-950/80 cursor-pointer transition-all duration-200 group text-center"
-                            >
-                                <input 
-                                    type="file" 
-                                    id="usb-file-input" 
-                                    name="usb_file" 
-                                    class="hidden" 
-                                    onchange="handleUsbFileSelect(this)"
-                                >
-                                
-                                <div class="p-3 rounded-full bg-slate-900 group-hover:bg-cyan-500/10 text-slate-400 group-hover:text-cyan-400 transition-colors mb-2.5">
-                                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-                                    </svg>
-                                </div>
-                                
-                                <div id="usb-file-name" class="text-xs font-medium text-slate-300 group-hover:text-white transition-colors break-all max-w-[240px]">
-                                    Click to choose a file or drag &amp; drop here
-                                </div>
-                                <div class="text-[11px] text-slate-400 font-mono mt-1">
-                                    Saves to USB drive partition
-                                </div>
-                            </label>
-
-                            <!-- Transfer Action Button -->
-                            <button 
-                                type="submit" 
-                                id="usb-upload-btn"
-                                class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-[0.99] transition-all duration-200 shadow-md shadow-emerald-900/30 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                                </svg>
-                                <span>📤 Transfer File to USB Drive</span>
-                            </button>
-                        </form>
-
-                        <!-- Dynamic Upload Feedback Message -->
-                        <div id="usb-upload-msg" class="hidden mt-3 p-3 rounded-xl text-xs font-mono"></div>
-
-                    </div>
-                </section>
-
-                <!-- 5. Node Telemetry Info Widget -->
-                <section class="rounded-2xl bg-slate-900/40 border border-slate-800/60 p-5 text-xs text-slate-400 space-y-3">
-                    <div class="flex items-center justify-between text-slate-300 font-semibold border-b border-slate-800 pb-2.5">
-                        <span>Server Hardware Node</span>
-                        <span class="font-mono text-[11px] text-cyan-400">Online &bull; MAMP</span>
-                    </div>
-                    <div class="flex justify-between items-center font-mono text-[11px]">
-                        <span class="text-slate-400">Device</span>
-                        <span class="text-slate-200">MacBook Pro 13" (Late 2011)</span>
-                    </div>
-                    <div class="flex justify-between items-center font-mono text-[11px]">
-                        <span class="text-slate-400">Network Tunnel</span>
-                        <span class="text-emerald-400">ZeroTier Mesh VPN</span>
-                    </div>
-                    <div class="flex justify-between items-center font-mono text-[11px]">
-                        <span class="text-slate-400">Access Mode</span>
-                        <span class="text-slate-200">Private &bull; Port 3307</span>
                     </div>
                 </section>
 
@@ -878,6 +871,90 @@
         </div>
     </div>
 
+    <!-- 3. Server Hardware Node & Telemetry Specs Popup Modal -->
+    <div id="node-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+            <!-- Top Gradient Accent -->
+            <div class="h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"></div>
+
+            <div class="p-6">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-slate-100 text-base tracking-tight">Server Hardware Node</h3>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 font-mono text-[10px] font-semibold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    Online
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400">MacBook Pro (13-inch, Late 2011) Host Node</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeNodeModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 transition-colors cursor-pointer" title="Close dialog">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Hardware Specifications Grid -->
+                <div class="space-y-2 mb-5 text-xs font-mono">
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <span class="text-slate-400">Host Device</span>
+                        <span class="text-slate-100 font-semibold">MacBook Pro 13" (Late 2011)</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <span class="text-slate-400">Processor / Arch</span>
+                        <span class="text-slate-200">Intel Core i5 (x86_64 Sandy Bridge)</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <span class="text-slate-400">Network Tunnel</span>
+                        <span class="text-emerald-400 font-semibold flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            ZeroTier Mesh (10.247.192.231)
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <span class="text-slate-400">Web Engine (HTTP)</span>
+                        <span class="text-slate-200">Apache 2.4 &bull; MAMP Pro</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <span class="text-slate-400">Database Engine</span>
+                        <span class="text-indigo-400 font-semibold">MySQL 5.7 &bull; Port 3307 / 8889</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <span class="text-slate-400">Media Server</span>
+                        <span class="text-amber-400 font-semibold">Plex Server &bull; Port 32400</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                        <span class="text-slate-400">Web Storage Root</span>
+                        <span class="text-slate-300 truncate max-w-[210px]">/Volumes/htdocs</span>
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
+                    <a href="debug.php" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                        <span>Open Diagnostics</span>
+                    </a>
+                    <button type="button" onclick="closeNodeModal()" class="py-2.5 px-5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800 transition-colors cursor-pointer">
+                        Dismiss
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
         // Dropdown toggle for tools menu
@@ -892,6 +969,47 @@
             const dropdown = document.getElementById('nav-dropdown');
             if (wrapper && !wrapper.contains(e.target) && dropdown && !dropdown.classList.contains('hidden')) {
                 dropdown.classList.add('hidden');
+            }
+        });
+
+        // Server Hardware Node Modal Controls
+        function openNodeModal() {
+            const modal = document.getElementById('node-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeNodeModal() {
+            const modal = document.getElementById('node-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Close all modals on Escape key or clicking outside
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeNodeModal();
+                closePopup();
+                closeDbPopup();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const nodeModal = document.getElementById('node-modal');
+            if (nodeModal && !nodeModal.classList.contains('hidden') && e.target === nodeModal) {
+                closeNodeModal();
+            }
+            const successPopup = document.getElementById('success-popup');
+            if (successPopup && !successPopup.classList.contains('hidden') && e.target === successPopup) {
+                closePopup();
+            }
+            const dbPopup = document.getElementById('db-popup');
+            if (dbPopup && !dbPopup.classList.contains('hidden') && e.target === dbPopup) {
+                closeDbPopup();
             }
         });
 
