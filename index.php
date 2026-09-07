@@ -1,6 +1,4 @@
 <?php
-// index.php – redirect to login page
-header('Location: /login.php');
+// index.php — serve the modern developer console directly
+include_once __DIR__ . '/index.html';
 exit;
-?>
-

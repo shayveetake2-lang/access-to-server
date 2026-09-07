@@ -1,0 +1,12 @@
+# Disable caching for active development
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
+</IfModule>
+
+# Ensure index.html is the primary directory index
+<IfModule dir_module>
+    DirectoryIndex index.html index.php
+</IfModule>
+
