@@ -319,6 +319,30 @@
             <!-- LEFT COLUMN: Compact USB Storage & Live Terminal Activity Log (5 cols on large screens) -->
             <div class="order-2 lg:order-1 lg:col-span-5 space-y-6">
                 
+                <!-- House Rules & Instructions Section -->
+                <div class="rounded-xl border border-rose-500/30 bg-rose-950/20 shadow-lg shadow-rose-500/10 overflow-hidden">
+                    <div class="flex items-center gap-2 p-4 bg-rose-900/30 border-b border-rose-500/20">
+                        <svg class="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <h3 class="text-sm font-bold text-rose-200 tracking-wide uppercase">House Rules & Instructions</h3>
+                    </div>
+                    <div class="p-5 text-sm text-slate-300 space-y-4">
+                        <div class="flex items-start gap-3">
+                            <span class="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 font-bold text-xs shrink-0 mt-0.5">1</span>
+                            <p><strong class="text-white">Give your GitHub repository a unique name</strong> so you do not overwrite another person's folder.</p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 font-bold text-xs shrink-0 mt-0.5">2</span>
+                            <p><strong class="text-white">Always use relative paths</strong> for images and CSS (e.g., <code>images/pic.jpg</code>).</p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 font-bold text-xs shrink-0 mt-0.5">3</span>
+                            <p><strong class="text-white">Downtime is normal!</strong> If the 2011 Mac goes to sleep or the tunnel drops, your site will temporarily go offline.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 1. Compact USB Storage Manager Card -->
                 <section class="rounded-2xl bg-slate-900/60 border border-slate-800/90 shadow-xl shadow-black/40 backdrop-blur-md overflow-hidden relative">
                     <!-- Subtle top gradient accent line -->
@@ -507,29 +531,7 @@
                             </span>
                         </div>
 
-                        <!-- House Rules & Instructions Section -->
-                        <div class="mb-6 rounded-xl border border-rose-500/30 bg-rose-950/20 shadow-lg shadow-rose-500/10 overflow-hidden">
-                            <div class="flex items-center gap-2 p-4 bg-rose-900/30 border-b border-rose-500/20">
-                                <svg class="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                                <h3 class="text-sm font-bold text-rose-200 tracking-wide uppercase">House Rules & Instructions</h3>
-                            </div>
-                            <div class="p-5 text-sm text-slate-300 space-y-4">
-                                <div class="flex items-start gap-3">
-                                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 font-bold text-xs shrink-0 mt-0.5">1</span>
-                                    <p><strong class="text-white">Give your GitHub repository a unique name</strong> so you do not overwrite another person's folder.</p>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 font-bold text-xs shrink-0 mt-0.5">2</span>
-                                    <p><strong class="text-white">Always use relative paths</strong> for images and CSS (e.g., <code>images/pic.jpg</code>).</p>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 font-bold text-xs shrink-0 mt-0.5">3</span>
-                                    <p><strong class="text-white">Downtime is normal!</strong> If the 2011 Mac goes to sleep or the tunnel drops, your site will temporarily go offline.</p>
-                                </div>
-                            </div>
-                        </div>
+
 
                         <!-- Deployment Input Controls (Admin Only) -->
                         <div id="deploy-form-container" class="space-y-4">
