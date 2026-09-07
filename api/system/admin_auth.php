@@ -7,10 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 
-require_once __DIR__ . '/../../config/config.php';
-
 try {
-    $pdo = getDBConnection();
+    require_once __DIR__ . '/../../config/db_connect.php';
     
     // Ensure admin_users table exists in access_db
     $pdo->exec("
@@ -42,9 +40,13 @@ try {
             $update->execute([':hash' => $hash, ':id' => $admin['id']]);
         }
     }
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+    exit;
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Server error: ' . $e->getMessage()]);
     exit;
 }
 
@@ -74,43 +76,49 @@ if ($action === 'login') {
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT * FROM admin_users WHERE username = :user LIMIT 1");
-    $stmt->execute([':user' => $username]);
-    $userRow = $stmt->fetch();
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM admin_users WHERE username = :user LIMIT 1");
+        $stmt->execute([':user' => $username]);
+        $userRow = $stmt->fetch();
 
-    $authenticated = false;
-    if ($userRow) {
-        if (password_verify($password, $userRow['password_hash'])) {
-            $authenticated = true;
-        } elseif ($userRow['password_hash'] === $password) {
-            // Legacy plaintext fallback & auto-upgrade to BCRYPT
-            $authenticated = true;
-            $newHash = password_hash($password, PASSWORD_BCRYPT);
-            $upStmt = $pdo->prepare("UPDATE admin_users SET password_hash = :h WHERE id = :id");
-            $upStmt->execute([':h' => $newHash, ':id' => $userRow['id']]);
+        $authenticated = false;
+        if ($userRow) {
+            if (password_verify($password, $userRow['password_hash'])) {
+                $authenticated = true;
+            } elseif ($userRow['password_hash'] === $password) {
+                // Legacy plaintext fallback & auto-upgrade to BCRYPT
+                $authenticated = true;
+                $newHash = password_hash($password, PASSWORD_BCRYPT);
+                $upStmt = $pdo->prepare("UPDATE admin_users SET password_hash = :h WHERE id = :id");
+                $upStmt->execute([':h' => $newHash, ':id' => $userRow['id']]);
+            }
         }
-    }
 
-    if ($authenticated) {
-        // Record login timestamp in database
-        $logStmt = $pdo->prepare("UPDATE admin_users SET last_login = NOW() WHERE id = :id");
-        $logStmt->execute([':id' => $userRow['id']]);
+        if ($authenticated) {
+            // Record login timestamp in database
+            $logStmt = $pdo->prepare("UPDATE admin_users SET last_login = NOW() WHERE id = :id");
+            $logStmt->execute([':id' => $userRow['id']]);
 
-        $_SESSION['admin_logged_in'] = true;
-        $_SESSION['admin_user'] = $userRow['username'];
+            $_SESSION['admin_logged_in'] = true;
+            $_SESSION['admin_user'] = $userRow['username'];
 
-        echo json_encode([
-            'status'   => 'success',
-            'message'  => 'Admin authentication successful.',
-            'username' => $userRow['username']
-        ]);
-        exit;
-    } else {
-        http_response_code(401);
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Invalid username or password.'
-        ]);
+            echo json_encode([
+                'status'   => 'success',
+                'message'  => 'Admin authentication successful.',
+                'username' => $userRow['username']
+            ]);
+            exit;
+        } else {
+            http_response_code(401);
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Invalid username or password.'
+            ]);
+            exit;
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
         exit;
     }
 }
