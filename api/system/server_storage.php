@@ -63,12 +63,15 @@ $percentUsed = round(($usedBytes / $totalBytes) * 100, 1);
 // Each entry: [label, path, tailwind-color-key]
 $assetDefs = [
     ['Deployed Sites',  $serverRoot . '/sites',    'cyan'],
-    ['Web Host Files',  $serverRoot . '/webhost',   'blue'],
     ['API & System',    $serverRoot . '/api',       'indigo'],
+    ['Configuration',   $serverRoot . '/config',    'violet'],
     ['Console App',     $serverRoot,                'slate'],   // top-level files only
-    ['MySQL Data',      '/Applications/MAMP/db/mysql', 'amber'],
-    ['USB Drive',       '/Volumes/USBDrive',        'emerald'],
 ];
+
+// Include MySQL Data if directory exists
+if (is_dir('/Applications/MAMP/db/mysql')) {
+    $assetDefs[] = ['MySQL Data', '/Applications/MAMP/db/mysql', 'amber'];
+}
 
 $breakdown = [];
 $accountedBytes = 0;

@@ -166,14 +166,14 @@
             },
             body: JSON.stringify(data)
         })
-        .then(response => response.text())
+        .then(response => response.json())
         .then(result => {
-            if (result.includes("successfully")) {
+            if (result.status === 'success') {
                 document.getElementById('access-form').classList.add('hidden');
                 document.getElementById('success-message').classList.remove('hidden');
-                document.getElementById('success-text').textContent = 'Welcome to the server, ' + data.name;
+                document.getElementById('success-text').textContent = 'Welcome to the server, ' + (result.name || data.name);
             } else {
-                alert('Error: ' + result);
+                alert('Error: ' + (result.message || 'Submission failed.'));
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }

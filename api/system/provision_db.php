@@ -17,6 +17,7 @@ if ($s8889) {
         $port = '3307';
     }
 }
+$username = 'root';
 $password = 'root';
 
 $dbName = isset($_POST['db_name']) ? trim($_POST['db_name']) : '';

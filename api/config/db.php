@@ -1,10 +1,10 @@
 <?php
 // /api/config/db.php
-require_once 'init.php';
+require_once __DIR__ . '/init.php';
 
 class Database {
-    // We use localhost here since the PHP script executes directly on the Late 2011 MacBook Pro MAMP server.
-    private $host = "localhost"; 
+    // 127.0.0.1 forces TCP connection using the detected port
+    private $host = "127.0.0.1"; 
     private $port;
     private $db_name = "access_db";
     private $username = "root";

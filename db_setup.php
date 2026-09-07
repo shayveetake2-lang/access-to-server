@@ -13,6 +13,7 @@ if ($s8889) {
         $port = '3307';
     }
 }
+$user = 'root';
 $pass = 'root';
 
 try {

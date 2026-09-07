@@ -42,7 +42,14 @@ if (empty($repoName)) {
 }
 
 // Target Directory — inside the document root so sites are publicly accessible
-$targetDir = "/Applications/MAMP/htdocs/access-to-server/sites/" . preg_replace('/[^a-zA-Z0-9_-]/', '', $repoName);
+$sitesBase = realpath(__DIR__ . '/../../sites');
+if (!$sitesBase) {
+    $sitesBase = realpath(__DIR__ . '/../../') . '/sites';
+    if (!is_dir($sitesBase)) {
+        @mkdir($sitesBase, 0755, true);
+    }
+}
+$targetDir = rtrim($sitesBase, '/') . '/' . preg_replace('/[^a-zA-Z0-9_-]/', '', $repoName);
 sendMsg("[INFO] Target Directory: " . $targetDir);
 
 // Sanitize inputs strictly using escapeshellarg
