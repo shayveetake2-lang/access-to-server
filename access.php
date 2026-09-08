@@ -90,6 +90,37 @@
                     <span class="whitespace-nowrap" id="admin-logged-in-username">Admin Active</span>
                 </div>
 
+                <!-- Admin Logout Button (Hidden by default) -->
+                <button 
+                    type="button" 
+                    id="admin-logout-btn"
+                    onclick="submitAdminLogout()" 
+                    title="Log Out" 
+                    class="hidden items-center justify-center p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 hover:border-rose-400/60 text-rose-400 hover:text-white transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-rose-400/50"
+                >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                    </svg>
+                </button>
+
+                <!-- Dark/Light Mode Toggle -->
+                <button 
+                    type="button" 
+                    id="theme-toggle-btn"
+                    onclick="toggleTheme()" 
+                    title="Toggle Dark/Light Mode" 
+                    class="flex items-center justify-center p-1.5 rounded-xl bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 hover:border-slate-500/60 text-slate-400 hover:text-slate-200 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-slate-400/50"
+                >
+                    <!-- Sun icon for dark mode (to switch to light) -->
+                    <svg id="theme-icon-sun" class="w-4 h-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    </svg>
+                    <!-- Moon icon for light mode (to switch to dark) -->
+                    <svg id="theme-icon-moon" class="w-4 h-4 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                </button>
+
                 <!-- Interactive System Online Button (Opens Hardware Node Modal) -->
                 <button 
                     type="button" 
@@ -482,86 +513,6 @@
 </div>
 
     <script>
-        // ================= ADMIN AUTHENTICATION LOGIC =================
-        let currentAdminState = { logged_in: false, user: null };
-
-        async function checkAdminAuth() {
-            try {
-                const res = await fetch('api/system/admin_auth.php?action=status');
-                const data = await res.json();
-                if (data.status === 'success') {
-                    currentAdminState.logged_in = data.logged_in;
-                    currentAdminState.user = data.user;
-                    updateAdminUI(data.logged_in, data.user);
-                }
-            } catch (err) {
-                console.error('Failed to check admin auth status', err);
-            }
-        }
-
-        function updateAdminUI(isLoggedIn, user) {
-            const navBtnText = document.getElementById('admin-nav-text');
-            const navIconLock = document.getElementById('admin-nav-icon-lock');
-            const navBadgeActive = document.getElementById('admin-nav-badge-active');
-            const dropdownText = document.getElementById('admin-dropdown-text');
-            
-            const adminNavBtn = document.getElementById('admin-nav-btn');
-            const adminLoggedInIndicator = document.getElementById('admin-logged-in-indicator');
-            const adminLoggedInUsername = document.getElementById('admin-logged-in-username');
-
-            const loginView = document.getElementById('admin-modal-login-view');
-            const panelView = document.getElementById('admin-modal-panel-view');
-            const userDisplay = document.getElementById('admin-username-display');
-
-            const deployForm = document.getElementById('deploy-form-container');
-            const deployLock = document.getElementById('deploy-lock-container');
-            const dbForm = document.getElementById('db-form-container');
-            const dbLock = document.getElementById('db-lock-container');
-            const usbForm = document.getElementById('usb-upload-form');
-            const usbLock = document.getElementById('usb-lock-container');
-            const navDropdownWrapper = document.getElementById('nav-dropdown-wrapper');
-
-            if (isLoggedIn) {
-                if (adminNavBtn) adminNavBtn.classList.add('hidden');
-                if (adminLoggedInIndicator) {
-                    adminLoggedInIndicator.classList.remove('hidden');
-                    adminLoggedInIndicator.classList.add('inline-flex');
-                }
-                if (adminLoggedInUsername) adminLoggedInUsername.innerText = 'Admin: ' + (user || 'admin');
-
-                if (loginView) loginView.classList.add('hidden');
-                if (panelView) panelView.classList.remove('hidden');
-                if (userDisplay) userDisplay.innerText = user || 'admin';
-                if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
-
-                // Unlock Admin Forms
-                if (deployForm) deployForm.classList.remove('hidden');
-                if (deployLock) deployLock.classList.add('hidden');
-                if (dbForm) dbForm.classList.remove('hidden');
-                if (dbLock) dbLock.classList.add('hidden');
-                if (usbForm) usbForm.classList.remove('hidden');
-                if (usbLock) usbLock.classList.add('hidden');
-            } else {
-                if (adminNavBtn) adminNavBtn.classList.remove('hidden');
-                if (adminLoggedInIndicator) {
-                    adminLoggedInIndicator.classList.add('hidden');
-                    adminLoggedInIndicator.classList.remove('inline-flex');
-                }
-
-                if (loginView) loginView.classList.remove('hidden');
-                if (panelView) panelView.classList.add('hidden');
-                if (navDropdownWrapper) navDropdownWrapper.classList.add('hidden');
-
-                // Lock Admin Forms for non-logged-in users
-                if (deployForm) deployForm.classList.add('hidden');
-                if (deployLock) deployLock.classList.remove('hidden');
-                if (dbForm) dbForm.classList.add('hidden');
-                if (dbLock) dbLock.classList.remove('hidden');
-                if (usbForm) usbForm.classList.add('hidden');
-                if (usbLock) usbLock.classList.remove('hidden');
-            }
-        }
-
         // Auto-run on load
         document.addEventListener('DOMContentLoaded', () => {
             checkAdminAuth();
