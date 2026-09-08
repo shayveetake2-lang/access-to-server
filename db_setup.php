@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/api/auth/require_admin.php';
+requireAdmin();
+
 $host = '127.0.0.1';
 
 $port = '8889';

@@ -214,7 +214,7 @@ async function submitServerFlowChat() {
         }
 
         if (!data) {
-            const response = await fetch('/api/chat.php', {
+            const response = await fetch('api/chat.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: userText })

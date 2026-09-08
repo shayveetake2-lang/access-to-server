@@ -1,5 +1,8 @@
 <?php
 // server_storage.php — Server-Wide Storage Telemetry API
+require_once __DIR__ . '/../auth/require_admin.php';
+requireAdmin();
+
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 

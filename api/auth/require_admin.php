@@ -11,6 +11,8 @@ function requireAdmin() {
     $token = '';
     if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
         $token = $matches[1];
+    } elseif (!empty($_GET['token'])) {
+        $token = $_GET['token'];
     }
     
     // Fallback to checking session if no Bearer token provided

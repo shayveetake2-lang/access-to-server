@@ -16,36 +16,8 @@ function sendMsg($msg) {
 // ==========================================
 // 1. Token Verification Check (Token Auth)
 // ==========================================
-$headers = function_exists('getallheaders') ? getallheaders() : [];
-$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-
-// Extract token from Bearer header, URL query param (?token=), or POST body
-$token = $_GET['token'] ?? $_POST['token'] ?? '';
-if (empty($token) && preg_match('/Bearer\s(\S+)/i', $authHeader, $matches)) {
-    $token = $matches[1];
-}
-
-$sessionToken = $_SESSION['auth_token'] ?? null;
-
-// Validate incoming token against active session token
-$validToken = false;
-if (!empty($token) && !empty($sessionToken)) {
-    $validToken = hash_equals($sessionToken, $token);
-} elseif (!empty($sessionToken) && empty($token)) {
-    // Cookie-backed session fallback
-    $validToken = true;
-}
-
-if (!$validToken) {
-    http_response_code(401);
-    header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode([
-        'status'  => 'error',
-        'code'    => 401,
-        'message' => 'HTTP 401 Unauthorized: Invalid, missing, or expired authentication token.'
-    ]);
-    exit;
-}
+require_once __DIR__ . '/../auth/require_admin.php';
+requireAdmin();
 
 // ==========================================
 // 2. Set SSE Headers for Streaming Output

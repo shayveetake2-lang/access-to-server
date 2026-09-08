@@ -2,7 +2,7 @@ let currentAdminState = { logged_in: false, user: null };
 
 async function checkAdminAuth() {
     try {
-        const res = await fetch('/api/system/admin_auth.php?action=status');
+        const res = await fetch('api/system/admin_auth.php?action=status');
         const data = await res.json();
         if (data && data.status === 'success' && data.logged_in) {
             currentAdminState.logged_in = true;
