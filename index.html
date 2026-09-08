@@ -898,25 +898,41 @@
                 const repo = document.getElementById('repo-url')?.value;
                 const output = document.getElementById('output');
                 if (!repo) return alert('Please enter a repo URL');
-                if (output) output.innerHTML += `<br>[DEPLOY] Starting build for ${escapeHtml(repo)}...`;
+                const token = localStorage.getItem('auth_token') || '';
+                if (output) output.innerHTML += `<br>[DEPLOY] Initializing deployment stream for ${escapeHtml(repo)}...`;
+                
                 try {
-                    const res = await fetch('/api/system/deploy.php', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ repo_url: repo })
-                    });
-                    const data = await res.json();
-                    if (data && data.success && data.url) {
-                        if (output) output.innerHTML += `<br>[DEPLOY] ${escapeHtml(data.message || 'Deployment completed successfully!')}`;
-                        showPopup(data.url);
-                    } else {
-                        const errMsg = (data && data.message) ? data.message : 'Deployment failed. Check repository URL.';
-                        if (output) output.innerHTML += `<br>[DEPLOY ERROR] ${escapeHtml(errMsg)}`;
-                        alert(errMsg);
-                    }
+                    let deploymentSuccess = false;
+                    const sseUrl = `/api/system/deploy.php?repo=${encodeURIComponent(repo)}&token=${encodeURIComponent(token)}`;
+                    const es = new EventSource(sseUrl);
+                    
+                    es.onmessage = (event) => {
+                        const msg = event.data;
+                        if (output) {
+                            output.innerHTML += `<br>[DEPLOY] ${escapeHtml(msg)}`;
+                            output.scrollTop = output.scrollHeight;
+                        }
+                        if (msg.includes('Deployment Complete')) {
+                            deploymentSuccess = true;
+                            es.close();
+                            const pathParts = repo.split('/');
+                            let repoName = pathParts[pathParts.length - 1].replace(/\.git$/, '');
+                            showPopup('/sites/' + repoName);
+                        } else if (msg.includes('Deployment Failed')) {
+                            es.close();
+                            alert('Deployment failed. Check execution output for details.');
+                        }
+                    };
+
+                    es.onerror = (err) => {
+                        es.close();
+                        if (!deploymentSuccess && output) {
+                            output.innerHTML += `<br>[DEPLOY ERROR] Stream closed or unauthorized access.`;
+                        }
+                    };
                 } catch(e) {
-                    if (output) output.innerHTML += `<br>[DEPLOY ERROR] Network or server error during deployment.`;
-                    alert('Deployment failed: Unable to communicate with server.');
+                    if (output) output.innerHTML += `<br>[DEPLOY ERROR] Network or server error during deployment stream.`;
+                    alert('Deployment failed: Unable to connect to streaming server.');
                 }
             });
         }
@@ -924,11 +940,15 @@
             requireAdminAuth(async () => {
                 const dbName = document.getElementById('db-name')?.value;
                 if (!dbName) return alert('Please enter a database name');
+                const token = localStorage.getItem('auth_token') || '';
                 try {
                     const res = await fetch('/api/system/provision_db.php', {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ db_name: dbName })
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: 'db_name=' + encodeURIComponent(dbName)
                     });
                     const data = await res.json();
                     if (data && (data.success || data.status === 'success')) {

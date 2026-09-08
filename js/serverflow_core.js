@@ -198,18 +198,36 @@ async function submitServerFlowChat() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-        const response = await fetch('/api/chat.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userText })
-        });
-        const data = await response.json();
+        const pythonApiUrl = `http://${window.location.hostname || 'localhost'}:5005/chat`;
+        let data = null;
+        try {
+            const pyRes = await fetch(pythonApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userText, prompt: userText })
+            });
+            if (pyRes.ok) {
+                data = await pyRes.json();
+            }
+        } catch(pyErr) {
+            // Python API on port 5005 unreachable, fallback to PHP chat proxy
+        }
+
+        if (!data) {
+            const response = await fetch('/api/chat.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userText })
+            });
+            data = await response.json();
+        }
         
         const typingEl = document.getElementById(typingId);
         if (typingEl) typingEl.remove();
 
-        if (data.status === 'success' && data.reply) {
-            appendChatMessage('bot', data.reply);
+        const replyText = data.reply || data.response || data.message;
+        if (data && (data.status === 'success' || data.reply || data.response)) {
+            appendChatMessage('bot', replyText || 'Response received.');
         } else {
             appendChatMessage('bot', data.message || 'Sorry, I ran into an error processing your request.');
         }

@@ -327,9 +327,12 @@ function showAdminPanelView() {
 async function loadAdminsList() {
     const listEl = document.getElementById('admin-accounts-list');
     listEl.innerHTML = '<div class="p-3 text-center text-xs text-slate-500">Loading...</div>';
+    const token = localStorage.getItem('auth_token') || '';
     
     try {
-        const res = await fetch('api/system/admin_accounts.php?action=list');
+        const res = await fetch('api/system/admin_accounts.php?action=list', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
         const data = await res.json();
         if (res.ok && data.status === 'success') {
             listEl.innerHTML = '';
@@ -361,6 +364,7 @@ async function submitAddAdmin() {
     const userEl = document.getElementById('new-admin-user');
     const passEl = document.getElementById('new-admin-pass');
     const msg = document.getElementById('manage-admin-msg');
+    const token = localStorage.getItem('auth_token') || '';
     
     if (!userEl.value || !passEl.value) {
         msg.className = 'mt-2 p-2 rounded-lg text-[11px] font-mono font-medium bg-rose-950/60 text-rose-400 border border-rose-500/40';
@@ -372,7 +376,10 @@ async function submitAddAdmin() {
     try {
         const res = await fetch('api/system/admin_accounts.php?action=add', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
             body: JSON.stringify({ username: userEl.value, password: passEl.value })
         });
         const result = await res.json();
@@ -400,10 +407,14 @@ async function deleteAdmin(id, username) {
     if (!confirm(`Are you sure you want to permanently delete the admin account '${username}'?`)) return;
     
     const msg = document.getElementById('manage-admin-msg');
+    const token = localStorage.getItem('auth_token') || '';
     try {
         const res = await fetch('api/system/admin_accounts.php?action=delete', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
             body: JSON.stringify({ id: id })
         });
         const result = await res.json();
