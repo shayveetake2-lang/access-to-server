@@ -222,7 +222,7 @@ function updateAdminUI(isLoggedIn, user, role) {
 
         // If currently viewing a restricted tab in index.html, return to overview
         const activeTabEl = document.querySelector('.sf-tab-content:not(.hidden)');
-        if (activeTabEl && ['tab-data', 'tab-activity', 'tab-settings'].includes(activeTabEl.id)) {
+        if (activeTabEl && ['tab-servers', 'tab-data', 'tab-activity', 'tab-settings'].includes(activeTabEl.id)) {
             if (typeof switchTab === 'function') switchTab('overview');
         }
     }
