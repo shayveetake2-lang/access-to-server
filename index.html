@@ -85,19 +85,19 @@
                                 </button>
                             </li>
 
-                            <li>
+                            <li class="auth-required-nav hidden">
                                 <button onclick="switchTab('data'); closeMobileSidebar();" id="nav-tab-data" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
                                     App Databases
                                 </button>
                             </li>
-                            <li>
+                            <li class="auth-required-nav hidden">
                                 <button onclick="switchTab('activity'); closeMobileSidebar();" id="nav-tab-activity" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                     Activity Stream
                                 </button>
                             </li>
-                            <li>
+                            <li class="auth-required-nav hidden">
                                 <button onclick="switchTab('settings'); closeMobileSidebar();" id="nav-tab-settings" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     System Settings
@@ -115,7 +115,7 @@
                                     My Live Websites
                                 </a>
                             </li>
-                            <li>
+                            <li class="auth-required-nav hidden">
                                 <a href="movies.html" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
                                     Media Player (Plex)
@@ -133,13 +133,13 @@
                                     Server Specs & IP
                                 </a>
                             </li>
-                            <li>
+                            <li class="auth-required-nav auth-admin-nav hidden">
                                 <a href="auto_debug.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                                     Health Diagnostic Check
                                 </a>
                             </li>
-                            <li>
+                            <li class="auth-required-nav auth-admin-nav hidden">
                                 <a href="debug.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
                                     Server Debug Logs
@@ -899,16 +899,25 @@
     <script src="js/admin_auth.js"></script>
     <script>
         function switchTab(tabId) {
+            if (!currentAdminState.logged_in && ['data', 'activity', 'settings'].includes(tabId)) {
+                tabId = 'overview';
+                openAdminModal();
+                const errBanner = document.getElementById('admin-login-error');
+                if (errBanner) {
+                    errBanner.innerText = '🔒 Please log in to access this section.';
+                    errBanner.classList.remove('hidden');
+                }
+            }
             document.querySelectorAll('.sf-tab-content').forEach(el => el.classList.add('hidden'));
             const target = document.getElementById('tab-' + tabId);
             if (target) target.classList.remove('hidden');
 
             document.querySelectorAll('.sf-nav-btn').forEach(btn => {
-                btn.className = 'sf-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all';
+                btn.className = 'sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all';
             });
             const activeBtn = document.getElementById('nav-tab-' + tabId);
             if (activeBtn) {
-                activeBtn.className = 'sf-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all';
+                activeBtn.className = 'sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all';
             }
             if (tabId === 'servers') {
                 loadHostedSites();
@@ -1190,6 +1199,10 @@
             loadServerStorage();
             loadUsbStatus();
             loadHostedSites();
+            const hash = window.location.hash.replace('#', '');
+            if (hash) {
+                switchTab(hash);
+            }
         });
     </script>
 </body>

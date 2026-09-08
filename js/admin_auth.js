@@ -179,9 +179,15 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (repoInput) repoInput.disabled = false;
         if (dbNameInput) dbNameInput.disabled = false;
 
-        // Put back all buttons and controls requiring a logged-in user
-        document.querySelectorAll('.auth-required-btn, .auth-required-action').forEach(el => el.classList.remove('hidden'));
+        // Put back all buttons, controls, and sidebar navigation requiring a logged-in user
+        document.querySelectorAll('.auth-required-btn, .auth-required-action, .auth-required-nav').forEach(el => el.classList.remove('hidden'));
         document.querySelectorAll('.logged-out-prompt').forEach(el => el.classList.add('hidden'));
+
+        if (role === 'admin') {
+            document.querySelectorAll('.auth-admin-nav').forEach(el => el.classList.remove('hidden'));
+        } else {
+            document.querySelectorAll('.auth-admin-nav').forEach(el => el.classList.add('hidden'));
+        }
 
     } else {
         if (loginView) loginView.classList.remove('hidden');
@@ -210,9 +216,15 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (repoInput) repoInput.disabled = true;
         if (dbNameInput) dbNameInput.disabled = true;
 
-        // Remove all buttons and controls requiring a logged-in user when logged out
-        document.querySelectorAll('.auth-required-btn, .auth-required-action').forEach(el => el.classList.add('hidden'));
+        // Remove all buttons, controls, and sidebar navigation requiring a logged-in user when logged out
+        document.querySelectorAll('.auth-required-btn, .auth-required-action, .auth-required-nav, .auth-admin-nav').forEach(el => el.classList.add('hidden'));
         document.querySelectorAll('.logged-out-prompt').forEach(el => el.classList.remove('hidden'));
+
+        // If currently viewing a restricted tab in index.html, return to overview
+        const activeTabEl = document.querySelector('.sf-tab-content:not(.hidden)');
+        if (activeTabEl && ['tab-data', 'tab-activity', 'tab-settings'].includes(activeTabEl.id)) {
+            if (typeof switchTab === 'function') switchTab('overview');
+        }
     }
 }
 function openAdminModal() {
