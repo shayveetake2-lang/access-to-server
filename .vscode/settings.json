@@ -2,7 +2,10 @@
     "git.autorefresh": false,
     "git.autofetch": false,
     "git.decorations.enabled": true,
+    "git.detectSubmodules": false,
+    "git.status.submodules": false,
     "files.watcherExclude": {
-        "**/.git/**": true
+        "**/.git/**": true,
+        "**/sites/**": true
     }
 }
