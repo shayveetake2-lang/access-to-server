@@ -1,17 +1,27 @@
 let currentAdminState = { logged_in: false, user: null };
 
 async function checkAuthOnLoad(loginPayload = null) {
-    const token = localStorage.getItem('auth_token');
-    const storedRole = localStorage.getItem('user_role') || 'member';
-    const storedUser = localStorage.getItem('user_name') || 'User';
-    const storedStorage = localStorage.getItem('user_storage');
+    if (loginPayload) {
+        currentAdminState.logged_in = true;
+        currentAdminState.user = loginPayload.username || 'Admin';
+        if (loginPayload.storage) updateUserStorageUI(loginPayload.storage);
+        updateAdminUI(true, currentAdminState.user, loginPayload.role || 'admin');
+        return;
+    }
 
-    if (loginPayload && loginPayload.storage) {
-        updateUserStorageUI(loginPayload.storage);
-    } else if (storedStorage) {
-        try {
-            updateUserStorageUI(JSON.parse(storedStorage));
-        } catch(e) {}
+    const activeSession = sessionStorage.getItem('active_session_token');
+    const storedStorage = localStorage.getItem('user_storage');
+    
+    if (storedStorage) {
+        try { updateUserStorageUI(JSON.parse(storedStorage)); } catch(e) {}
+    }
+
+    // Default to Logged Out state on site load unless user has actively logged in this session
+    if (!activeSession) {
+        currentAdminState.logged_in = false;
+        currentAdminState.user = null;
+        updateAdminUI(false, null, 'guest');
+        return;
     }
 
     try {
@@ -19,27 +29,18 @@ async function checkAuthOnLoad(loginPayload = null) {
         const data = await res.json();
         if (data && data.status === 'success' && data.logged_in) {
             currentAdminState.logged_in = true;
-            currentAdminState.user = data.user || storedUser || 'Admin';
-            updateAdminUI(true, currentAdminState.user, data.role || storedRole);
-        } else if (token) {
-            currentAdminState.logged_in = true;
-            currentAdminState.user = storedUser;
-            updateAdminUI(true, storedUser, storedRole);
+            currentAdminState.user = data.user || 'Admin';
+            updateAdminUI(true, currentAdminState.user, data.role || 'admin');
         } else {
+            sessionStorage.removeItem('active_session_token');
             currentAdminState.logged_in = false;
             currentAdminState.user = null;
             updateAdminUI(false, null, 'guest');
         }
     } catch(e) {
-        if (token) {
-            currentAdminState.logged_in = true;
-            currentAdminState.user = storedUser;
-            updateAdminUI(true, storedUser, storedRole);
-        } else {
-            currentAdminState.logged_in = false;
-            currentAdminState.user = null;
-            updateAdminUI(false, null, 'guest');
-        }
+        currentAdminState.logged_in = false;
+        currentAdminState.user = null;
+        updateAdminUI(false, null, 'guest');
     }
 }
 
@@ -244,6 +245,7 @@ async function submitAdminLogin(event) {
             currentAdminState.logged_in = true;
             currentAdminState.user = data.username || username;
             
+            sessionStorage.setItem('active_session_token', data.token || 'active');
             if (data.token) localStorage.setItem('auth_token', data.token);
             if (data.role) localStorage.setItem('user_role', data.role);
             localStorage.setItem('user_name', data.username || username);
@@ -284,18 +286,22 @@ async function submitAdminLogin(event) {
 async function submitAdminLogout() {
     try {
         await fetch('api/system/admin_auth.php?action=logout', { method: 'POST' });
-        currentAdminState.logged_in = false;
-        currentAdminState.user = null;
-        updateAdminUI(false, null);
-        closeAdminModal();
+    } catch (err) {}
 
-        const output = document.getElementById('output');
-        if (output) {
-            output.innerHTML += `<span class="text-amber-400 font-semibold">[AUTH] Admin session terminated. Controls locked.</span><br>`;
-            output.parentElement.scrollTop = output.parentElement.scrollHeight;
-        }
-    } catch (err) {
-        console.error('Logout error:', err);
+    sessionStorage.removeItem('active_session_token');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('user_name');
+
+    currentAdminState.logged_in = false;
+    currentAdminState.user = null;
+    updateAdminUI(false, null, 'guest');
+    closeAdminModal();
+
+    const output = document.getElementById('output');
+    if (output) {
+        output.innerHTML += `<br><span class="text-amber-400 font-semibold">[AUTH] Session terminated. System locked to read-only guest state.</span>`;
+        output.scrollTop = output.scrollHeight;
     }
 }
 
