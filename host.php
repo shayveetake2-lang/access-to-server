@@ -92,21 +92,20 @@
                 </div>
             </header>
 
-            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
+            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1 pb-28">
                 <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                     <div>
-                        <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">HOST NODE</div>
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">MacBook Pro 2011 Node Info</h2>
                     </div>
                 </div>
 
                 <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
                     <h3 class="text-sm font-bold text-slate-900 dark:text-white">Server Information</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-                        <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">OS / ARCH</span>macOS (MacBook Pro 2011)</div>
-                        <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">ZEROTIER IP</span>10.247.192.231</div>
-                        <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">WEB SERVER</span>Apache 2.4</div>
-                        <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">DATABASE</span>MySQL / SQLite PDO</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono">
+                        <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">OS / ARCH</span>macOS (MacBook Pro 2011)</div>
+                        <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">ZEROTIER IP</span><span class="text-cyan-400 font-bold">10.247.192.231</span></div>
+                        <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">WEB SERVER</span><span class="text-emerald-400 font-bold">Apache 2.4 / PHP 8</span></div>
+                        <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">DATABASE</span>MySQL / SQLite PDO Engine</div>
                     </div>
                 </div>
             </div>

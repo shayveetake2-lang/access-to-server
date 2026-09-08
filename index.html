@@ -239,7 +239,7 @@
             </header>
 
             <!-- Page Body Canvas -->
-            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
+            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1 pb-28">
 
                 <!-- ═══════════════════════════════════════════════════════ -->
                 <!-- TAB 1: OVERVIEW (Welcome Header)                        -->
@@ -249,14 +249,13 @@
                     <!-- Overview Header Subbar (Updated to just "Welcome") -->
                     <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">OVERVIEW</div>
                             <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Welcome</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
                                 MacBook Pro 2011 · ZeroTier connected · <span class="live-time-display">Checked 14:32</span>
                             </p>
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                             3 services healthy
                         </div>
                     </div>
@@ -316,16 +315,19 @@
                         <!-- CARD 2: Traffic -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Traffic</h3>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Traffic</h3>
+                                    <span class="text-[10px] text-slate-400 font-mono">Unit: Requests / min</span>
+                                </div>
                                 <select class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-2 py-1 focus:outline-none">
                                     <option>Requests</option>
                                     <option>Bandwidth</option>
                                 </select>
                             </div>
                             <div class="my-2 relative">
-                                <div class="text-[10px] text-slate-400 mb-1 flex justify-between">
-                                    <span>2,000</span>
-                                    <span>1,000</span>
+                                <div class="text-[10px] text-slate-400 mb-1 flex justify-between font-mono">
+                                    <span>2,000 req/min</span>
+                                    <span>1,000 req/min</span>
                                     <span>0</span>
                                 </div>
                                 <svg class="w-full h-32" viewBox="0 0 300 100">
@@ -337,14 +339,14 @@
                                     </defs>
                                     <path fill="url(#trafficGradient)" d="M 0,80 Q 50,70 100,60 T 200,30 T 300,70 L 300,100 L 0,100 Z" />
                                     <path fill="none" stroke="#06b6d4" stroke-width="2.5" d="M 0,80 Q 50,70 100,60 T 200,30 T 300,70" />
-                                    <circle cx="200" cy="30" r="4" fill="#06b6d4" class="animate-ping" />
-                                    <circle cx="200" cy="30" r="3" fill="#ffffff" />
+                                    <circle cx="200" cy="30" r="4" fill="#06b6d4" />
+                                    <circle cx="200" cy="30" r="2.5" fill="#ffffff" />
                                 </svg>
                                 <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-2">
-                                    <span>3 am</span>
-                                    <span>6 am</span>
-                                    <span>9 am</span>
-                                    <span>12 pm</span>
+                                    <span>03:00</span>
+                                    <span>06:00</span>
+                                    <span>09:00</span>
+                                    <span>12:00</span>
                                 </div>
                             </div>
                         </div>
@@ -369,14 +371,14 @@
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-slate-700 dark:text-slate-300">
                                         <tr>
-                                            <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Instance 1</td>
+                                            <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Host Node</td>
                                             <td class="py-2.5"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">● Online</span></td>
-                                            <td class="py-2.5 text-slate-400">192.168.13.5</td>
+                                            <td class="py-2.5 text-slate-400">10.247.192.231</td>
                                         </tr>
                                         <tr>
-                                            <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Instance 2</td>
+                                            <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Web Server</td>
                                             <td class="py-2.5"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">● Online</span></td>
-                                            <td class="py-2.5 text-slate-400">192.168.13.2</td>
+                                            <td class="py-2.5 text-slate-400">127.0.0.1:80</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -406,7 +408,7 @@
                             </div>
                             <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-1.5">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                MySQL checked 14:31
+                                SQLite PDO Engine active
                             </div>
                         </div>
 
@@ -420,49 +422,54 @@
                             </div>
                             <div class="space-y-3 text-xs">
                                 <div class="flex items-start gap-3">
-                                    <div class="w-7 h-7 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">🚀</div>
+                                    <div class="w-7 h-7 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0 font-mono text-[10px] font-bold">GIT</div>
                                     <div>
-                                        <div class="font-semibold text-slate-900 dark:text-white">Deployment finished for portfolio-site</div>
-                                        <div class="text-[11px] text-slate-400">Apache · 12 min ago</div>
+                                        <div class="font-semibold text-slate-900 dark:text-white">Deployment engine ready</div>
+                                        <div class="text-[11px] text-slate-400">Apache /sites/ · Active</div>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-3">
-                                    <div class="w-7 h-7 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">🎬</div>
+                                    <div class="w-7 h-7 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0 font-mono text-[10px] font-bold">PLX</div>
                                     <div>
-                                        <div class="font-semibold text-slate-900 dark:text-white">Plex scan finished</div>
-                                        <div class="text-[11px] text-slate-400">Media service · 18 min ago</div>
+                                        <div class="font-semibold text-slate-900 dark:text-white">Plex Media Server online</div>
+                                        <div class="text-[11px] text-slate-400">Port 32400 · Streaming ready</div>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-3">
-                                    <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">💾</div>
+                                    <div class="w-7 h-7 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0 font-mono text-[10px] font-bold">USB</div>
                                     <div>
                                         <div class="font-semibold text-slate-900 dark:text-white">USB storage status checked</div>
-                                        <div class="text-[11px] text-slate-400">/Volumes/USBDrive · 32 min ago</div>
+                                        <div class="text-[11px] text-slate-400">/Volumes/USBDrive</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- CARD 6: Sources World Map -->
+                        <!-- CARD 6: Local Host Telemetry -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Sources</h3>
-                                <span class="text-xs text-slate-400 font-mono">Global</span>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Host Telemetry</h3>
+                                <span class="text-xs text-slate-400 font-mono">ZeroTier</span>
                             </div>
-                            <div class="my-2 relative flex items-center justify-center bg-slate-900/40 rounded-xl p-3 border border-slate-800/60">
-                                <svg class="w-full h-32 text-slate-600 fill-current opacity-70" viewBox="0 0 1000 500">
-                                    <path d="M150,150 Q200,100 300,150 T450,200 T600,120 T750,220 T900,180" stroke="currentColor" stroke-width="2" fill="none" />
-                                    <circle cx="220" cy="140" r="8" fill="#06b6d4" class="animate-pulse"/>
-                                    <text x="235" y="145" fill="#ffffff" font-size="24" font-weight="bold">Canada</text>
-                                    <circle cx="340" cy="320" r="8" fill="#38bdf8"/>
-                                    <text x="355" y="325" fill="#ffffff" font-size="24" font-weight="bold">Brazil</text>
-                                    <circle cx="820" cy="350" r="8" fill="#10b981"/>
-                                    <text x="835" y="355" fill="#ffffff" font-size="24" font-weight="bold">Australia</text>
-                                    <circle cx="780" cy="180" r="8" fill="#f59e0b"/>
-                                    <text x="795" y="185" fill="#ffffff" font-size="24" font-weight="bold">China</text>
-                                </svg>
+                            <div class="my-2 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2 font-mono text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Node:</span>
+                                    <span class="text-slate-200 font-semibold">MacBook Pro 2011</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">IP:</span>
+                                    <span class="text-cyan-400 font-bold">10.247.192.231</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Web Server:</span>
+                                    <span class="text-emerald-400 font-semibold">Apache / PHP 8</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Status:</span>
+                                    <span class="text-emerald-400 font-semibold">Active & Listening</span>
+                                </div>
                             </div>
-                            <div class="text-[10px] text-slate-400 text-right mt-1">Map base: public domain</div>
+                            <div class="text-[10px] text-slate-400 text-right mt-1 font-mono">ZeroTier mesh active</div>
                         </div>
 
                     </div>
@@ -474,7 +481,6 @@
                 <div id="tab-servers" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">SERVERS & DEPLOYMENTS</div>
                             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Server Instances & Git Deployer</h2>
                         </div>
                     </div>
@@ -484,29 +490,38 @@
                         <h3 class="text-sm font-bold text-slate-900 dark:text-white">Deploy New Site / Repository</h3>
                         <div id="deploy-form-container" class="space-y-4">
                             <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">GitHub Repository URL</label>
-                                <input type="url" id="repo-url" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <label for="repo-url" class="block text-xs font-medium text-slate-400 mb-1">GitHub Repository URL</label>
+                                <input type="url" id="repo-url" aria-label="GitHub Repository URL" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
                             </div>
                             <div class="flex gap-3">
-                                <button type="button" onclick="loadDemoRepo()" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white transition-all">Load Demo Repo</button>
-                                <button id="deploy-btn" onclick="startDeployment()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-bold shadow-md hover:from-cyan-400 hover:to-blue-500 transition-all">🚀 Start Deployment</button>
+                                <button type="button" onclick="loadDemoRepo()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white focus:ring-2 focus:ring-cyan-500 transition-all min-h-[44px]">Load Demo Repo</button>
+                                <button id="deploy-btn" onclick="startDeployment()" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md focus:ring-2 focus:ring-cyan-400 transition-all min-h-[44px]">Start Deployment</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Service Control Panel -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button onclick="fetch('/scripts/restart_web.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-cyan-500 text-left transition-all">
-                            <div class="text-xs font-bold text-slate-900 dark:text-white">🌐 Restart Web Server</div>
+                        <button onclick="fetch('/scripts/restart_web.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-cyan-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">
+                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                Restart Web Server
+                            </div>
                             <div class="text-[11px] text-slate-400 mt-1">Reload Apache web service</div>
                         </button>
-                        <button onclick="fetch('/scripts/restart_plex.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all">
-                            <div class="text-xs font-bold text-slate-900 dark:text-white">🎬 Restart Plex</div>
+                        <button onclick="fetch('/scripts/restart_plex.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-purple-500">
+                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                                Restart Plex
+                            </div>
                             <div class="text-[11px] text-slate-400 mt-1">Reset media streaming daemon</div>
                         </button>
-                        <button onclick="fetch('/scripts/restart_db.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-emerald-500 text-left transition-all">
-                            <div class="text-xs font-bold text-slate-900 dark:text-white">𝛿 Restart Database</div>
-                            <div class="text-[11px] text-slate-400 mt-1">Flush MySQL connections</div>
+                        <button onclick="fetch('/scripts/restart_db.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-emerald-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">
+                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                                Restart Database
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">Flush database connections</div>
                         </button>
                     </div>
 
@@ -528,10 +543,9 @@
                 <div id="tab-storage" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">STORAGE</div>
                             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Disk Storage & USB Drive Manager</h2>
                         </div>
-                        <button onclick="loadServerStorage(); loadUsbStatus();" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-cyan-400">🔄 Refresh Storage</button>
+                        <button onclick="loadServerStorage(); loadUsbStatus();" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-cyan-400 focus:ring-2 focus:ring-cyan-500 min-h-[44px]">Refresh Storage</button>
                     </div>
 
                     <!-- Internal Disk Gauge Card -->
@@ -549,7 +563,7 @@
                                 <span id="srv-percent-text" class="text-cyan-400 font-mono">--%</span>
                             </div>
                             <div class="h-3.5 w-full rounded-full bg-slate-800 overflow-hidden" id="srv-bar-track">
-                                <div class="h-full flex" id="srv-bar-segments" style="width: 0%; transition: width 0.6s ease-out;"></div>
+                                <div class="h-full bg-cyan-400 rounded-full w-full" id="srv-bar-segments" style="transform-origin: left; transform: scaleX(0); transition: transform 0.6s ease-out;"></div>
                             </div>
                         </div>
                         <div class="grid grid-cols-3 gap-4 pt-2 text-xs font-mono">
@@ -566,7 +580,7 @@
                             <h3 class="text-sm font-bold text-slate-900 dark:text-white">USB Drive Storage (/Volumes/USBDrive)</h3>
                             <span id="usb-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">--</span>
                         </div>
-                        <div id="usb-warning-banner" class="hidden p-3 rounded-xl text-xs bg-amber-500/10 border border-amber-500/30 text-amber-400 font-medium"></div>
+                        <div id="usb-warning-banner" class="hidden p-3 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-400 font-medium"></div>
                         <div class="grid grid-cols-3 gap-4 text-xs font-mono">
                             <div><span class="text-slate-400 block text-[10px]">USB USED</span><span id="usb-used-text" class="text-slate-200 font-bold">--</span></div>
                             <div><span class="text-slate-400 block text-[10px]">USB FREE</span><span id="usb-free-text" class="text-emerald-400 font-bold">--</span></div>
@@ -576,13 +590,13 @@
                         <!-- Drag & Drop File Form -->
                         <form id="usb-upload-form" onsubmit="event.preventDefault(); uploadUsbFile();" class="space-y-3 pt-2">
                             <div id="usb-drop-zone" class="p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/40 text-center hover:border-cyan-500 cursor-pointer transition-all">
-                                <input type="file" id="usb-file-input" onchange="handleUsbFileSelect(this)" class="hidden">
+                                <input type="file" id="usb-file-input" aria-label="Upload file to USB storage" onchange="handleUsbFileSelect(this)" class="hidden">
                                 <label for="usb-file-input" class="cursor-pointer space-y-2 block">
-                                    <div class="text-2xl">📁</div>
                                     <div id="usb-file-name" class="text-xs text-slate-300 font-semibold">Drop files here or click to browse</div>
+                                    <div class="text-[11px] text-slate-400">Supported formats: zip, tar, gz, sql, img, iso (Max: 2 GB)</div>
                                 </label>
                             </div>
-                            <button id="usb-upload-btn" type="submit" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all">Upload File to USB Storage</button>
+                            <button id="usb-upload-btn" type="submit" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">Upload File to USB Storage</button>
                         </form>
                     </div>
                 </div>
@@ -593,7 +607,6 @@
                 <div id="tab-data" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">DATA & DATABASES</div>
                             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Provision MySQL / SQLite Database</h2>
                         </div>
                     </div>
@@ -603,16 +616,16 @@
                         <h3 class="text-sm font-bold text-slate-900 dark:text-white">Create New Database</h3>
                         <div id="db-form-container" class="space-y-4">
                             <div>
-                                <label class="block text-xs font-medium text-slate-400 mb-1">Database Name</label>
-                                <input type="text" id="db-name" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <label for="db-name" class="block text-xs font-medium text-slate-400 mb-1">Database Name</label>
+                                <input type="text" id="db-name" aria-label="Database Name" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                             </div>
                             <div class="flex flex-wrap gap-2">
-                                <button onclick="setDbPreset('app_store')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all">+ App Store</button>
-                                <button onclick="setDbPreset('analytics')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all">+ Analytics</button>
-                                <button onclick="setDbPreset('user_accounts')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all">+ User Accounts</button>
-                                <button onclick="setDbPreset('website_data')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all">+ Website Data</button>
+                                <button type="button" onclick="setDbPreset('app_store')" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">+ App Store</button>
+                                <button type="button" onclick="setDbPreset('analytics')" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">+ Analytics</button>
+                                <button type="button" onclick="setDbPreset('user_accounts')" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">+ User Accounts</button>
+                                <button type="button" onclick="setDbPreset('website_data')" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">+ Website Data</button>
                             </div>
-                            <button id="db-btn" onclick="provisionDatabase()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold shadow-md hover:from-emerald-400 hover:to-teal-500 transition-all">𝛿 Provision Database</button>
+                            <button id="db-btn" onclick="provisionDatabase()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md focus:ring-2 focus:ring-emerald-400 transition-all min-h-[44px]">Provision Database</button>
                         </div>
                     </div>
                 </div>
@@ -623,7 +636,6 @@
                 <div id="tab-activity" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">ACTIVITY</div>
                             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">System Audit & Activity Stream</h2>
                         </div>
                     </div>
@@ -648,7 +660,6 @@
                 <div id="tab-settings" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">SETTINGS</div>
                             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">System Configuration & Security</h2>
                         </div>
                     </div>
@@ -861,7 +872,7 @@
             const repo = document.getElementById('repo-url')?.value;
             const output = document.getElementById('output');
             if (!repo) return alert('Please enter a repo URL');
-            if (output) output.innerHTML += `<br>[DEPLOY] Starting build for ${repo}...`;
+            if (output) output.innerHTML += `<br>[DEPLOY] Starting build for ${escapeHtml(repo)}...`;
             try {
                 const res = await fetch('/api/system/deploy.php', {
                     method: 'POST',
@@ -869,11 +880,17 @@
                     body: JSON.stringify({ repo_url: repo })
                 });
                 const data = await res.json();
-                if (output) output.innerHTML += `<br>[DEPLOY] ${data.message || 'Deployment completed!'}`;
-                if (data.url) showPopup(data.url);
+                if (data && data.success && data.url) {
+                    if (output) output.innerHTML += `<br>[DEPLOY] ${escapeHtml(data.message || 'Deployment completed successfully!')}`;
+                    showPopup(data.url);
+                } else {
+                    const errMsg = (data && data.message) ? data.message : 'Deployment failed. Check repository URL.';
+                    if (output) output.innerHTML += `<br>[DEPLOY ERROR] ${escapeHtml(errMsg)}`;
+                    alert(errMsg);
+                }
             } catch(e) {
-                if (output) output.innerHTML += `<br>[DEPLOY] Deployment completed.`;
-                showPopup('/sites/' + repo.split('/').pop().replace('.git', ''));
+                if (output) output.innerHTML += `<br>[DEPLOY ERROR] Network or server error during deployment.`;
+                alert('Deployment failed: Unable to communicate with server.');
             }
         }
         async function provisionDatabase() {
@@ -886,24 +903,41 @@
                     body: JSON.stringify({ db_name: dbName })
                 });
                 const data = await res.json();
-                const createdName = document.getElementById('created-db-name');
-                if (createdName) createdName.textContent = dbName;
-                const dbPopup = document.getElementById('db-popup');
-                if (dbPopup) { dbPopup.classList.remove('hidden'); dbPopup.classList.add('flex'); }
+                if (data && (data.success || data.status === 'success')) {
+                    const createdName = document.getElementById('created-db-name');
+                    if (createdName) createdName.textContent = dbName;
+                    const dbPopup = document.getElementById('db-popup');
+                    if (dbPopup) { dbPopup.classList.remove('hidden'); dbPopup.classList.add('flex'); }
+                } else {
+                    alert('Database provisioning failed: ' + (data.message || 'Server query error'));
+                }
             } catch(e) {
-                const createdName = document.getElementById('created-db-name');
-                if (createdName) createdName.textContent = dbName;
-                const dbPopup = document.getElementById('db-popup');
-                if (dbPopup) { dbPopup.classList.remove('hidden'); dbPopup.classList.add('flex'); }
+                alert('Failed to provision database: Server error.');
             }
         }
         async function loadServerStorage() {
             try {
                 const res = await fetch('/api/system/server_storage.php');
                 const data = await res.json();
-                if (data) {
+                if (data && data.status === 'success') {
+                    const percent = Math.round(data.percent_used || 0);
                     const text = document.getElementById('srv-percent-text');
-                    if (text) text.textContent = (data.percent_used || 45) + '%';
+                    if (text) text.textContent = percent + '%';
+                    const bar = document.getElementById('srv-bar-segments');
+                    if (bar) bar.style.transform = `scaleX(${percent / 100})`;
+                    const used = document.getElementById('srv-used-text');
+                    if (used) used.textContent = data.used_gb ? data.used_gb + ' GB' : (data.used || '--');
+                    const free = document.getElementById('srv-free-text');
+                    if (free) free.textContent = data.free_gb ? data.free_gb + ' GB' : (data.free || '--');
+                    const total = document.getElementById('srv-total-text');
+                    if (total) total.textContent = data.total_gb ? data.total_gb + ' GB' : (data.total || '--');
+                    const path = document.getElementById('srv-disk-path');
+                    if (path) path.textContent = data.disk_path || '/';
+                    const pill = document.getElementById('srv-status-pill');
+                    if (pill) {
+                        pill.textContent = '● Online';
+                        pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                    }
                 }
             } catch(e){}
         }
@@ -911,9 +945,36 @@
             try {
                 const res = await fetch('/usb_manager.php?action=status');
                 const data = await res.json();
-                if (data) {
-                    const pill = document.getElementById('usb-status-pill');
-                    if (pill) pill.textContent = data.connected ? '● Connected' : '○ Offline';
+                const pill = document.getElementById('usb-status-pill');
+                const banner = document.getElementById('usb-warning-banner');
+                const dropzone = document.getElementById('usb-drop-zone');
+                const uploadBtn = document.getElementById('usb-upload-btn');
+                const isConnected = data && data.connected;
+
+                if (pill) {
+                    pill.textContent = isConnected ? '● Connected' : '○ Offline';
+                    pill.className = isConnected 
+                        ? 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                }
+                if (banner) {
+                    if (isConnected) {
+                        banner.classList.add('hidden');
+                    } else {
+                        banner.classList.remove('hidden');
+                        banner.textContent = '⚠️ USB storage is currently offline or unplugged. Uploads are disabled until a drive is mounted at /Volumes/USBDrive.';
+                    }
+                }
+                if (dropzone && uploadBtn) {
+                    if (isConnected) {
+                        dropzone.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                        uploadBtn.disabled = false;
+                        uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        dropzone.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                        uploadBtn.disabled = true;
+                        uploadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
                 }
             } catch(e){}
         }
@@ -929,9 +990,14 @@
             try {
                 const res = await fetch('/usb_manager.php?action=upload', { method: 'POST', body: formData });
                 const data = await res.json();
-                alert(data.message || 'File uploaded to USB storage');
+                if (data && data.status === 'success') {
+                    alert(data.message || 'File uploaded successfully to USB storage');
+                    loadUsbStatus();
+                } else {
+                    alert('Upload failed: ' + ((data && data.message) ? data.message : 'USB drive unavailable'));
+                }
             } catch(e) {
-                alert('Upload request sent');
+                alert('Upload failed: USB drive is offline or network error');
             }
         }
 

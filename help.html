@@ -92,22 +92,27 @@
                 </div>
             </header>
 
-            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
+            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1 pb-28">
                 <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                     <div>
-                        <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">HELP & DOCUMENTATION</div>
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">ServerFlow Guides & API Reference</h2>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
-                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">🚀 How to Deploy Sites</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">Enter any public GitHub repository URL into the deployment form on the Servers or Sites tab. The server will clone the repository, run build scripts, and publish the static or PHP app under <code>/sites/{repoName}/</code>.</p>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            How to Deploy Sites
+                        </h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">Enter any public GitHub repository URL into the deployment form on the Servers or Sites tab. The server will clone the repository, run build scripts, and publish the static or PHP app under <code class="text-cyan-400 font-mono">/sites/{repoName}/</code>.</p>
                     </div>
                     <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
-                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">💾 USB Storage Management</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">External USB drives mounted at <code>/Volumes/USBDrive</code> can be inspected and uploaded to directly via the Storage tab or by asking the ServerFlow Help AI chatbot assistant.</p>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            USB Storage Management
+                        </h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">External USB drives mounted at <code class="text-amber-400 font-mono">/Volumes/USBDrive</code> can be inspected and uploaded to directly via the Storage tab or by asking the ServerFlow Help AI chatbot assistant.</p>
                     </div>
                 </div>
             </div>

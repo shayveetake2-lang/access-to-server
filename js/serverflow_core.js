@@ -20,7 +20,21 @@ document.addEventListener('DOMContentLoaded', () => {
     initChatWidgetListeners();
     initNotificationDropdown();
     initProfileDropdown();
+    initGlobalKeyboardListeners();
 });
+
+function initGlobalKeyboardListeners() {
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const notifMenu = document.getElementById('sf-notification-menu');
+            const profileMenu = document.getElementById('sf-profile-menu');
+            const chatWidget = document.getElementById('sf-chat-widget');
+            if (notifMenu && !notifMenu.classList.contains('hidden')) notifMenu.classList.add('hidden');
+            if (profileMenu && !profileMenu.classList.contains('hidden')) profileMenu.classList.add('hidden');
+            if (chatWidget && !chatWidget.classList.contains('hidden')) toggleServerFlowChat();
+        }
+    });
+}
 
 // Update live time checks (e.g. "Checked 14:32")
 function updateTimestampDisplays() {

@@ -76,7 +76,7 @@ if (strpos($lowerMsg, 'why is usb storage offline') !== false || strpos($lowerMs
 } else if (strpos($lowerMsg, 'deploy a site') !== false) {
     echo json_encode([
         "status" => "success",
-        "reply" => "To deploy a site, go to the Servers or Sites tab, enter your GitHub repository URL into the deployment form, select Apache or Node runtime, and click 'Deploy Site'."
+        "reply" => "To deploy a site, go to the Servers tab, enter your GitHub repository URL into the deployment form, and click 'Start Deployment'."
     ]);
     exit();
 }

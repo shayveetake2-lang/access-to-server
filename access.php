@@ -92,33 +92,57 @@
                 </div>
             </header>
 
-            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
+            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1 pb-28">
                 <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                     <div>
-                        <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">ACCESS CONTROL</div>
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Server Access Request Form</h2>
                     </div>
                 </div>
 
                 <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4 max-w-xl">
                     <h3 class="text-sm font-bold text-slate-900 dark:text-white">Request Server Access Permission</h3>
-                    <div class="space-y-3 text-xs">
+                    
+                    <div id="access-form-msg" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+
+                    <form onsubmit="handleAccessFormSubmit(event)" class="space-y-3 text-xs">
                         <div>
-                            <label class="block font-medium text-slate-400 mb-1">Full Name</label>
-                            <input type="text" class="w-full px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none">
+                            <label for="access-fullname" class="block font-medium text-slate-400 mb-1">Full Name</label>
+                            <input type="text" id="access-fullname" required aria-label="Full Name" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         </div>
                         <div>
-                            <label class="block font-medium text-slate-400 mb-1">Email Address</label>
-                            <input type="email" class="w-full px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none">
+                            <label for="access-email" class="block font-medium text-slate-400 mb-1">Email Address</label>
+                            <input type="email" id="access-email" required aria-label="Email Address" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         </div>
                         <div>
-                            <label class="block font-medium text-slate-400 mb-1">Reason for Access</label>
-                            <textarea rows="3" class="w-full px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none"></textarea>
+                            <label for="access-reason" class="block font-medium text-slate-400 mb-1">Reason for Access</label>
+                            <textarea id="access-reason" rows="3" required aria-label="Reason for Access" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
                         </div>
-                        <button onclick="alert('Access Request Submitted Successfully!')" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">Submit Access Request</button>
-                    </div>
+                        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md focus:ring-2 focus:ring-emerald-400 transition-all min-h-[44px]">Submit Access Request</button>
+                    </form>
                 </div>
             </div>
+
+            <script>
+                function handleAccessFormSubmit(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('access-fullname')?.value.trim();
+                    const email = document.getElementById('access-email')?.value.trim();
+                    const reason = document.getElementById('access-reason')?.value.trim();
+                    const msgEl = document.getElementById('access-form-msg');
+                    if (!msgEl) return;
+
+                    if (!name || !email || !reason) {
+                        msgEl.className = 'p-3 rounded-xl text-xs font-medium bg-rose-500/10 border border-rose-500/30 text-rose-400';
+                        msgEl.textContent = 'Please fill out all required fields before submitting.';
+                        msgEl.classList.remove('hidden');
+                        return;
+                    }
+
+                    msgEl.className = 'p-3 rounded-xl text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400';
+                    msgEl.textContent = `Access request recorded for ${name} (${email}). Administrator review pending.`;
+                    msgEl.classList.remove('hidden');
+                }
+            </script>
 
             <footer class="mt-auto px-6 py-4 border-t border-slate-200 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
                 <div>ServerFlow · MacBook Pro 2011 · ZeroTier local host</div>

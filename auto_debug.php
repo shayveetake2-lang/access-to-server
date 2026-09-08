@@ -195,20 +195,22 @@ $results[] = $sitesCheck;
                 </div>
             </header>
 
-            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
+            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1 pb-28">
                 <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                     <div>
-                        <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">AUTO DEBUG</div>
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Automated System Health Suite</h2>
                     </div>
-                    <button onclick="window.location.reload()" class="px-3 py-1.5 rounded-xl bg-cyan-600 text-white text-xs font-bold shadow-md hover:bg-cyan-500">🔄 Re-run Diagnostics</button>
+                    <button onclick="window.location.reload()" class="px-3.5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold shadow-md hover:bg-cyan-500 min-h-[44px] focus:ring-2 focus:ring-cyan-400">Re-run Diagnostics</button>
                 </div>
 
-                <div class="space-y-4">
+                <div class="space-y-3">
                     <?php foreach ($results as $res): ?>
-                        <div class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl flex items-center justify-between">
+                        <div class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border <?= $res['status'] === 'pass' ? 'border-slate-200 dark:border-slate-800' : 'border-rose-500/50 bg-rose-500/5' ?> shadow-lg flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white"><?= htmlspecialchars($res['name']) ?></h3>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full <?= $res['status'] === 'pass' ? 'bg-emerald-400' : 'bg-rose-500' ?>"></span>
+                                    <?= htmlspecialchars($res['name']) ?>
+                                </h3>
                                 <p class="text-xs text-slate-400 mt-1"><?= htmlspecialchars($res['message']) ?></p>
                             </div>
                             <span class="px-3 py-1 rounded-full text-xs font-bold font-mono <?= $res['status'] === 'pass' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20' ?>">

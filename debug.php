@@ -138,22 +138,21 @@ if ($return_var === 0) {
                 </div>
             </header>
 
-            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
+            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1 pb-28">
                 <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                     <div>
-                        <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">DEBUG CONSOLE</div>
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Interactive Debug & Log Inspector</h2>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl">
-                        <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-2">Database Diagnostic</h3>
-                        <p class="text-xs text-slate-400 font-mono"><?= htmlspecialchars($db_status) ?></p>
+                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-2">
+                        <h3 class="text-xs font-bold text-slate-900 dark:text-white">Database Diagnostic</h3>
+                        <p class="text-sm text-emerald-400 font-mono leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800/80"><?= htmlspecialchars($db_status) ?></p>
                     </div>
-                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl">
-                        <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-2">Shell / Git Diagnostic</h3>
-                        <p class="text-xs text-slate-400 font-mono"><?= htmlspecialchars($git_status) ?></p>
+                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-2">
+                        <h3 class="text-xs font-bold text-slate-900 dark:text-white">Shell / Git Diagnostic</h3>
+                        <p class="text-sm text-cyan-400 font-mono leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800/80"><?= htmlspecialchars($git_status) ?></p>
                     </div>
                 </div>
             </div>

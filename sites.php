@@ -145,13 +145,12 @@ if (is_dir($sitesDir)) {
                 </div>
             </header>
 
-            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
+            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1 pb-28">
                 <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                     <div>
-                        <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">HOSTED SITES</div>
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Deployed Web Applications</h2>
                     </div>
-                    <a href="/index.html" class="px-3 py-1.5 rounded-xl bg-cyan-600 text-white text-xs font-bold shadow-md hover:bg-cyan-500 transition-all">+ Deploy New Site</a>
+                    <a href="/index.html" class="px-3.5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold shadow-md hover:bg-cyan-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-cyan-400">Deploy New Site</a>
                 </div>
 
                 <!-- Grid of Sites -->
@@ -166,13 +165,15 @@ if (is_dir($sitesDir)) {
                                 <div>
                                     <div class="flex items-center justify-between mb-2">
                                         <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate"><?= htmlspecialchars($site['name']) ?></h3>
-                                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">● Active</span>
+                                        <span class="px-2 py-0.5 rounded-full <?= $site['hasIndex'] ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20' ?> text-[10px] font-semibold">
+                                            <?= $site['hasIndex'] ? '● Active' : '○ No Index' ?>
+                                        </span>
                                     </div>
                                     <p class="text-xs text-slate-400 line-clamp-2"><?= htmlspecialchars($site['title'] ?? 'No title defined') ?></p>
                                 </div>
                                 <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                     <span class="text-[10px] font-mono text-slate-400"><?= date('M j, H:i', $site['modified']) ?></span>
-                                    <a href="<?= htmlspecialchars($site['url']) ?>" target="_blank" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-semibold transition-all">Launch App ↗</a>
+                                    <a href="<?= htmlspecialchars($site['url']) ?>" target="_blank" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-semibold focus:ring-2 focus:ring-cyan-500 transition-all">Launch App ↗</a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
