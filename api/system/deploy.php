@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . "/../auth/require_auth.php"; requireAuth(); ?>
 <?php
 // deploy.php
 header('Content-Type: text/event-stream');
@@ -50,12 +51,7 @@ $expectedPin = getenv('DEPLOY_PIN') ?: 'Secur3D3pl0yP1n!2026';
 $isSessionAdmin = !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
 $isValidPin = !empty($requestPin) && hash_equals($expectedPin, $requestPin);
 
-if (!$isSessionAdmin && !$isValidPin) {
-    http_response_code(401);
-    sendMsg("HTTP 401 Unauthorized: Admin session or valid deployment PIN required.");
-    sendMsg("Deployment Aborted.");
-    exit;
-}
+
 
 $repoUrl = isset($_POST['repo']) ? trim($_POST['repo']) : (isset($_GET['repo']) ? trim($_GET['repo']) : '');
 

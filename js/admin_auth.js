@@ -3,20 +3,22 @@
 let currentAdminState = { logged_in: false, user: null };
 
 async function checkAdminAuth() {
-    try {
-        const res = await fetch('api/system/admin_auth.php?action=status');
-        const data = await res.json();
-        if (data.status === 'success') {
-            currentAdminState.logged_in = data.logged_in;
-            currentAdminState.user = data.user;
-            updateAdminUI(data.logged_in, data.user);
-        }
-    } catch (err) {
-        console.error('Failed to check admin auth status:', err);
+    const token = localStorage.getItem('auth_token');
+    const role = localStorage.getItem('auth_role');
+    const user = localStorage.getItem('auth_user');
+
+    if (token && role && user) {
+        currentAdminState.logged_in = true;
+        currentAdminState.user = user;
+        updateAdminUI(true, user, role);
+    } else {
+        currentAdminState.logged_in = false;
+        currentAdminState.user = null;
+        updateAdminUI(false, null, null);
     }
 }
 
-function updateAdminUI(isLoggedIn, user) {
+function updateAdminUI(isLoggedIn, user, role) {
     const navBtnTexts = document.querySelectorAll('.admin-nav-text-el');
     const navIconLocks = document.querySelectorAll('.admin-nav-icon-lock-el');
     const navBadges = document.querySelectorAll('.admin-nav-badge-active-el');
@@ -31,81 +33,54 @@ function updateAdminUI(isLoggedIn, user) {
     const panelView = document.getElementById('admin-modal-panel-view');
     const userDisplay = document.getElementById('admin-username-display');
 
-    const deployForm = document.getElementById('deploy-form-container');
-    const deployLock = document.getElementById('deploy-lock-container');
-    const dbForm = document.getElementById('db-form-container');
-    const dbLock = document.getElementById('db-lock-container');
-    const usbForm = document.getElementById('usb-upload-form');
-    const usbLock = document.getElementById('usb-lock-container');
+    const standardUserPortal = document.querySelectorAll('.standard-user-portal');
+    const standardUserBanner = document.getElementById('standard-user-banner');
+    const adminPortal = document.getElementById('admin-portal');
     const navDropdownWrapper = document.getElementById('nav-dropdown-wrapper');
-
-    const adminOnlyTools = document.querySelectorAll('.admin-only-tool');
+    const manageAdminsBtn = document.getElementById('manage-admins-btn');
 
     if (isLoggedIn) {
-        if (adminNavBtn) adminNavBtn.classList.add('hidden');
-        if (adminLoggedInIndicator) {
-            adminLoggedInIndicator.classList.remove('hidden');
-            adminLoggedInIndicator.classList.add('inline-flex');
-        }
-        if (adminLogoutBtn) {
-            adminLogoutBtn.classList.remove('hidden');
-            adminLogoutBtn.classList.add('inline-flex');
-        }
-        if (adminLoggedInUsername) adminLoggedInUsername.innerText = 'Admin: ' + (user || 'admin');
-
-        navBtnTexts.forEach(el => el.innerText = 'Admin Panel');
-        navIconLocks.forEach(el => el.classList.add('hidden'));
-        navBadges.forEach(el => el.classList.remove('hidden'));
-        dropdownTexts.forEach(el => el.innerText = 'Admin Panel (Active)');
-
         if (loginView) loginView.classList.add('hidden');
-        if (panelView) panelView.classList.remove('hidden');
-        if (userDisplay) userDisplay.innerText = user || 'admin';
-        if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
+        
+        standardUserPortal.forEach(el => el.classList.remove('hidden'));
+        if (standardUserBanner) standardUserBanner.classList.add('hidden');
 
-        // Unlock Admin Action Cards if present on index.html
-        if (deployForm) deployForm.classList.remove('hidden');
-        if (deployLock) deployLock.classList.add('hidden');
-        if (dbForm) dbForm.classList.remove('hidden');
-        if (dbLock) dbLock.classList.add('hidden');
-        if (usbForm) usbForm.classList.remove('hidden');
-        if (usbLock) usbLock.classList.add('hidden');
+        if (role === 'admin') {
+            if (adminPortal) adminPortal.classList.remove('hidden');
+            if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
+            if (manageAdminsBtn) manageAdminsBtn.classList.remove('hidden');
+        } else {
+            if (adminPortal) adminPortal.classList.add('hidden');
+            if (navDropdownWrapper) navDropdownWrapper.classList.add('hidden');
+            if (manageAdminsBtn) manageAdminsBtn.classList.add('hidden');
+        }
+        
+        if (adminNavBtn) adminNavBtn.classList.add('hidden');
+        if (adminLoggedInIndicator) adminLoggedInIndicator.classList.remove('hidden');
+        if (adminLoggedInIndicator) adminLoggedInIndicator.classList.add('flex');
+        if (adminLoggedInUsername) adminLoggedInUsername.innerText = user;
+        if (adminLogoutBtn) adminLogoutBtn.classList.remove('hidden');
 
-        // Reveal Admin-Only Tools in dropdown
-        adminOnlyTools.forEach(el => el.classList.remove('hidden'));
     } else {
-        if (adminNavBtn) adminNavBtn.classList.remove('hidden');
-        if (adminLoggedInIndicator) {
-            adminLoggedInIndicator.classList.add('hidden');
-            adminLoggedInIndicator.classList.remove('inline-flex');
-        }
-        if (adminLogoutBtn) {
-            adminLogoutBtn.classList.add('hidden');
-            adminLogoutBtn.classList.remove('inline-flex');
-        }
+        if (loginView) loginView.classList.remove('hidden');
+        
+        standardUserPortal.forEach(el => el.classList.add('hidden'));
+        if (standardUserBanner) standardUserBanner.classList.remove('hidden');
+        if (adminPortal) adminPortal.classList.add('hidden');
+        if (navDropdownWrapper) navDropdownWrapper.classList.add('hidden');
+        if (manageAdminsBtn) manageAdminsBtn.classList.add('hidden');
 
-        navBtnTexts.forEach(el => el.innerText = 'Admin Login');
+        if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+        if (adminLoggedInIndicator) adminLoggedInIndicator.classList.add('hidden');
+        if (adminLoggedInIndicator) adminLoggedInIndicator.classList.remove('flex');
+        if (adminLogoutBtn) adminLogoutBtn.classList.add('hidden');
+        
+        navBtnTexts.forEach(el => el.innerText = 'Login');
+        dropdownTexts.forEach(el => el.innerText = 'Login');
         navIconLocks.forEach(el => el.classList.remove('hidden'));
         navBadges.forEach(el => el.classList.add('hidden'));
-        dropdownTexts.forEach(el => el.innerText = 'Admin Login');
-
-        if (loginView) loginView.classList.remove('hidden');
-        if (panelView) panelView.classList.add('hidden');
-        if (navDropdownWrapper) navDropdownWrapper.classList.add('hidden');
-
-        // Lock Admin Action Cards if present on index.html
-        if (deployForm) deployForm.classList.add('hidden');
-        if (deployLock) deployLock.classList.remove('hidden');
-        if (dbForm) dbForm.classList.add('hidden');
-        if (dbLock) dbLock.classList.remove('hidden');
-        if (usbForm) usbForm.classList.add('hidden');
-        if (usbLock) usbLock.classList.remove('hidden');
-
-        // Hide Admin-Only Tools in dropdown
-        adminOnlyTools.forEach(el => el.classList.add('hidden'));
     }
 }
-
 function openAdminModal() {
     const modal = document.getElementById('admin-auth-modal');
     if (modal) {
@@ -122,57 +97,54 @@ function closeAdminModal() {
     }
 }
 
-async function submitAdminLogin() {
-    const userInputEl = document.getElementById('admin-username-input');
-    const passInputEl = document.getElementById('admin-password-input');
+async function submitAdminLogin(event) { if (event) event.preventDefault();
     const errBanner = document.getElementById('admin-login-error');
     const submitBtn = document.getElementById('admin-login-btn');
+    const username = document.getElementById('admin-username-input').value.trim();
+    const pass = document.getElementById('admin-password-input').value.trim();
 
-    const userInput = userInputEl ? userInputEl.value : '';
-    const passInput = passInputEl ? passInputEl.value : '';
-
-    if (!userInput || !passInput) return;
-
-    if (errBanner) errBanner.classList.add('hidden');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'Authenticating with access_db...';
+    if (!username || !pass) {
+        errBanner.innerText = 'Please enter both username and password.';
+        errBanner.classList.remove('hidden');
+        return;
     }
 
+    errBanner.classList.add('hidden');
+    submitBtn.innerText = 'Verifying...';
+    submitBtn.disabled = true;
+
     try {
-        const res = await fetch('api/system/admin_auth.php?action=login', {
+        const res = await fetch('api/auth/login.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: userInput, password: passInput })
+            body: JSON.stringify({ username: username, password: pass })
         });
-
-        const result = await res.json();
-        if (res.ok && result.status === 'success') {
-            currentAdminState.logged_in = true;
-            currentAdminState.user = result.username;
-            updateAdminUI(true, result.username);
-
-            const output = document.getElementById('output');
-            if (output) {
-                output.innerHTML += `<span class="text-emerald-400 font-semibold">[AUTH-SUCCESS] Authenticated as '${result.username}'. Admin features unlocked.</span><br>`;
-                output.parentElement.scrollTop = output.parentElement.scrollHeight;
-            }
+        
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('auth_role', data.role);
+            localStorage.setItem('auth_user', username);
+            
+            checkAdminAuth();
+            
+            setTimeout(() => { closeAdminModal(); }, 1500);
+            
+            submitBtn.innerText = 'Authentication Successful';
+            submitBtn.classList.replace('bg-indigo-600', 'bg-emerald-600');
+            submitBtn.classList.replace('hover:bg-indigo-500', 'hover:bg-emerald-500');
         } else {
-            if (errBanner) {
-                errBanner.innerText = result.message || 'Authentication failed.';
-                errBanner.classList.remove('hidden');
-            }
+            errBanner.innerText = data.message || 'Login failed.';
+            errBanner.classList.remove('hidden');
+            submitBtn.innerText = 'Access System';
+            submitBtn.disabled = false;
         }
     } catch (err) {
-        if (errBanner) {
-            errBanner.innerText = 'Network error during authentication.';
-            errBanner.classList.remove('hidden');
-        }
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'Authenticate & Unlock Controls';
-        }
+        errBanner.innerText = 'Network error. Please try again.';
+        errBanner.classList.remove('hidden');
+        submitBtn.innerText = 'Access System';
+        submitBtn.disabled = false;
     }
 }
 
@@ -380,5 +352,87 @@ async function deleteAdmin(id, username) {
         msg.className = 'mt-2 p-2 rounded-lg text-[11px] font-mono font-medium bg-rose-950/60 text-rose-400 border border-rose-500/40';
         msg.innerText = 'Network error.';
         msg.classList.remove('hidden');
+    }
+}
+
+
+// Toggle between Login and Register views inside the modal
+function toggleAuthView(view) {
+    const loginView = document.getElementById('admin-modal-login-view');
+    const registerView = document.getElementById('admin-modal-register-view');
+    const loginBanner = document.getElementById('admin-login-error');
+    const registerBanner = document.getElementById('register-message-banner');
+    
+    if (loginBanner) loginBanner.classList.add('hidden');
+    if (registerBanner) registerBanner.classList.add('hidden');
+    
+    if (view === 'register') {
+        if (loginView) loginView.classList.add('hidden');
+        if (registerView) registerView.classList.remove('hidden');
+    } else {
+        if (registerView) registerView.classList.add('hidden');
+        if (loginView) loginView.classList.remove('hidden');
+    }
+}
+
+// Handle Registration Submission
+async function submitRegister(event) {
+    if (event) event.preventDefault();
+    
+    const errBanner = document.getElementById('register-message-banner');
+    const submitBtn = document.getElementById('register-submit-btn');
+    const username = document.getElementById('register-username-input').value.trim();
+    const pass = document.getElementById('register-password-input').value.trim();
+
+    if (!username || !pass) {
+        errBanner.innerText = 'Please fill out all fields.';
+        errBanner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+        return;
+    }
+
+    if (pass.length < 6) {
+        errBanner.innerText = 'Password must be at least 6 characters.';
+        errBanner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+        return;
+    }
+
+    errBanner.classList.add('hidden');
+    submitBtn.innerText = 'Creating Account...';
+    submitBtn.disabled = true;
+
+    try {
+        const res = await fetch('api/auth/register.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: pass })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.status === 'success') {
+            errBanner.innerText = data.message;
+            errBanner.className = 'p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-medium';
+            
+            // Clear the form
+            document.getElementById('register-username-input').value = '';
+            document.getElementById('register-password-input').value = '';
+            
+            // Switch back to login view after a short delay
+            setTimeout(() => {
+                toggleAuthView('login');
+                // Pre-fill username for convenience
+                const loginUserInput = document.getElementById('admin-username-input');
+                if (loginUserInput) loginUserInput.value = username;
+            }, 2000);
+        } else {
+            errBanner.innerText = data.message || 'Registration failed.';
+            errBanner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+        }
+    } catch (err) {
+        errBanner.innerText = 'Network error. Please try again.';
+        errBanner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+    } finally {
+        submitBtn.innerText = 'Create Account';
+        submitBtn.disabled = false;
     }
 }

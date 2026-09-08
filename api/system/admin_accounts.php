@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . "/../auth/require_admin.php"; requireAdmin(); ?>
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

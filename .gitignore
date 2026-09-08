@@ -1,4 +1,2 @@
-.DS_Store
-sites/*
-!sites/.gitkeep
-
+.env
+__pycache__/
