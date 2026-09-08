@@ -7,7 +7,7 @@ define('DB_NAME', getenv('DB_NAME') ?: 'access_db');
 define('DB_USER', getenv('DB_USER') ?: 'server_app');
 define('DB_PASS', getenv('DB_PASS') ?: 'SuperSecureDBP@ss2026!');
 define('DB_CHARSET', 'utf8mb4');
-define('DB_SQLITE_PATH', __DIR__ . '/../access_db.sqlite');
+define('DB_SQLITE_PATH', sys_get_temp_dir() . '/access_db.sqlite');
 
 /**
  * SQLite PDO extension wrapper to ensure compatibility with MySQL DDL statements
@@ -23,6 +23,7 @@ if (!class_exists('SQLitePDO')) {
             return $sql;
         }
 
+        #[\ReturnTypeWillChange]
         public function exec($statement) {
             $trimmed = trim($statement);
             if (preg_match("/^\s*(CREATE DATABASE|USE)\b/i", $trimmed)) {
@@ -31,16 +32,22 @@ if (!class_exists('SQLitePDO')) {
             return parent::exec($this->cleanSql($statement));
         }
 
+        #[\ReturnTypeWillChange]
         public function prepare($query, $options = array()) {
             return parent::prepare($this->cleanSql($query), $options);
         }
 
+        #[\ReturnTypeWillChange]
         public function query($query, $fetchMode = null, ...$args) {
             $trimmed = trim($query);
+            $clean = $this->cleanSql($query);
             if (preg_match("/^\s*(CREATE DATABASE|USE)\b/i", $trimmed)) {
-                return parent::query("SELECT 1");
+                $clean = "SELECT 1";
             }
-            return parent::query($this->cleanSql($query), $fetchMode, ...$args);
+            if ($fetchMode === null) {
+                return parent::query($clean);
+            }
+            return parent::query($clean, $fetchMode, ...$args);
         }
     }
 }
@@ -206,8 +213,17 @@ function getDBConnection() {
         initSQLiteSchema($pdo);
         return $pdo;
     } catch (\Exception $sqe) {
-        error_log("Database Connection Error: " . $sqe->getMessage());
-        throw new \RuntimeException("Database Connection Failed: " . $sqe->getMessage(), 0, $sqe);
+        try {
+            $tmpPath = sys_get_temp_dir() . '/access_db.sqlite';
+            $pdo = new SQLitePDO("sqlite:" . $tmpPath);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            initSQLiteSchema($pdo);
+            return $pdo;
+        } catch (\Exception $sqe2) {
+            error_log("Database Connection Error: " . $sqe2->getMessage());
+            throw new \RuntimeException("Database Connection Failed: " . $sqe2->getMessage(), 0, $sqe2);
+        }
     }
 }
 ?>

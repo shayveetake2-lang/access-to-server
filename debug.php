@@ -48,18 +48,15 @@ if ($return_var === 0) {
 <html lang="en" class="dark">
 <head>
     <script>
-    if (localStorage.getItem('theme') === 'light') {
-        document.documentElement.classList.remove('dark');
-    } else {
-        document.documentElement.classList.add('dark');
-    }
-</script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Diagnostics — Server Console</title>
+    <title>Debug Console — ServerFlow</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -72,880 +69,128 @@ if ($return_var === 0) {
                     fontFamily: {
                         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
                         mono: ['"JetBrains Mono"', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
-                    },
-                    colors: {
-                        brand: { 50: '#ecfeff', 100: '#cffafe', 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2' },
-                        surface: { base: '#090d16', card: '#0f172a', elevated: '#1e293b', terminal: '#050811', border: '#1e293b' }
-                    },
-                    animation: { 'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
+                    }
                 }
             }
         }
     </script>
     <style>
-        .bg-grid-pattern {
-            background-size: 32px 32px;
-            background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-        }
-    
-        /* ═══════════════════════════════════════════════════════════ */
-        /*  NEON PROFESSIONAL LIGHT THEME                              */
-        /* ═══════════════════════════════════════════════════════════ */
-        html:not(.dark) body {
-            background-color: #f1f5f9 !important;
-            color: #0f172a !important;
-            background-image: 
-                linear-gradient(to right, rgba(6, 182, 212, 0.06) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(6, 182, 212, 0.06) 1px, transparent 1px) !important;
-        }
-
-        /* Top Glow Ambient Accent for Light Mode */
-        html:not(.dark) .fixed.top-0.left-1\/2 {
-            background: linear-gradient(to right, rgba(6, 182, 212, 0.15), rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15)) !important;
-            filter: blur(40px) !important;
-        }
-
-        /* Cards & Section Panels */
-        html:not(.dark) section,
-        html:not(.dark) .bg-slate-900,
-        html:not(.dark) .bg-slate-900\/60,
-        html:not(.dark) .bg-slate-900\/50,
-        html:not(.dark) .bg-slate-900\/40,
-        html:not(.dark) .bg-slate-950\/90,
-        html:not(.dark) .bg-slate-950\/80,
-        html:not(.dark) .bg-slate-950\/60,
-        html:not(.dark) .bg-slate-950,
-        html:not(.dark) .bg-surface-base,
-        html:not(.dark) .bg-indigo-950\/40 {
-            background-color: #ffffff !important;
-            color: #0f172a !important;
-            border-color: rgba(6, 182, 212, 0.25) !important;
-            box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04) !important;
-        }
-
-        /* Nav Bar & Header */
-        html:not(.dark) header,
-        html:not(.dark) nav {
-            background-color: rgba(255, 255, 255, 0.9) !important;
-            backdrop-filter: blur(12px) !important;
-            border-color: rgba(6, 182, 212, 0.2) !important;
-        }
-
-        
-        html:not(.dark) #terminal-container * {
-            color: inherit;
-        }
-
-        /* Typography & Headings */
-        html:not(.dark) h1, html:not(.dark) h2, html:not(.dark) h3, html:not(.dark) h4 {
-            color: #0f172a !important;
-        }
-        html:not(.dark) .text-slate-100,
-        html:not(.dark) .text-slate-200,
-        html:not(.dark) .text-slate-300 {
-            color: #1e293b !important;
-        }
-        html:not(.dark) .text-slate-400,
-        html:not(.dark) .text-slate-500 {
-            color: #475569 !important;
-        }
-
-        /* Sub-cards, Containers & Form Blocks */
-        html:not(.dark) .bg-slate-800,
-        html:not(.dark) .bg-slate-800\/60,
-        html:not(.dark) .bg-slate-800\/80,
-        html:not(.dark) .bg-slate-800\/90,
-        html:not(.dark) .bg-slate-800\/50 {
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
-            border-color: rgba(6, 182, 212, 0.2) !important;
-        }
-
-        /* Inputs & Controls */
-        html:not(.dark) input,
-        html:not(.dark) textarea,
-        html:not(.dark) select {
-            background-color: #ffffff !important;
-            color: #0f172a !important;
-            border-color: #cbd5e1 !important;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
-        }
-        html:not(.dark) input:focus,
-        html:not(.dark) textarea:focus,
-        html:not(.dark) select:focus {
-            border-color: #06b6d4 !important;
-            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2) !important;
-        }
-
-        /* Neon Accent Badges & Buttons */
-        html:not(.dark) .bg-cyan-500\/10 {
-            background-color: rgba(6, 182, 212, 0.12) !important;
-        }
-        html:not(.dark) .text-cyan-400 {
-            color: #0284c7 !important;
-        }
-        html:not(.dark) .border-cyan-500\/20,
-        html:not(.dark) .border-cyan-500\/30 {
-            border-color: rgba(6, 182, 212, 0.4) !important;
-        }
-
-        /* Modals in Light Mode */
-        html:not(.dark) #admin-auth-modal,
-        html:not(.dark) #node-modal {
-            background-color: rgba(15, 23, 42, 0.4) !important;
-            backdrop-filter: blur(8px) !important;
-        }
-        html:not(.dark) #admin-auth-modal > div,
-        html:not(.dark) #node-modal > div {
-            background-color: #ffffff !important;
-            border-color: rgba(6, 182, 212, 0.3) !important;
-            box-shadow: 0 20px 40px -10px rgba(6, 182, 212, 0.25), 0 0 20px rgba(6, 182, 212, 0.15) !important;
-        }
-
-    
-        /* ═══════════════════════════════════════════════════════════ */
-        /*  LIGHT MODE SPECIFIC VISUAL FIXES                           */
-        /* ═══════════════════════════════════════════════════════════ */
-
-        /* 1. Welcome / Hero Banner Fix */
-        html:not(.dark) section.mb-8 {
-            background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 50%, #e0f2fe 100%) !important;
-            border-color: rgba(6, 182, 212, 0.3) !important;
-            box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.15) !important;
-        }
-        html:not(.dark) section.mb-8 h1 {
-            color: #0f172a !important;
-        }
-        html:not(.dark) section.mb-8 p {
-            color: #334155 !important;
-        }
-        html:not(.dark) section.mb-8 .border-b {
-            border-color: rgba(6, 182, 212, 0.2) !important;
-        }
-        html:not(.dark) section.mb-8 .grid > div {
-            background-color: #ffffff !important;
-            border-color: rgba(6, 182, 212, 0.25) !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-        }
-        html:not(.dark) section.mb-8 .grid > div p {
-            color: #475569 !important;
-        }
-        html:not(.dark) section.mb-8 .grid > div button {
-            background-color: #f1f5f9 !important;
-            color: #0f172a !important;
-            border-color: rgba(6, 182, 212, 0.3) !important;
-        }
-        html:not(.dark) section.mb-8 .grid > div button:hover {
-            background-color: rgba(6, 182, 212, 0.15) !important;
-            color: #0284c7 !important;
-        }
-
-        /* 2. House Rules Fix */
-        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20,
-        html:not(.dark) div.rounded-xl.border-cyan-500\/30 {
-            background-color: #ffffff !important;
-            border-color: rgba(6, 182, 212, 0.3) !important;
-            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.08) !important;
-        }
-        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 .bg-cyan-900\/30,
-        html:not(.dark) div.rounded-xl.border-cyan-500\/30 .bg-cyan-900\/30 {
-            background-color: #ecfeff !important;
-            border-color: rgba(6, 182, 212, 0.25) !important;
-        }
-        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 h3,
-        html:not(.dark) div.rounded-xl.border-cyan-500\/30 h3 {
-            color: #0369a1 !important;
-        }
-        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 p,
-        html:not(.dark) div.rounded-xl.border-cyan-500\/30 p {
-            color: #334155 !important;
-        }
-        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 strong.text-white,
-        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 strong,
-        html:not(.dark) div.rounded-xl.border-cyan-500\/30 strong {
-            color: #0f172a !important;
-        }
-        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 code,
-        html:not(.dark) div.rounded-xl.border-cyan-500\/30 code {
-            background-color: #f1f5f9 !important;
-            color: #0284c7 !important;
-            border: 1px solid #cbd5e1 !important;
-        }
-
-        /* 3. Navigation Bar & Buttons Fix */
-        html:not(.dark) header {
-            background-color: rgba(255, 255, 255, 0.95) !important;
-            border-color: rgba(226, 232, 240, 0.8) !important;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-        }
-        html:not(.dark) nav {
-            background-color: #f1f5f9 !important;
-            border-color: #e2e8f0 !important;
-        }
-        html:not(.dark) nav a.bg-slate-800,
-        html:not(.dark) nav a.bg-slate-200 {
-            background-color: #0f172a !important;
-            color: #ffffff !important;
-            border-color: #0f172a !important;
-        }
-        html:not(.dark) nav a:not(.bg-slate-800):not(.bg-slate-200) {
-            color: #475569 !important;
-        }
-        html:not(.dark) nav a:not(.bg-slate-800):not(.bg-slate-200):hover {
-            color: #0f172a !important;
-            background-color: #e2e8f0 !important;
-        }
-        html:not(.dark) #admin-nav-btn {
-            background-color: rgba(6, 182, 212, 0.1) !important;
-            border-color: rgba(6, 182, 212, 0.3) !important;
-            color: #0284c7 !important;
-        }
-        html:not(.dark) #admin-nav-btn:hover {
-            background-color: rgba(6, 182, 212, 0.2) !important;
-            color: #0369a1 !important;
-        }
-        html:not(.dark) #admin-nav-btn svg {
-            color: #0284c7 !important;
-        }
-        html:not(.dark) #sys-status-btn {
-            background-color: rgba(16, 185, 129, 0.1) !important;
-            border-color: rgba(16, 185, 129, 0.3) !important;
-            color: #047857 !important;
-        }
-        html:not(.dark) #sys-status-btn span.text-emerald-300 {
-            color: #047857 !important;
-        }
-        html:not(.dark) header a[title="Diagnostic Tool"],
-        html:not(.dark) header a[title="Host a Website"],
-        html:not(.dark) header #nav-menu-btn {
-            background-color: #f8fafc !important;
-            border-color: #cbd5e1 !important;
-            color: #334155 !important;
-        }
-        html:not(.dark) header a[title="Diagnostic Tool"]:hover,
-        html:not(.dark) header a[title="Host a Website"]:hover,
-        html:not(.dark) header #nav-menu-btn:hover {
-            background-color: #f1f5f9 !important;
-            color: #0f172a !important;
-        }
-
-    
-        /* Live Server Activity Logs in Light Mode: White Background & Green Text */
-        html:not(.dark) .bg-surface-terminal,
-        html:not(.dark) #terminal-container,
-        html:not(.dark) #terminal {
-            background-color: #ffffff !important;
-            color: #15803d !important;
-            border-color: rgba(6, 182, 212, 0.3) !important;
-            box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.08) !important;
-        }
-        html:not(.dark) #terminal *,
-        html:not(.dark) #output,
-        html:not(.dark) #output * {
-            color: #15803d !important;
-        }
-        html:not(.dark) #terminal .text-emerald-400,
-        html:not(.dark) #terminal .text-cyan-400,
-        html:not(.dark) #terminal .text-slate-400,
-        html:not(.dark) #terminal .text-slate-500 {
-            color: #16a34a !important;
-        }
-
+        html:not(.dark) body { background-color: #f1f5f9 !important; color: #0f172a !important; }
+        html.dark body { background-color: #090d16 !important; color: #f8fafc !important; }
     </style>
 </head>
-<body class="bg-surface-base text-slate-200 font-sans min-h-screen flex flex-col antialiased selection:bg-cyan-500/30 selection:text-cyan-200 bg-grid-pattern relative">
-    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-4xl h-36 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 blur-3xl pointer-events-none -z-10"></div>
-    <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl transition-all">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4">
-            
-            <!-- Left: Brand / Title & Primary Navigation -->
-            <div class="flex items-center gap-3.5 shrink-0 min-w-0">
-                <a href="index.html" class="flex items-center gap-3 shrink-0 group select-none cursor-pointer" title="Go to Server Console Dashboard">
-                    <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/15 group-hover:scale-105 transition-transform shrink-0">
-                        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" />
-                        </svg>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2 whitespace-nowrap">
-                            <span class="font-bold text-slate-100 tracking-tight text-base sm:text-lg group-hover:text-white transition-colors">Server Console</span>
-                            <span class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800/90 text-cyan-400 border border-slate-700/60 uppercase tracking-wider">
-                                MBP 2011
-                            </span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 font-mono hidden lg:block truncate whitespace-nowrap">ZeroTier Tunnel &bull; MAMP Apache &bull; Port 3307</p>
-                    </div>
-                </a>
+<body class="min-h-screen font-sans antialiased flex flex-col selection:bg-cyan-500 selection:text-white">
 
-                <!-- Navigation Tabs (Deployer / Hosted Sites) -->
-                <nav class="hidden sm:flex items-center gap-1 ml-1 px-1.5 py-1 rounded-xl bg-slate-900/80 border border-slate-800">
-                    <a href="index.html" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-white shadow-sm border border-slate-700/60">Deployer</a>
-                    <a href="sites.php" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">Hosted Sites</a>
+    <div class="flex flex-1 min-h-screen overflow-hidden">
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-[#0b1329] border-r border-slate-800 flex flex-col justify-between shrink-0 z-30 select-none">
+            <div>
+                <div class="p-5 border-b border-slate-800/80 flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-cyan-500/20">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-white font-bold text-base tracking-tight leading-none">ServerFlow</h1>
+                        <span class="text-[10px] font-mono text-slate-400 tracking-wider uppercase">MacBook Pro 2011</span>
+                    </div>
+                </div>
+
+                <nav class="p-3 space-y-6">
+                    <div>
+                        <div class="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Monitor</div>
+                        <ul class="space-y-1">
+                            <li><a href="/index.html" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>Overview</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tools & Services</div>
+                        <ul class="space-y-1">
+                            <li><a href="/sites.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>Hosted Sites</a></li>
+                            <li><a href="/movies.html" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>Plex Media</a></li>
+                            <li><a href="/access.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>Access Request</a></li>
+                            <li><a href="/host.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>Host Node</a></li>
+                            <li><a href="/auto_debug.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Auto Debug</a></li>
+                            <li><a href="/debug.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all"><svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>Debug Console</a></li>
+                            <li><a href="/help.html" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Help & Docs</a></li>
+                        </ul>
+                    </div>
                 </nav>
             </div>
+            <div class="p-4 border-t border-slate-800/80 bg-slate-950/40">
+                <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Host</div>
+                <div class="text-xs font-bold text-white mb-0.5">MacBook Pro 2011</div>
+                <div class="flex items-center gap-1.5 text-[11px] text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>ZeroTier connected</div>
+            </div>
+        </aside>
 
-            <!-- Right: Interactive Status & Quick Actions -->
-            <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
-                
-                <!-- Admin Panel / Login Button -->
-                <button 
-                    type="button" 
-                    id="admin-nav-btn"
-                    onclick="openAdminModal()" 
-                    title="Admin Panel & Authentication" 
-                    class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 hover:border-cyan-400/60 text-cyan-300 hover:text-white text-xs font-semibold shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
-                >
-                    <svg class="admin-nav-icon-lock-el w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                    </svg>
-                    <span class="admin-nav-text-el whitespace-nowrap">Admin Login</span>
-                </button>
-
-                <!-- Admin Logged In Indicator (Hidden by default) -->
-                <div id="admin-logged-in-indicator" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-semibold shadow-sm cursor-default">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="whitespace-nowrap" id="admin-logged-in-username">Admin Active</span>
+        <!-- MAIN CONTAINER -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+            <header class="h-16 px-6 border-b border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-4">
+                <div class="relative w-72">
+                    <input type="text" class="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
-
-                <!-- Admin Logout Button (Hidden by default) -->
-                <button 
-                    type="button" 
-                    id="admin-logout-btn"
-                    onclick="submitAdminLogout()" 
-                    title="Log Out" 
-                    class="hidden items-center justify-center p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 hover:border-rose-400/60 text-rose-400 hover:text-white transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-rose-400/50"
-                >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                    </svg>
-                </button>
-
-                <!-- Dark/Light Mode Toggle -->
-                <button 
-                    type="button" 
-                    id="theme-toggle-btn"
-                    onclick="toggleTheme()" 
-                    title="Toggle Dark/Light Mode" 
-                    class="flex items-center justify-center p-1.5 rounded-xl bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 hover:border-slate-500/60 text-slate-400 hover:text-slate-200 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-slate-400/50"
-                >
-                    <!-- Sun icon for dark mode (to switch to light) -->
-                    <svg id="theme-icon-sun" class="w-4 h-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                    </svg>
-                    <!-- Moon icon for light mode (to switch to dark) -->
-                    <svg id="theme-icon-moon" class="w-4 h-4 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                    </svg>
-                </button>
-
-                <!-- Interactive System Online Button (Opens Hardware Node Modal) -->
-                <button 
-                    type="button" 
-                    id="sys-status-btn"
-                    onclick="openNodeModal()" 
-                    title="Click to view Server Hardware &amp; System Specs" 
-                    class="group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-emerald-950/60 hover:bg-emerald-900/70 border border-emerald-500/30 hover:border-emerald-400/60 text-emerald-400 hover:text-emerald-300 text-xs font-medium shadow-sm shadow-emerald-950/30 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
-                >
-                    <span class="relative flex h-2 w-2 shrink-0">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    <span class="hidden xs:inline tracking-wide text-emerald-300 font-mono text-[11px] font-semibold whitespace-nowrap">System Online</span>
-                    <svg class="w-3.5 h-3.5 text-emerald-400/70 group-hover:text-emerald-300 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                    </svg>
-                </button>
-
-                <!-- Diagnostic Tool Button -->
-                <a 
-                    href="auto_debug.php" 
-                    title="Diagnostic Tool" 
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
-                >
-                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.492-3.053c.24-.294.577-.487.94-.539l2.716-.388a.75.75 0 00.58-1.127l-3.264-5.22a.75.75 0 00-1.11-.157l-1.92 1.92-3.265-5.22a.75.75 0 00-1.11-.157l-1.92 1.92 2.492-3.053c.24-.294.577-.487.94-.539l2.716-.388z" />
-                    </svg>
-                    <span>Diagnostics</span>
-                </a>
-
-                <!-- Host Website Button -->
-                <a 
-                    href="host.php" 
-                    title="Host a Website" 
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
-                >
-                    <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
-                    </svg>
-                    <span>Host Site</span>
-                </a>
-
-                <!-- Tools Dropdown Menu Button (Admin Only) -->
-                <div class="relative hidden" id="nav-dropdown-wrapper">
-                    <button 
-                        onclick="toggleNavMenu()" 
-                        id="nav-menu-btn" 
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
-                    >
-                        <span>Tools</span>
-                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                        </svg>
-                    </button>
-
-                    <!-- Dropdown Content -->
-                    <div id="nav-dropdown" class="hidden absolute right-0 mt-2 w-52 rounded-xl bg-slate-900/95 border border-slate-800 shadow-2xl backdrop-blur-xl p-1.5 z-50 divide-y divide-slate-800/60">
-                        <div class="py-1">
-                            <button onclick="openAdminModal(); toggleNavMenu();" class="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-cyan-300 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer">
-                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> <span class="admin-dropdown-text-el">Admin Login</span>
-                            </button>
-                            <a href="index.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Deployer Console
-                            </a>
-                            <a href="sites.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Hosted Sites
-                            </a>
-                            <a href="host.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-blue-400"></span> Host Website
-                            </a>
-                            <a href="movies.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Plex Media Portal
-                            </a>
-                            <a href="access.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span> Access Request
-                            </a>
-                            <a href="help.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Server Docs &amp; Help
-                            </a>
-                            <button onclick="openNodeModal(); toggleNavMenu();" class="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer">
-                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Hardware Node Specs
-                            </button>
-                        </div>
-                        <div class="py-1 admin-only-tool hidden">
-                            <div class="px-3 py-1 text-[10px] font-mono font-semibold text-slate-500 uppercase tracking-wider">Admin Controls</div>
-                            <a href="index.html#database-section" onclick="toggleNavMenu();" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-indigo-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span> New Database
-                            </a>
-                            <a href="debug.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-amber-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Diagnostics
-                            </a>
-                            <a href="auto_debug.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-purple-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                                <span class="w-2 h-2 rounded-full bg-purple-400"></span> Auto Debug
-                            </a>
-                        </div>
+                <div class="flex items-center gap-3">
+                    <div class="p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+                        <button id="sf-theme-light-btn" onclick="setServerFlowTheme('light')" class="flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-lg text-slate-400">☀️ Light</button>
+                        <button id="sf-theme-dark-btn" onclick="setServerFlowTheme('dark')" class="flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-cyan-400">🌙 Dark</button>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-        <div class="rounded-2xl bg-slate-900/60 border border-slate-800/90 shadow-xl overflow-hidden">
-            <div class="h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500"></div>
-            <div class="p-6 sm:p-8">
-                <div class="mb-6">
-                    <h2 class="text-xl font-bold text-white tracking-tight">System Diagnostics</h2>
-                    <p class="text-sm text-slate-400 mt-1">Real-time system health checks</p>
+            <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
+                <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
+                    <div>
+                        <div class="text-[10px] font-bold tracking-widest uppercase text-cyan-500 mb-1">DEBUG CONSOLE</div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Interactive Debug & Log Inspector</h2>
+                    </div>
                 </div>
-                
-                <div class="space-y-4">
-                    <div class="rounded-xl p-4 <?php 
-                        if ($db_class === 'success') echo 'bg-emerald-500/5 border border-emerald-500/20';
-                        elseif ($db_class === 'error') echo 'bg-rose-500/5 border border-rose-500/20';
-                        elseif ($db_class === 'warning') echo 'bg-amber-500/5 border border-amber-500/20';
-                        else echo 'bg-slate-800/50 border border-slate-700';
-                    ?>">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-sm font-semibold text-white">MySQL Database</h3>
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider <?php
-                                if ($db_class === 'success') echo 'bg-emerald-500/10 text-emerald-400';
-                                elseif ($db_class === 'error') echo 'bg-rose-500/10 text-rose-400';
-                                elseif ($db_class === 'warning') echo 'bg-amber-500/10 text-amber-400';
-                                else echo 'bg-slate-700 text-slate-400';
-                            ?>"><?= ucfirst($db_class) ?></span>
-                        </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl">
+                        <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-2">Database Diagnostic</h3>
                         <p class="text-xs text-slate-400 font-mono"><?= htmlspecialchars($db_status) ?></p>
                     </div>
-
-                    <div class="rounded-xl p-4 <?php 
-                        if ($git_class === 'success') echo 'bg-emerald-500/5 border border-emerald-500/20';
-                        elseif ($git_class === 'error') echo 'bg-rose-500/5 border border-rose-500/20';
-                        elseif ($git_class === 'warning') echo 'bg-amber-500/5 border border-amber-500/20';
-                        else echo 'bg-slate-800/50 border border-slate-700';
-                    ?>">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-sm font-semibold text-white">Shell Execution & Git</h3>
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider <?php
-                                if ($git_class === 'success') echo 'bg-emerald-500/10 text-emerald-400';
-                                elseif ($git_class === 'error') echo 'bg-rose-500/10 text-rose-400';
-                                elseif ($git_class === 'warning') echo 'bg-amber-500/10 text-amber-400';
-                                else echo 'bg-slate-700 text-slate-400';
-                            ?>"><?= ucfirst($git_class) ?></span>
-                        </div>
+                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl">
+                        <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-2">Shell / Git Diagnostic</h3>
                         <p class="text-xs text-slate-400 font-mono"><?= htmlspecialchars($git_status) ?></p>
                     </div>
                 </div>
-
-                <div class="border-t border-slate-800 my-6"></div>
-
-                <div>
-                    <h3 class="text-sm font-semibold text-white mb-4">Manual Verification Checklist</h3>
-                    <div class="space-y-3">
-                        <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-800/40 border border-slate-700/50 cursor-pointer hover:bg-slate-800/60 transition-colors">
-                            <input type="checkbox" class="h-4 w-4 rounded border-slate-600 bg-slate-900 text-cyan-500 focus:ring-cyan-500/30">
-                            <span class="text-sm text-slate-300">ZeroTier network is ACTIVE and connected</span>
-                        </label>
-                        <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-800/40 border border-slate-700/50 cursor-pointer hover:bg-slate-800/60 transition-colors">
-                            <input type="checkbox" class="h-4 w-4 rounded border-slate-600 bg-slate-900 text-cyan-500 focus:ring-cyan-500/30">
-                            <span class="text-sm text-slate-300">Plex Media Server is routing correctly</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <script src="js/admin_auth.js"></script>
-
-<!-- Admin Auth & Control Panel Modal -->
-<div id="admin-auth-modal" class="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-950/80 backdrop-blur-md hidden items-start sm:items-center justify-center p-4 overflow-y-auto py-8">
-        <div class="relative w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 overflow-hidden animate-in fade-in zoom-in duration-150 my-auto">
-            <!-- Top Gradient Accent Bar -->
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500"></div>
-
-            <!-- Close Button -->
-            <button onclick="closeAdminModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-
-            <!-- STATE 1: LOGGED OUT LOGIN FORM -->
-            <div id="admin-modal-login-view" class="space-y-4">
-                <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">System Login</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Secure access to the Server Console</p>
-                    </div>
-                </div>
-
-                <!-- Error Banner -->
-                <div id="admin-login-error" class="hidden p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium"></div>
-                <!-- Success Banner -->
-                <div id="admin-login-success" class="hidden p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-medium"></div>
-
-                <form onsubmit="submitAdminLogin(event);" class="space-y-3.5">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Username</label>
-                        <input 
-                            type="text" 
-                            id="admin-username-input" 
-                            name="username"
-                            autocomplete="off"
-                            required 
-                            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
-                            placeholder="Enter username"
-                        >
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
-                        <input 
-                            type="password" 
-                            id="admin-password-input" 
-                            name="password"
-                            autocomplete="off"
-                            required 
-                            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
-                            placeholder="••••••••"
-                        >
-                    </div>
-
-                    <div class="pt-1">
-                        <button 
-                            type="submit" 
-                            id="admin-login-btn"
-                            class="w-full py-3 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 transition-all duration-200 shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 cursor-pointer"
-                        >
-                            <span>Authenticate &amp; Unlock Controls</span>
-                        </button>
-                    </div>
-                
-                    <div class="text-center pt-3">
-                        <button type="button" onclick="toggleAuthView('register')" class="text-xs font-medium text-cyan-500 hover:text-cyan-400 transition-colors cursor-pointer">
-                            Don't have an account? Create one
-                        </button>
-                    </div>
-                </form>
-
-
-                <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
-                    <div class="font-semibold text-slate-600 dark:text-slate-300">🔐 Database Security Notice:</div>
-                    <p>Reads and writes credentials directly to <code>access_db.sys_users</code> table using BCrypt hashes.</p>
-                </div>
             </div>
 
-            
-            
-            <!-- Registration View (Hidden by default) -->
-            <div id="admin-modal-register-view" class="space-y-4 hidden">
-                <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Create an Account</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Register a new standard user account</p>
-                    </div>
-                </div>
-
-                <!-- Error/Success Banner -->
-                <div id="register-message-banner" class="hidden p-3 rounded-xl text-xs font-medium border"></div>
-
-                <form onsubmit="submitRegister(event);" class="space-y-3.5" autocomplete="off">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Username</label>
-                        <input type="text" id="register-username-input" autocomplete="off" name="new-username" autocomplete="off" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors" placeholder="Choose a username">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
-                        <input type="password" id="register-password-input" autocomplete="off" name="new-password" autocomplete="new-password" required minlength="6" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors" placeholder="Create a password (min 6 chars)">
-                    </div>
-                    
-                    <button type="submit" id="register-submit-btn" class="w-full py-3 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 transition-all duration-200 shadow-lg shadow-indigo-500/25 flex items-center justify-center cursor-pointer">
-                        Create Account
-                    </button>
-                    
-                    <div class="text-center pt-3">
-                        <button type="button" onclick="toggleAuthView('login')" class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-white transition-colors cursor-pointer">
-                            Already have an account? Log In
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- STATE 3: MANAGE ADMINS VIEW -->
-            <div id="admin-modal-manage-view" class="hidden space-y-4">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                        </svg>
-                        <span>Manage Admins</span>
-                    </h3>
-                    <button type="button" onclick="showAdminPanelView()" class="text-[10px] text-slate-500 dark:text-slate-400 hover:text-white font-semibold flex items-center gap-1 cursor-pointer">
-                        <span>&larr; Back</span>
-                    </button>
-                </div>
-                
-                <div class="rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/60 overflow-hidden">
-                    <div id="admin-accounts-list" class="divide-y divide-slate-300 dark:divide-slate-800/80 max-h-40 overflow-y-auto">
-                        <!-- Populated by JS -->
-                        <div class="p-3 text-center text-xs text-slate-500">Loading admins...</div>
-                    </div>
-                </div>
-
-<!-- STATE 1: LOGGED OUT LOGIN FORM -->
-        <div id="admin-modal-login-view" class="space-y-4">
-            <div class="flex items-center gap-3">
-                <div class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-bold text-slate-100">System Login</h3>
-                    <p class="text-xs text-slate-400">Secure access to the Server Console</p>
-                </div>
-            </div>
-
-            <div id="admin-login-error" class="hidden p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium"></div>
-
-            <form onsubmit="event.preventDefault(); submitAdminLogin();" class="space-y-3.5">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Username</label>
-                    <input 
-                        type="text" 
-                        id="admin-username-input" 
-                        value="admin" 
-                        required 
-                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
-                        placeholder="Enter username"
-                    >
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-                    <input 
-                        type="password" 
-                        id="admin-password-input" 
-                        value="123456789"
-                        required 
-                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
-                        placeholder="••••••••"
-                    >
-                </div>
-
-                <div class="pt-1">
-                    <button 
-                        type="submit" 
-                        id="admin-login-btn"
-                        class="w-full py-3 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 transition-all duration-200 shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                        <span>Authenticate &amp; Unlock Controls</span>
-                    </button>
-                </div>
-            </form>
-
-            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
-                <div class="font-semibold text-slate-300">🔐 Database Security Notice:</div>
-                <p>Reads and writes credentials directly to <code>access_db.sys_users</code> table using BCrypt hashes.</p>
-            </div>
-        </div>
-
-        <!-- STATE 2: LOGGED IN ADMIN PANEL VIEW -->
-        <div id="admin-modal-panel-view" class="hidden space-y-4">
-            <div class="flex items-center gap-3">
-                <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                        <span>Admin Control Panel</span>
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-500/30">Active</span>
-                    </h3>
-                    <p class="text-xs text-slate-400">Authenticated as <span id="admin-username-display" class="font-mono text-cyan-400 font-semibold">admin</span></p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                    <span class="text-[10px] text-slate-500 uppercase block">Privileges</span>
-                    <span class="text-emerald-400 font-semibold">Full Read &amp; Write</span>
-                </div>
-                <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                    <span class="text-[10px] text-slate-500 uppercase block">Database</span>
-                    <span class="text-indigo-400 font-semibold">access_db</span>
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <span class="text-xs font-semibold text-slate-300 block">Quick Admin Shortcuts:</span>
-                <div class="grid grid-cols-1 gap-2">
-                    <a href="index.html#database-section" onclick="closeAdminModal();" class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-cyan-500/40 text-xs font-medium text-slate-300 hover:text-white flex items-center justify-between transition-colors">
-                        <span>✨ Create New Database</span>
-                        <span class="text-cyan-400 font-mono text-[11px]">&rarr;</span>
-                    </a>
-                    <a href="auto_debug.php" class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-purple-500/40 text-xs font-medium text-slate-300 hover:text-white flex items-center justify-between transition-colors">
-                        <span>⚡ Run Auto Debug Diagnostics</span>
-                        <span class="text-purple-400 font-mono text-[11px]">&rarr;</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="pt-2">
-                <button 
-                    type="button" 
-                    onclick="submitAdminLogout()" 
-                    class="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-rose-300 hover:text-rose-200 bg-rose-950/50 hover:bg-rose-950/80 border border-rose-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                    <svg class="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                    </svg>
-                    <span>Log Out of Admin Panel</span>
-                </button>
-            </div>
-        </div>
+            <footer class="mt-auto px-6 py-4 border-t border-slate-200 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                <div>ServerFlow · MacBook Pro 2011 · ZeroTier local host</div>
+                <div class="live-time-display font-mono">Checked 14:32</div>
+            </footer>
+        </main>
     </div>
-</div>
 
-<!-- Hardware Node & Telemetry Specs Popup Modal -->
-<div id="node-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
-        <div class="h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"></div>
-        <div class="p-6">
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" />
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h3 class="font-bold text-slate-100 text-base tracking-tight">Server Hardware Node</h3>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-300 font-mono text-[10px] font-semibold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                Online
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-400">MacBook Pro (13-inch, Late 2011) Host Node</p>
-                    </div>
+    <!-- CHATBOT -->
+    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <div id="sf-chat-widget" class="hidden mb-4 w-96 max-w-[calc(100vw-2rem)] rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex-col">
+            <div class="p-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">SF</div>
+                    <div><div class="font-bold text-xs leading-none">ServerFlow Help</div><div class="text-[10px] text-emerald-400 mt-0.5">● Online</div></div>
                 </div>
-                <button type="button" onclick="closeNodeModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 transition-colors cursor-pointer" title="Close dialog">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                <button onclick="toggleServerFlowChat()" class="text-slate-400 hover:text-white text-base">✕</button>
             </div>
-            <div class="space-y-2 mb-5 text-xs font-mono">
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                    <span class="text-slate-400">Host Device</span>
-                    <span class="text-slate-200">MacBook Pro (Late 2011)</span>
-                </div>
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                    <span class="text-slate-400">Network Tunnel</span>
-                    <span class="text-cyan-400 font-semibold flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                        ZeroTier Mesh (10.247.192.231)
-                    </span>
-                </div>
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                    <span class="text-slate-400">Web Engine (HTTP)</span>
-                    <span class="text-slate-200">Apache 2.4 &bull; MAMP Pro</span>
-                </div>
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                    <span class="text-slate-400">Database Engine</span>
-                    <span class="text-indigo-400 font-semibold">MySQL 5.7 &bull; Port 3307 / 8889</span>
-                </div>
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                    <span class="text-slate-400">Media Server</span>
-                    <span class="text-amber-400 font-semibold">Plex Server &bull; Port 32400</span>
-                </div>
-                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
-                    <span class="text-slate-400">Web Storage Root</span>
-                    <span class="text-slate-300 truncate max-w-[210px]">/Volumes/htdocs</span>
+            <div id="sf-chat-messages" class="p-4 h-80 overflow-y-auto space-y-3 text-xs leading-relaxed bg-slate-50/50 dark:bg-slate-950/50">
+                <div class="flex items-start gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-cyan-600/20 text-cyan-400 flex items-center justify-center text-xs font-bold shrink-0">SF</div>
+                    <div class="px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">Welcome — what do you need help with?</div>
                 </div>
             </div>
-            <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
-                <a href="debug.php" class="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors flex items-center justify-center gap-1.5">
-                    <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                    </svg>
-                    <span>Open Diagnostics</span>
-                </a>
-                <button type="button" onclick="closeNodeModal()" class="py-2.5 px-5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-950 hover:bg-slate-800 border border-slate-800 transition-colors cursor-pointer">
-                    Dismiss
-                </button>
+            <div class="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                <input type="text" id="sf-chat-input" class="flex-1 px-3.5 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none">
+                <button onclick="submitServerFlowChat()" class="p-2 rounded-xl bg-cyan-500 text-white text-xs font-bold">✈</button>
             </div>
         </div>
+        <button onclick="toggleServerFlowChat()" class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-2xl flex items-center justify-center hover:scale-105 transition-transform">
+            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        </button>
     </div>
-</div>
 
-    <script>
-        // Auto-run on load
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAdminAuth();
-        });
-    </script>
+    <script src="/js/serverflow_core.js"></script>
 </body>
 </html>
