@@ -1,9 +1,6 @@
 let currentAdminState = { logged_in: false, user: null };
 
 async function checkAuthOnLoad(loginPayload = null) {
-    const token = localStorage.getItem('auth_token');
-    const storedRole = localStorage.getItem('user_role') || 'member';
-    const storedUser = localStorage.getItem('user_name') || 'User';
     if (loginPayload) {
         currentAdminState.logged_in = true;
         currentAdminState.user = loginPayload.username || 'Admin';
@@ -19,12 +16,6 @@ async function checkAuthOnLoad(loginPayload = null) {
         try { updateUserStorageUI(JSON.parse(storedStorage)); } catch(e) {}
     }
 
-    if (loginPayload && loginPayload.storage) {
-        updateUserStorageUI(loginPayload.storage);
-    } else if (storedStorage) {
-        try {
-            updateUserStorageUI(JSON.parse(storedStorage));
-        } catch(e) {}
     // Default to Logged Out state on site load unless user has actively logged in this session
     if (!activeSession) {
         currentAdminState.logged_in = false;
@@ -38,12 +29,6 @@ async function checkAuthOnLoad(loginPayload = null) {
         const data = await res.json();
         if (data && data.status === 'success' && data.logged_in) {
             currentAdminState.logged_in = true;
-            currentAdminState.user = data.user || storedUser || 'Admin';
-            updateAdminUI(true, currentAdminState.user, data.role || storedRole);
-        } else if (token) {
-            currentAdminState.logged_in = true;
-            currentAdminState.user = storedUser;
-            updateAdminUI(true, storedUser, storedRole);
             currentAdminState.user = data.user || 'Admin';
             updateAdminUI(true, currentAdminState.user, data.role || 'admin');
         } else {
@@ -53,15 +38,6 @@ async function checkAuthOnLoad(loginPayload = null) {
             updateAdminUI(false, null, 'guest');
         }
     } catch(e) {
-        if (token) {
-            currentAdminState.logged_in = true;
-            currentAdminState.user = storedUser;
-            updateAdminUI(true, storedUser, storedRole);
-        } else {
-            currentAdminState.logged_in = false;
-            currentAdminState.user = null;
-            updateAdminUI(false, null, 'guest');
-        }
         currentAdminState.logged_in = false;
         currentAdminState.user = null;
         updateAdminUI(false, null, 'guest');
@@ -310,19 +286,8 @@ async function submitAdminLogin(event) {
 async function submitAdminLogout() {
     try {
         await fetch('api/system/admin_auth.php?action=logout', { method: 'POST' });
-        currentAdminState.logged_in = false;
-        currentAdminState.user = null;
-        updateAdminUI(false, null);
-        closeAdminModal();
     } catch (err) {}
 
-        const output = document.getElementById('output');
-        if (output) {
-            output.innerHTML += `<span class="text-amber-400 font-semibold">[AUTH] Admin session terminated. Controls locked.</span><br>`;
-            output.parentElement.scrollTop = output.parentElement.scrollHeight;
-        }
-    } catch (err) {
-        console.error('Logout error:', err);
     sessionStorage.removeItem('active_session_token');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_role');
@@ -625,21 +590,15 @@ async function submitRegister(event) {
         
         if (res.ok && data.status === 'success') {
             currentAdminState.logged_in = true;
-            currentAdminState.user = data.username || username;
-            
-            sessionStorage.setItem('active_session_token', data.token || 'active');
-            if (data.token) localStorage.setItem('auth_token', data.token);
-            if (data.role) localStorage.setItem('user_role', data.role);
-            localStorage.setItem('user_name', data.username || username);
-            if (data.storage) localStorage.setItem('user_storage', JSON.stringify(data.storage));
+            currentAdminState.user = username;
             
             if (banner) {
-                banner.innerText = `✓ Account created! Welcome, ${currentAdminState.user}. Logging you in...`;
+                banner.innerText = `✓ Account created! Welcome, ${username}. Logging you in...`;
                 banner.className = 'p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-medium';
                 banner.classList.remove('hidden');
             }
             
-            checkAuthOnLoad(data);
+            updateAdminUI(true, username, data.role || 'user');
             clearAuthInputs();
             
             setTimeout(() => {
