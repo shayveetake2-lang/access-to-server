@@ -282,7 +282,7 @@ if (is_dir($sitesDir)) {
                 </form>
                 
                 <div class="text-center pt-2">
-                    <button type="button" onclick="toggleAuthView('register')" class="text-xs font-semibold text-cyan-400 hover:underline">Need an account? Register Admin</button>
+                    <p class="text-[11px] text-slate-500">🔒 Admin account creation is restricted to active administrators.</p>
                 </div>
             </div>
 
