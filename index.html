@@ -65,92 +65,92 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <nav class="p-3 space-y-6">
+                <nav class="p-3 space-y-7">
                     <div>
-                        <div class="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Monitor</div>
-                        <ul class="space-y-1">
+                        <div class="px-3 mb-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Server Control</div>
+                        <ul class="space-y-1.5">
                             <li>
-                                <button onclick="switchTab('overview')" id="nav-tab-overview" class="sf-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all">
+                                <button onclick="switchTab('overview')" id="nav-tab-overview" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                                    Overview
+                                    Server Dashboard
                                 </button>
                             </li>
                             <li>
-                                <button onclick="switchTab('servers')" id="nav-tab-servers" class="sf-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <button onclick="switchTab('servers')" id="nav-tab-servers" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
-                                    Servers
+                                    My Websites & Deployer
                                 </button>
                             </li>
                             <li>
-                                <button onclick="switchTab('storage')" id="nav-tab-storage" class="sf-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <button onclick="switchTab('storage')" id="nav-tab-storage" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                                    Storage
+                                    Storage & USB Drives
                                 </button>
                             </li>
                             <li>
-                                <button onclick="switchTab('data')" id="nav-tab-data" class="sf-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <button onclick="switchTab('data')" id="nav-tab-data" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
-                                    Data
+                                    App Databases
                                 </button>
                             </li>
                             <li>
-                                <button onclick="switchTab('activity')" id="nav-tab-activity" class="sf-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <button onclick="switchTab('activity')" id="nav-tab-activity" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                    Activity
+                                    Activity Stream
                                 </button>
                             </li>
                             <li>
-                                <button onclick="switchTab('settings')" id="nav-tab-settings" class="sf-nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <button onclick="switchTab('settings')" id="nav-tab-settings" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    Settings
+                                    System Settings
                                 </button>
                             </li>
                         </ul>
                     </div>
 
                     <div>
-                        <div class="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tools & Services</div>
-                        <ul class="space-y-1">
+                        <div class="px-3 mb-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Apps & Tools</div>
+                        <ul class="space-y-1.5">
                             <li>
-                                <a href="/sites.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <a href="/sites.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
-                                    Hosted Sites
+                                    My Live Websites
                                 </a>
                             </li>
                             <li>
-                                <a href="/movies.html" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <a href="/movies.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
-                                    Plex Media
+                                    Media Player (Plex)
                                 </a>
                             </li>
                             <li>
-                                <a href="/access.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <a href="/access.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                                    Access Request
+                                    Request Access
                                 </a>
                             </li>
                             <li>
-                                <a href="/host.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <a href="/host.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                                    Host Node
+                                    Server Specs & IP
                                 </a>
                             </li>
                             <li>
-                                <a href="/auto_debug.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <a href="/auto_debug.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                                    Auto Debug
+                                    Health Diagnostic Check
                                 </a>
                             </li>
                             <li>
-                                <a href="/debug.php" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <a href="/debug.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-                                    Debug Console
+                                    Server Debug Logs
                                 </a>
                             </li>
                             <li>
-                                <a href="/help.html" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                                <a href="/help.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    Help & Docs
+                                    Beginner Guides & Docs
                                 </a>
                             </li>
                         </ul>
@@ -163,7 +163,7 @@
                 <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Host</div>
                 <div class="text-xs font-bold text-white mb-0.5">MacBook Pro 2011</div>
                 <div class="flex items-center gap-1.5 text-[11px] text-emerald-400">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     ZeroTier connected
                 </div>
             </div>
@@ -174,10 +174,10 @@
 
             <!-- Top Header Navbar -->
             <header class="h-16 px-6 border-b border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between gap-4">
-                <!-- Global Search Input (No Placeholder) -->
-                <div class="relative w-72">
-                    <input type="text" class="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 transition-all">
-                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <!-- User Status Mode Badge -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Mode:</span>
+                    <span id="sf-user-mode-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-300">Standard User (Read-Only Actions)</span>
                 </div>
 
                 <!-- Right Top Controls -->
@@ -481,7 +481,8 @@
                 <div id="tab-servers" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Server Instances & Git Deployer</h2>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Websites & Git Deployer</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Deploy websites from GitHub or restart server services with one click.</p>
                         </div>
                     </div>
 
@@ -502,21 +503,21 @@
 
                     <!-- Service Control Panel -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button onclick="fetch('/scripts/restart_web.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-cyan-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">
+                        <button onclick="requireAdminAuth(() => fetch('/scripts/restart_web.sh'))" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-cyan-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">
                             <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                 Restart Web Server
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1">Reload Apache web service</div>
                         </button>
-                        <button onclick="fetch('/scripts/restart_plex.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-purple-500">
+                        <button onclick="requireAdminAuth(() => fetch('/scripts/restart_plex.sh'))" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-purple-500">
                             <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
                                 Restart Plex
                             </div>
                             <div class="text-[11px] text-slate-400 mt-1">Reset media streaming daemon</div>
                         </button>
-                        <button onclick="fetch('/scripts/restart_db.sh')" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-emerald-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">
+                        <button onclick="requireAdminAuth(() => fetch('/scripts/restart_db.sh'))" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-emerald-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">
                             <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
                                 Restart Database
@@ -543,7 +544,8 @@
                 <div id="tab-storage" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Disk Storage & USB Drive Manager</h2>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Storage & USB Drives</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Check available SSD space and upload files to attached USB storage drives.</p>
                         </div>
                         <button onclick="loadServerStorage(); loadUsbStatus();" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-cyan-400 focus:ring-2 focus:ring-cyan-500 min-h-[44px]">Refresh Storage</button>
                     </div>
@@ -607,7 +609,8 @@
                 <div id="tab-data" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Provision MySQL / SQLite Database</h2>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">App Databases</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Provision and manage database instances for your websites and apps.</p>
                         </div>
                     </div>
 
@@ -869,51 +872,55 @@
             if (popup) { popup.classList.add('hidden'); popup.classList.remove('flex'); }
         }
         async function startDeployment() {
-            const repo = document.getElementById('repo-url')?.value;
-            const output = document.getElementById('output');
-            if (!repo) return alert('Please enter a repo URL');
-            if (output) output.innerHTML += `<br>[DEPLOY] Starting build for ${escapeHtml(repo)}...`;
-            try {
-                const res = await fetch('/api/system/deploy.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ repo_url: repo })
-                });
-                const data = await res.json();
-                if (data && data.success && data.url) {
-                    if (output) output.innerHTML += `<br>[DEPLOY] ${escapeHtml(data.message || 'Deployment completed successfully!')}`;
-                    showPopup(data.url);
-                } else {
-                    const errMsg = (data && data.message) ? data.message : 'Deployment failed. Check repository URL.';
-                    if (output) output.innerHTML += `<br>[DEPLOY ERROR] ${escapeHtml(errMsg)}`;
-                    alert(errMsg);
+            requireAdminAuth(async () => {
+                const repo = document.getElementById('repo-url')?.value;
+                const output = document.getElementById('output');
+                if (!repo) return alert('Please enter a repo URL');
+                if (output) output.innerHTML += `<br>[DEPLOY] Starting build for ${escapeHtml(repo)}...`;
+                try {
+                    const res = await fetch('/api/system/deploy.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ repo_url: repo })
+                    });
+                    const data = await res.json();
+                    if (data && data.success && data.url) {
+                        if (output) output.innerHTML += `<br>[DEPLOY] ${escapeHtml(data.message || 'Deployment completed successfully!')}`;
+                        showPopup(data.url);
+                    } else {
+                        const errMsg = (data && data.message) ? data.message : 'Deployment failed. Check repository URL.';
+                        if (output) output.innerHTML += `<br>[DEPLOY ERROR] ${escapeHtml(errMsg)}`;
+                        alert(errMsg);
+                    }
+                } catch(e) {
+                    if (output) output.innerHTML += `<br>[DEPLOY ERROR] Network or server error during deployment.`;
+                    alert('Deployment failed: Unable to communicate with server.');
                 }
-            } catch(e) {
-                if (output) output.innerHTML += `<br>[DEPLOY ERROR] Network or server error during deployment.`;
-                alert('Deployment failed: Unable to communicate with server.');
-            }
+            });
         }
         async function provisionDatabase() {
-            const dbName = document.getElementById('db-name')?.value;
-            if (!dbName) return alert('Please enter a database name');
-            try {
-                const res = await fetch('/api/system/provision_db.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ db_name: dbName })
-                });
-                const data = await res.json();
-                if (data && (data.success || data.status === 'success')) {
-                    const createdName = document.getElementById('created-db-name');
-                    if (createdName) createdName.textContent = dbName;
-                    const dbPopup = document.getElementById('db-popup');
-                    if (dbPopup) { dbPopup.classList.remove('hidden'); dbPopup.classList.add('flex'); }
-                } else {
-                    alert('Database provisioning failed: ' + (data.message || 'Server query error'));
+            requireAdminAuth(async () => {
+                const dbName = document.getElementById('db-name')?.value;
+                if (!dbName) return alert('Please enter a database name');
+                try {
+                    const res = await fetch('/api/system/provision_db.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ db_name: dbName })
+                    });
+                    const data = await res.json();
+                    if (data && (data.success || data.status === 'success')) {
+                        const createdName = document.getElementById('created-db-name');
+                        if (createdName) createdName.textContent = dbName;
+                        const dbPopup = document.getElementById('db-popup');
+                        if (dbPopup) { dbPopup.classList.remove('hidden'); dbPopup.classList.add('flex'); }
+                    } else {
+                        alert('Database provisioning failed: ' + (data.message || 'Server query error'));
+                    }
+                } catch(e) {
+                    alert('Failed to provision database: Server error.');
                 }
-            } catch(e) {
-                alert('Failed to provision database: Server error.');
-            }
+            });
         }
         async function loadServerStorage() {
             try {
@@ -983,22 +990,24 @@
             if (nameEl && input.files[0]) nameEl.textContent = input.files[0].name;
         }
         async function uploadUsbFile() {
-            const fileInput = document.getElementById('usb-file-input');
-            if (!fileInput || !fileInput.files[0]) return alert('Select a file to upload');
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            try {
-                const res = await fetch('/usb_manager.php?action=upload', { method: 'POST', body: formData });
-                const data = await res.json();
-                if (data && data.status === 'success') {
-                    alert(data.message || 'File uploaded successfully to USB storage');
-                    loadUsbStatus();
-                } else {
-                    alert('Upload failed: ' + ((data && data.message) ? data.message : 'USB drive unavailable'));
+            requireAdminAuth(async () => {
+                const fileInput = document.getElementById('usb-file-input');
+                if (!fileInput || !fileInput.files[0]) return alert('Select a file to upload');
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                try {
+                    const res = await fetch('/usb_manager.php?action=upload', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data && data.status === 'success') {
+                        alert(data.message || 'File uploaded successfully to USB storage');
+                        loadUsbStatus();
+                    } else {
+                        alert('Upload failed: ' + ((data && data.message) ? data.message : 'USB drive unavailable'));
+                    }
+                } catch(e) {
+                    alert('Upload failed: USB drive is offline or network error');
                 }
-            } catch(e) {
-                alert('Upload failed: USB drive is offline or network error');
-            }
+            });
         }
 
         document.addEventListener('DOMContentLoaded', () => {

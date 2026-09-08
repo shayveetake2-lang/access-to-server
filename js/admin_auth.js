@@ -1,12 +1,36 @@
-// js/admin_auth.js — Centralized Admin Authentication & Dynamic Tools Menu Manager
-
 let currentAdminState = { logged_in: false, user: null };
 
 async function checkAdminAuth() {
-    // User requested no auto-login on page load/refresh
-    currentAdminState.logged_in = false;
-    currentAdminState.user = null;
-    updateAdminUI(false, null, null);
+    try {
+        const res = await fetch('/api/system/admin_auth.php?action=status');
+        const data = await res.json();
+        if (data && data.status === 'success' && data.logged_in) {
+            currentAdminState.logged_in = true;
+            currentAdminState.user = data.user || 'Admin';
+            updateAdminUI(true, currentAdminState.user, 'admin');
+        } else {
+            currentAdminState.logged_in = false;
+            currentAdminState.user = null;
+            updateAdminUI(false, null, 'user');
+        }
+    } catch(e) {
+        currentAdminState.logged_in = false;
+        currentAdminState.user = null;
+        updateAdminUI(false, null, 'user');
+    }
+}
+
+function requireAdminAuth(callback) {
+    if (currentAdminState.logged_in) {
+        if (typeof callback === 'function') callback();
+    } else {
+        openAdminModal();
+        const errBanner = document.getElementById('admin-login-error');
+        if (errBanner) {
+            errBanner.innerText = '🔒 Admin login required to perform this server action.';
+            errBanner.classList.remove('hidden');
+        }
+    }
 }
 
 function updateAdminUI(isLoggedIn, user, role) {
