@@ -2113,8 +2113,8 @@ try {
             }
         }
         
-        // Placeholder for chat API submission
-        function submitChatMessage(e) {
+        // Chat API submission to Groq backend
+        async function submitChatMessage(e) {
             e.preventDefault();
             const input = document.getElementById('chat-input-field');
             const msg = input.value.trim();
@@ -2122,11 +2122,14 @@ try {
             
             const messagesContainer = document.getElementById('chat-messages');
             
+            const escapeHtml = (str) => str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            const safeMsg = escapeHtml(msg);
+
             // Add user message
             messagesContainer.innerHTML += `
                 <div class="flex justify-end mb-2">
                     <div class="bg-cyan-600 text-white text-xs px-3 py-2 rounded-xl rounded-br-none max-w-[85%] shadow-sm">
-                        ${msg}
+                        ${safeMsg}
                     </div>
                 </div>
             `;
@@ -2134,17 +2137,63 @@ try {
             input.value = '';
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             
-            // Add placeholder for bot response
-            setTimeout(() => {
-                messagesContainer.innerHTML += `
-                    <div class="flex justify-start mb-2">
-                        <div class="bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-3 py-2 rounded-xl rounded-bl-none max-w-[85%] shadow-sm">
-                            <span class="animate-pulse">Thinking... (API Not Connected)</span>
-                        </div>
+            // Add loading placeholder
+            const loadingId = 'loading-' + Date.now();
+            messagesContainer.innerHTML += `
+                <div id="${loadingId}" class="flex justify-start mb-2">
+                    <div class="bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-3 py-2 rounded-xl rounded-bl-none max-w-[85%] shadow-sm">
+                        <span class="animate-pulse">Assistant is thinking...</span>
                     </div>
-                `;
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }, 500);
+                </div>
+            `;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            try {
+                const response = await fetch('api/chat.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+
+                const data = await response.json();
+                const loadingElem = document.getElementById(loadingId);
+
+                if (data.status === 'success' && data.reply) {
+                    const safeReply = escapeHtml(data.reply).replace(/\n/g, '<br>');
+                    if (loadingElem) {
+                        loadingElem.outerHTML = `
+                            <div class="flex justify-start mb-2">
+                                <div class="bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs px-3 py-2 rounded-xl rounded-bl-none max-w-[85%] shadow-sm border border-slate-300 dark:border-slate-700/50">
+                                    ${safeReply}
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    const errorMsg = data.message || 'Unable to connect to assistant service.';
+                    if (loadingElem) {
+                        loadingElem.outerHTML = `
+                            <div class="flex justify-start mb-2">
+                                <div class="bg-rose-950/60 text-rose-300 text-xs px-3 py-2 rounded-xl rounded-bl-none max-w-[85%] shadow-sm border border-rose-500/30">
+                                    ⚠️ ${escapeHtml(errorMsg)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (err) {
+                const loadingElem = document.getElementById(loadingId);
+                if (loadingElem) {
+                    loadingElem.outerHTML = `
+                        <div class="flex justify-start mb-2">
+                            <div class="bg-rose-950/60 text-rose-300 text-xs px-3 py-2 rounded-xl rounded-bl-none max-w-[85%] shadow-sm border border-rose-500/30">
+                                ⚠️ Connection error. Please check server connection.
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
     </script>
 
