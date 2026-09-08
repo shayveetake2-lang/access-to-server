@@ -147,6 +147,10 @@ async function submitAdminLogin(event) {
             currentAdminState.logged_in = true;
             currentAdminState.user = username;
             
+            if (data.token) {
+                localStorage.setItem('auth_token', data.token);
+            }
+            
             if (successBanner) {
                 successBanner.innerText = `✓ Login successful! Welcome back, ${username}.`;
                 successBanner.classList.remove('hidden');

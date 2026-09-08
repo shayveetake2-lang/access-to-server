@@ -1758,45 +1758,92 @@ try {
             output.parentElement.scrollTop = output.parentElement.scrollHeight;
         }
 
-        // Deployment Stream (SSE via deploy.php)
-        function startDeployment() {
-            const repoUrl = document.getElementById('repo-url').value;
+        // Deployment Stream (SSE via deploy.php with Token Auth)
+        async function startDeployment() {
+            const repoUrlInput = document.getElementById('repo-url');
+            const repoUrl = repoUrlInput ? repoUrlInput.value.trim() : '';
             const output = document.getElementById('output');
             const deployBtn = document.getElementById('deploy-btn');
             
+            // 1. Retrieve stored auth token from localStorage
+            const authToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+
+            if (!authToken) {
+                alert("Authentication Required: Please log in to trigger project deployments.");
+                return;
+            }
+
             if (!repoUrl) {
                 alert("Please enter a repository URL");
                 return;
             }
 
             deployBtn.disabled = true;
-            output.innerHTML = '<span class="text-cyan-400 font-semibold">[STREAM] Establishing secure link via ZeroTier tunnel...</span><br>';
+            output.innerHTML = '<span class="text-cyan-400 font-semibold">[STREAM] Authenticating token & connecting to serveo deployment pipeline...</span><br>';
 
-            const eventSource = new EventSource('api/system/deploy.php?repo=' + encodeURIComponent(repoUrl));
+            // WORKAROUND CHOICE:
+            // Modern Fetch API with ReadableStream allows custom Authorization headers (DevSecOps standard)
+            // EventSource alternative: `new EventSource('api/system/deploy.php?repo=' + encodeURIComponent(repoUrl) + '&token=' + encodeURIComponent(authToken))`
 
-            eventSource.onmessage = function(event) {
-                const message = event.data;
-                output.innerHTML += message + '<br>';
-                output.parentElement.scrollTop = output.parentElement.scrollHeight;
+            try {
+                const streamUrl = `api/system/deploy.php?repo=${encodeURIComponent(repoUrl)}&token=${encodeURIComponent(authToken)}`;
+                
+                const response = await fetch(streamUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'text/event-stream'
+                    }
+                });
 
-                if (message.includes('Deployment Complete') || message.includes('Deployment Failed')) {
-                    eventSource.close();
+                if (response.status === 401 || response.status === 403) {
+                    output.innerHTML += '<span class="text-rose-400 font-semibold">[HTTP 401/403] Deployment denied: Invalid, expired, or missing auth token.</span><br>';
                     deployBtn.disabled = false;
-                    
-                    if (message.includes('Deployment Complete')) {
-                        const parts = repoUrl.split('/');
-                        let repoName = parts[parts.length - 1].replace('.git', '').replace(/[^a-zA-Z0-9_-]/g, '');
-                        const projectUrl = `/sites/${repoName}/`;
-                        showPopup(projectUrl);
+                    return;
+                }
+
+                if (!response.ok) {
+                    output.innerHTML += `<span class="text-rose-400 font-semibold">[ERROR ${response.status}] Server returned error status during deployment start.</span><br>`;
+                    deployBtn.disabled = false;
+                    return;
+                }
+
+                // Parse stream chunks as Server-Sent Events
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const events = buffer.split('\n\n');
+                    buffer = events.pop(); // Hold incomplete trailing chunk
+
+                    for (const eventBlock of events) {
+                        const lines = eventBlock.split('\n');
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const message = line.slice(6);
+                                output.innerHTML += message + '<br>';
+                                output.parentElement.scrollTop = output.parentElement.scrollHeight;
+
+                                if (message.includes('Deployment Complete')) {
+                                    const parts = repoUrl.split('/');
+                                    let repoName = parts[parts.length - 1].replace('.git', '').replace(/[^a-zA-Z0-9_-]/g, '');
+                                    const projectUrl = `/sites/${repoName}/`;
+                                    showPopup(projectUrl);
+                                }
+                            }
+                        }
                     }
                 }
-            };
-
-            eventSource.onerror = function() {
-                output.innerHTML += '<span class="text-rose-400 font-semibold">[ERROR] Connection stream interrupted or lost.</span><br>';
-                eventSource.close();
+            } catch (err) {
+                output.innerHTML += `<span class="text-rose-400 font-semibold">[ERROR] Connection stream interrupted or lost: ${err.message}</span><br>`;
+            } finally {
                 deployBtn.disabled = false;
-            };
+            }
         }
 
         /* -------------------------------------------------------------

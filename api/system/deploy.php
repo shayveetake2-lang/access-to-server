@@ -1,12 +1,10 @@
-<?php require_once __DIR__ . "/../auth/require_auth.php"; requireAuth(); ?>
 <?php
-// deploy.php
-header('Content-Type: text/event-stream');
-header('Cache-Control: no-cache');
-header('Connection: keep-alive');
-header('X-Accel-Buffering: no'); // Disable buffering for real-time streams
+// deploy.php — Production Deployment Engine with Token Authentication
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Non-blocking output flush
+// Helper function to send SSE stream message
 function sendMsg($msg) {
     echo "data: " . $msg . "\n\n";
     if (ob_get_level() > 0) {
@@ -16,40 +14,46 @@ function sendMsg($msg) {
 }
 
 // ==========================================
-// 1. IP Restriction Check (ZeroTier 10.247.192.x)
+// 1. Token Verification Check (Token Auth)
 // ==========================================
-$clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-if (strpos($clientIp, ',') !== false) {
-    $clientIp = trim(explode(',', $clientIp)[0]);
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+
+// Extract token from Bearer header, URL query param (?token=), or POST body
+$token = $_GET['token'] ?? $_POST['token'] ?? '';
+if (empty($token) && preg_match('/Bearer\s(\S+)/i', $authHeader, $matches)) {
+    $token = $matches[1];
 }
 
-$zeroTierRange = '10.247.192.';
-$isZeroTier = strncmp($clientIp, $zeroTierRange, strlen($zeroTierRange)) === 0;
-$isLocalhost = ($clientIp === '127.0.0.1' || $clientIp === '::1');
+$sessionToken = $_SESSION['auth_token'] ?? null;
 
-if (!$isZeroTier && !$isLocalhost) {
-    http_response_code(403);
-    sendMsg("HTTP 403 Forbidden: Access denied. Requests must originate from the ZeroTier private network (10.247.192.x).");
-    sendMsg("Deployment Aborted.");
+// Validate incoming token against active session token
+$validToken = false;
+if (!empty($token) && !empty($sessionToken)) {
+    $validToken = hash_equals($sessionToken, $token);
+} elseif (!empty($sessionToken) && empty($token)) {
+    // Cookie-backed session fallback
+    $validToken = true;
+}
+
+if (!$validToken) {
+    http_response_code(401);
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode([
+        'status'  => 'error',
+        'code'    => 401,
+        'message' => 'HTTP 401 Unauthorized: Invalid, missing, or expired authentication token.'
+    ]);
     exit;
 }
 
 // ==========================================
-// 2. Admin Authentication (Session or PIN)
+// 2. Set SSE Headers for Streaming Output
 // ==========================================
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-$headers = function_exists('getallheaders') ? getallheaders() : [];
-$requestPin = $_SERVER['HTTP_X_DEPLOY_PIN']
-    ?? $headers['X-Deploy-PIN']
-    ?? $headers['x-deploy-pin']
-    ?? ($_POST['pin'] ?? '');
-
-$expectedPin = getenv('DEPLOY_PIN') ?: 'Secur3D3pl0yP1n!2026';
-$isSessionAdmin = !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
-$isValidPin = !empty($requestPin) && hash_equals($expectedPin, $requestPin);
+header('Content-Type: text/event-stream');
+header('Cache-Control: no-cache');
+header('Connection: keep-alive');
+header('X-Accel-Buffering: no'); // Disable buffering for real-time streams
 
 
 
