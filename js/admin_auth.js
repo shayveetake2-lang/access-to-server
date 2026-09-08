@@ -54,6 +54,9 @@ function updateAdminUI(isLoggedIn, user, role) {
     const navDropdownWrapper = document.getElementById('nav-dropdown-wrapper');
     const manageAdminsBtn = document.getElementById('manage-admins-btn');
 
+    const sfProfileContainer = document.getElementById('sf-profile-container');
+    const sfProfileUsername = document.getElementById('sf-profile-username');
+
     if (isLoggedIn) {
         if (loginView) loginView.classList.add('hidden');
         
@@ -71,6 +74,8 @@ function updateAdminUI(isLoggedIn, user, role) {
         }
         
         if (adminNavBtn) adminNavBtn.classList.add('hidden');
+        if (sfProfileContainer) sfProfileContainer.classList.remove('hidden');
+        if (sfProfileUsername) sfProfileUsername.innerText = user;
         if (adminLoggedInIndicator) adminLoggedInIndicator.classList.remove('hidden');
         if (adminLoggedInIndicator) adminLoggedInIndicator.classList.add('flex');
         if (adminLoggedInUsername) adminLoggedInUsername.innerText = user;
@@ -86,6 +91,7 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (manageAdminsBtn) manageAdminsBtn.classList.add('hidden');
 
         if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+        if (sfProfileContainer) sfProfileContainer.classList.add('hidden');
         if (adminLoggedInIndicator) adminLoggedInIndicator.classList.add('hidden');
         if (adminLoggedInIndicator) adminLoggedInIndicator.classList.remove('flex');
         if (adminLogoutBtn) adminLogoutBtn.classList.add('hidden');

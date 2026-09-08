@@ -99,12 +99,17 @@ if ($action === 'login') {
             $logStmt = $pdo->prepare("UPDATE admin_users SET last_login = NOW() WHERE id = :id");
             $logStmt->execute([':id' => $userRow['id']]);
 
+            $token = bin2hex(random_bytes(32));
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_user'] = $userRow['username'];
+            $_SESSION['role'] = 'admin';
+            $_SESSION['auth_token'] = $token;
 
             echo json_encode([
                 'status'   => 'success',
                 'message'  => 'Admin authentication successful.',
+                'token'    => $token,
+                'role'     => 'admin',
                 'username' => $userRow['username']
             ]);
             exit;

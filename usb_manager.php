@@ -92,18 +92,8 @@ if ($requestMethod === 'GET') {
 
 // 2. POST: Handle File Upload to USB Drive
 if ($requestMethod === 'POST') {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-
-    if (empty($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-        http_response_code(401);
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Upload failed: Admin login required to transfer files to USB drive.'
-        ]);
-        exit;
-    }
+    require_once __DIR__ . '/api/auth/require_admin.php';
+    requireAdmin();
 
     $storage = getUsbStorageStatus($usbMountPath);
 
