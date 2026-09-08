@@ -58,6 +58,13 @@ if (is_dir($sitesDir)) {
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
+    <script>
+    if (localStorage.getItem('theme') === 'light') {
+        document.documentElement.classList.remove('dark');
+    } else {
+        document.documentElement.classList.add('dark');
+    }
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -110,6 +117,270 @@ if (is_dir($sitesDir)) {
                 linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         }
+    
+        /* ═══════════════════════════════════════════════════════════ */
+        /*  NEON PROFESSIONAL LIGHT THEME                              */
+        /* ═══════════════════════════════════════════════════════════ */
+        html:not(.dark) body {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            background-image: 
+                linear-gradient(to right, rgba(6, 182, 212, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(6, 182, 212, 0.06) 1px, transparent 1px) !important;
+        }
+
+        /* Top Glow Ambient Accent for Light Mode */
+        html:not(.dark) .fixed.top-0.left-1\/2 {
+            background: linear-gradient(to right, rgba(6, 182, 212, 0.15), rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15)) !important;
+            filter: blur(40px) !important;
+        }
+
+        /* Cards & Section Panels */
+        html:not(.dark) section,
+        html:not(.dark) .bg-slate-900,
+        html:not(.dark) .bg-slate-900\/60,
+        html:not(.dark) .bg-slate-900\/50,
+        html:not(.dark) .bg-slate-900\/40,
+        html:not(.dark) .bg-slate-950\/90,
+        html:not(.dark) .bg-slate-950\/80,
+        html:not(.dark) .bg-slate-950\/60,
+        html:not(.dark) .bg-slate-950,
+        html:not(.dark) .bg-surface-base,
+        html:not(.dark) .bg-indigo-950\/40 {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: rgba(6, 182, 212, 0.25) !important;
+            box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        /* Nav Bar & Header */
+        html:not(.dark) header,
+        html:not(.dark) nav {
+            background-color: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(12px) !important;
+            border-color: rgba(6, 182, 212, 0.2) !important;
+        }
+
+        
+        html:not(.dark) #terminal-container * {
+            color: inherit;
+        }
+
+        /* Typography & Headings */
+        html:not(.dark) h1, html:not(.dark) h2, html:not(.dark) h3, html:not(.dark) h4 {
+            color: #0f172a !important;
+        }
+        html:not(.dark) .text-slate-100,
+        html:not(.dark) .text-slate-200,
+        html:not(.dark) .text-slate-300 {
+            color: #1e293b !important;
+        }
+        html:not(.dark) .text-slate-400,
+        html:not(.dark) .text-slate-500 {
+            color: #475569 !important;
+        }
+
+        /* Sub-cards, Containers & Form Blocks */
+        html:not(.dark) .bg-slate-800,
+        html:not(.dark) .bg-slate-800\/60,
+        html:not(.dark) .bg-slate-800\/80,
+        html:not(.dark) .bg-slate-800\/90,
+        html:not(.dark) .bg-slate-800\/50 {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            border-color: rgba(6, 182, 212, 0.2) !important;
+        }
+
+        /* Inputs & Controls */
+        html:not(.dark) input,
+        html:not(.dark) textarea,
+        html:not(.dark) select {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+        }
+        html:not(.dark) input:focus,
+        html:not(.dark) textarea:focus,
+        html:not(.dark) select:focus {
+            border-color: #06b6d4 !important;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2) !important;
+        }
+
+        /* Neon Accent Badges & Buttons */
+        html:not(.dark) .bg-cyan-500\/10 {
+            background-color: rgba(6, 182, 212, 0.12) !important;
+        }
+        html:not(.dark) .text-cyan-400 {
+            color: #0284c7 !important;
+        }
+        html:not(.dark) .border-cyan-500\/20,
+        html:not(.dark) .border-cyan-500\/30 {
+            border-color: rgba(6, 182, 212, 0.4) !important;
+        }
+
+        /* Modals in Light Mode */
+        html:not(.dark) #admin-auth-modal,
+        html:not(.dark) #node-modal {
+            background-color: rgba(15, 23, 42, 0.4) !important;
+            backdrop-filter: blur(8px) !important;
+        }
+        html:not(.dark) #admin-auth-modal > div,
+        html:not(.dark) #node-modal > div {
+            background-color: #ffffff !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+            box-shadow: 0 20px 40px -10px rgba(6, 182, 212, 0.25), 0 0 20px rgba(6, 182, 212, 0.15) !important;
+        }
+
+    
+        /* ═══════════════════════════════════════════════════════════ */
+        /*  LIGHT MODE SPECIFIC VISUAL FIXES                           */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        /* 1. Welcome / Hero Banner Fix */
+        html:not(.dark) section.mb-8 {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 50%, #e0f2fe 100%) !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+            box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.15) !important;
+        }
+        html:not(.dark) section.mb-8 h1 {
+            color: #0f172a !important;
+        }
+        html:not(.dark) section.mb-8 p {
+            color: #334155 !important;
+        }
+        html:not(.dark) section.mb-8 .border-b {
+            border-color: rgba(6, 182, 212, 0.2) !important;
+        }
+        html:not(.dark) section.mb-8 .grid > div {
+            background-color: #ffffff !important;
+            border-color: rgba(6, 182, 212, 0.25) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+        }
+        html:not(.dark) section.mb-8 .grid > div p {
+            color: #475569 !important;
+        }
+        html:not(.dark) section.mb-8 .grid > div button {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+        }
+        html:not(.dark) section.mb-8 .grid > div button:hover {
+            background-color: rgba(6, 182, 212, 0.15) !important;
+            color: #0284c7 !important;
+        }
+
+        /* 2. House Rules Fix */
+        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20,
+        html:not(.dark) div.rounded-xl.border-cyan-500\/30 {
+            background-color: #ffffff !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.08) !important;
+        }
+        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 .bg-cyan-900\/30,
+        html:not(.dark) div.rounded-xl.border-cyan-500\/30 .bg-cyan-900\/30 {
+            background-color: #ecfeff !important;
+            border-color: rgba(6, 182, 212, 0.25) !important;
+        }
+        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 h3,
+        html:not(.dark) div.rounded-xl.border-cyan-500\/30 h3 {
+            color: #0369a1 !important;
+        }
+        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 p,
+        html:not(.dark) div.rounded-xl.border-cyan-500\/30 p {
+            color: #334155 !important;
+        }
+        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 strong.text-white,
+        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 strong,
+        html:not(.dark) div.rounded-xl.border-cyan-500\/30 strong {
+            color: #0f172a !important;
+        }
+        html:not(.dark) .border-cyan-500\/30.bg-cyan-950\/20 code,
+        html:not(.dark) div.rounded-xl.border-cyan-500\/30 code {
+            background-color: #f1f5f9 !important;
+            color: #0284c7 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+
+        /* 3. Navigation Bar & Buttons Fix */
+        html:not(.dark) header {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            border-color: rgba(226, 232, 240, 0.8) !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+        }
+        html:not(.dark) nav {
+            background-color: #f1f5f9 !important;
+            border-color: #e2e8f0 !important;
+        }
+        html:not(.dark) nav a.bg-slate-800,
+        html:not(.dark) nav a.bg-slate-200 {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            border-color: #0f172a !important;
+        }
+        html:not(.dark) nav a:not(.bg-slate-800):not(.bg-slate-200) {
+            color: #475569 !important;
+        }
+        html:not(.dark) nav a:not(.bg-slate-800):not(.bg-slate-200):hover {
+            color: #0f172a !important;
+            background-color: #e2e8f0 !important;
+        }
+        html:not(.dark) #admin-nav-btn {
+            background-color: rgba(6, 182, 212, 0.1) !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+            color: #0284c7 !important;
+        }
+        html:not(.dark) #admin-nav-btn:hover {
+            background-color: rgba(6, 182, 212, 0.2) !important;
+            color: #0369a1 !important;
+        }
+        html:not(.dark) #admin-nav-btn svg {
+            color: #0284c7 !important;
+        }
+        html:not(.dark) #sys-status-btn {
+            background-color: rgba(16, 185, 129, 0.1) !important;
+            border-color: rgba(16, 185, 129, 0.3) !important;
+            color: #047857 !important;
+        }
+        html:not(.dark) #sys-status-btn span.text-emerald-300 {
+            color: #047857 !important;
+        }
+        html:not(.dark) header a[title="Diagnostic Tool"],
+        html:not(.dark) header a[title="Host a Website"],
+        html:not(.dark) header #nav-menu-btn {
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            color: #334155 !important;
+        }
+        html:not(.dark) header a[title="Diagnostic Tool"]:hover,
+        html:not(.dark) header a[title="Host a Website"]:hover,
+        html:not(.dark) header #nav-menu-btn:hover {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+
+    
+        /* Live Server Activity Logs in Light Mode: White Background & Green Text */
+        html:not(.dark) .bg-surface-terminal,
+        html:not(.dark) #terminal-container,
+        html:not(.dark) #terminal {
+            background-color: #ffffff !important;
+            color: #15803d !important;
+            border-color: rgba(6, 182, 212, 0.3) !important;
+            box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.08) !important;
+        }
+        html:not(.dark) #terminal *,
+        html:not(.dark) #output,
+        html:not(.dark) #output * {
+            color: #15803d !important;
+        }
+        html:not(.dark) #terminal .text-emerald-400,
+        html:not(.dark) #terminal .text-cyan-400,
+        html:not(.dark) #terminal .text-slate-400,
+        html:not(.dark) #terminal .text-slate-500 {
+            color: #16a34a !important;
+        }
+
     </style>
 </head>
 
@@ -494,11 +765,13 @@ if (is_dir($sitesDir)) {
     <script src="js/admin_auth.js"></script>
 
     <!-- Admin Auth & Control Panel Modal -->
-    <div id="admin-auth-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
-        <div class="relative w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-6 overflow-hidden animate-in fade-in zoom-in duration-150">
+    <div id="admin-auth-modal" class="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-950/80 backdrop-blur-md hidden items-start sm:items-center justify-center p-4 overflow-y-auto py-8">
+        <div class="relative w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 overflow-hidden animate-in fade-in zoom-in duration-150 my-auto">
+            <!-- Top Gradient Accent Bar -->
             <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500"></div>
 
-            <button onclick="closeAdminModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer">
+            <!-- Close Button -->
+            <button onclick="closeAdminModal()" class="absolute top-4 right-4 p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -513,8 +786,139 @@ if (is_dir($sitesDir)) {
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-slate-100">Admin Authentication</h3>
-                        <p class="text-xs text-slate-400">Database-backed access control for access_db</p>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">System Login</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Secure access to the Server Console</p>
+                    </div>
+                </div>
+
+                <!-- Error Banner -->
+                <div id="admin-login-error" class="hidden p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium"></div>
+                <!-- Success Banner -->
+                <div id="admin-login-success" class="hidden p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-medium"></div>
+
+                <form onsubmit="submitAdminLogin(event);" class="space-y-3.5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Username</label>
+                        <input 
+                            type="text" 
+                            id="admin-username-input" 
+                            name="username"
+                            autocomplete="off"
+                            required 
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+                            placeholder="Enter username"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
+                        <input 
+                            type="password" 
+                            id="admin-password-input" 
+                            name="password"
+                            autocomplete="off"
+                            required 
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
+                            placeholder="••••••••"
+                        >
+                    </div>
+
+                    <div class="pt-1">
+                        <button 
+                            type="submit" 
+                            id="admin-login-btn"
+                            class="w-full py-3 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 transition-all duration-200 shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                            <span>Authenticate &amp; Unlock Controls</span>
+                        </button>
+                    </div>
+                
+                    <div class="text-center pt-3">
+                        <button type="button" onclick="toggleAuthView('register')" class="text-xs font-medium text-cyan-500 hover:text-cyan-400 transition-colors cursor-pointer">
+                            Don't have an account? Create one
+                        </button>
+                    </div>
+                </form>
+
+
+                <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-950/60 border border-slate-300 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+                    <div class="font-semibold text-slate-600 dark:text-slate-300">🔐 Database Security Notice:</div>
+                    <p>Reads and writes credentials directly to <code>access_db.sys_users</code> table using BCrypt hashes.</p>
+                </div>
+            </div>
+
+            
+            
+            <!-- Registration View (Hidden by default) -->
+            <div id="admin-modal-register-view" class="space-y-4 hidden">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Create an Account</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Register a new standard user account</p>
+                    </div>
+                </div>
+
+                <!-- Error/Success Banner -->
+                <div id="register-message-banner" class="hidden p-3 rounded-xl text-xs font-medium border"></div>
+
+                <form onsubmit="submitRegister(event);" class="space-y-3.5" autocomplete="off">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Username</label>
+                        <input type="text" id="register-username-input" autocomplete="off" name="new-username" autocomplete="off" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors" placeholder="Choose a username">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Password</label>
+                        <input type="password" id="register-password-input" autocomplete="off" name="new-password" autocomplete="new-password" required minlength="6" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors" placeholder="Create a password (min 6 chars)">
+                    </div>
+                    
+                    <button type="submit" id="register-submit-btn" class="w-full py-3 px-4 rounded-xl font-semibold text-xs text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 transition-all duration-200 shadow-lg shadow-indigo-500/25 flex items-center justify-center cursor-pointer">
+                        Create Account
+                    </button>
+                    
+                    <div class="text-center pt-3">
+                        <button type="button" onclick="toggleAuthView('login')" class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-white transition-colors cursor-pointer">
+                            Already have an account? Log In
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- STATE 3: MANAGE ADMINS VIEW -->
+            <div id="admin-modal-manage-view" class="hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                        </svg>
+                        <span>Manage Admins</span>
+                    </h3>
+                    <button type="button" onclick="showAdminPanelView()" class="text-[10px] text-slate-500 dark:text-slate-400 hover:text-white font-semibold flex items-center gap-1 cursor-pointer">
+                        <span>&larr; Back</span>
+                    </button>
+                </div>
+                
+                <div class="rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/60 overflow-hidden">
+                    <div id="admin-accounts-list" class="divide-y divide-slate-300 dark:divide-slate-800/80 max-h-40 overflow-y-auto">
+                        <!-- Populated by JS -->
+                        <div class="p-3 text-center text-xs text-slate-500">Loading admins...</div>
+                    </div>
+                </div>
+
+<!-- STATE 1: LOGGED OUT LOGIN FORM -->
+            <div id="admin-modal-login-view" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-100">System Login</h3>
+                        <p class="text-xs text-slate-400">Secure access to the Server Console</p>
                     </div>
                 </div>
 
@@ -557,7 +961,7 @@ if (is_dir($sitesDir)) {
 
                 <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
                     <div class="font-semibold text-slate-300">🔐 Database Security Notice:</div>
-                    <p>Reads and writes credentials directly to <code>access_db.admin_users</code> table using BCrypt hashes.</p>
+                    <p>Reads and writes credentials directly to <code>access_db.sys_users</code> table using BCrypt hashes.</p>
                 </div>
             </div>
 

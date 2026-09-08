@@ -3,19 +3,10 @@
 let currentAdminState = { logged_in: false, user: null };
 
 async function checkAdminAuth() {
-    const token = localStorage.getItem('auth_token');
-    const role = localStorage.getItem('auth_role');
-    const user = localStorage.getItem('auth_user');
-
-    if (token && role && user) {
-        currentAdminState.logged_in = true;
-        currentAdminState.user = user;
-        updateAdminUI(true, user, role);
-    } else {
-        currentAdminState.logged_in = false;
-        currentAdminState.user = null;
-        updateAdminUI(false, null, null);
-    }
+    // User requested no auto-login on page load/refresh
+    currentAdminState.logged_in = false;
+    currentAdminState.user = null;
+    updateAdminUI(false, null, null);
 }
 
 function updateAdminUI(isLoggedIn, user, role) {
@@ -82,11 +73,35 @@ function updateAdminUI(isLoggedIn, user, role) {
     }
 }
 function openAdminModal() {
+    // Clear input fields
+    clearAuthInputs();
+    
+    // Reset view to login
+    toggleAuthView('login');
+    
+    // If already logged in, this button acts as a logout
+    if (currentAdminState.logged_in) {
+        submitAdminLogout();
+        return;
+    }
+    
     const modal = document.getElementById('admin-auth-modal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
+}
+
+function clearAuthInputs() {
+    const adminUser = document.getElementById('admin-username-input');
+    const adminPass = document.getElementById('admin-password-input');
+    const regUser = document.getElementById('register-username-input');
+    const regPass = document.getElementById('register-password-input');
+    
+    if (adminUser) adminUser.value = '';
+    if (adminPass) adminPass.value = '';
+    if (regUser) regUser.value = '';
+    if (regPass) regPass.value = '';
 }
 
 function closeAdminModal() {
@@ -97,19 +112,25 @@ function closeAdminModal() {
     }
 }
 
-async function submitAdminLogin(event) { if (event) event.preventDefault();
+async function submitAdminLogin(event) {
+    if (event) event.preventDefault();
     const errBanner = document.getElementById('admin-login-error');
+    const successBanner = document.getElementById('admin-login-success');
     const submitBtn = document.getElementById('admin-login-btn');
     const username = document.getElementById('admin-username-input').value.trim();
     const pass = document.getElementById('admin-password-input').value.trim();
 
     if (!username || !pass) {
-        errBanner.innerText = 'Please enter both username and password.';
-        errBanner.classList.remove('hidden');
+        if (errBanner) {
+            errBanner.innerText = 'Please enter both username and password.';
+            errBanner.classList.remove('hidden');
+        }
+        if (successBanner) successBanner.classList.add('hidden');
         return;
     }
 
-    errBanner.classList.add('hidden');
+    if (errBanner) errBanner.classList.add('hidden');
+    if (successBanner) successBanner.classList.add('hidden');
     submitBtn.innerText = 'Verifying...';
     submitBtn.disabled = true;
 
@@ -123,26 +144,36 @@ async function submitAdminLogin(event) { if (event) event.preventDefault();
         const data = await res.json();
         
         if (data.status === 'success') {
-            localStorage.setItem('auth_token', data.token);
-            localStorage.setItem('auth_role', data.role);
-            localStorage.setItem('auth_user', username);
+            currentAdminState.logged_in = true;
+            currentAdminState.user = username;
             
-            checkAdminAuth();
+            if (successBanner) {
+                successBanner.innerText = `✓ Login successful! Welcome back, ${username}.`;
+                successBanner.classList.remove('hidden');
+            }
             
-            setTimeout(() => { closeAdminModal(); }, 1500);
+            submitBtn.innerText = 'Access Granted!';
+            updateAdminUI(true, username, data.role);
             
-            submitBtn.innerText = 'Authentication Successful';
-            submitBtn.classList.replace('bg-indigo-600', 'bg-emerald-600');
-            submitBtn.classList.replace('hover:bg-indigo-500', 'hover:bg-emerald-500');
+            setTimeout(() => {
+                closeAdminModal();
+                submitBtn.innerText = 'Access System';
+                submitBtn.disabled = false;
+                if (successBanner) successBanner.classList.add('hidden');
+            }, 1200);
         } else {
-            errBanner.innerText = data.message || 'Login failed.';
-            errBanner.classList.remove('hidden');
+            if (errBanner) {
+                errBanner.innerText = data.message || 'Invalid username or password.';
+                errBanner.classList.remove('hidden');
+            }
             submitBtn.innerText = 'Access System';
             submitBtn.disabled = false;
         }
     } catch (err) {
-        errBanner.innerText = 'Network error. Please try again.';
-        errBanner.classList.remove('hidden');
+        if (errBanner) {
+            errBanner.innerText = 'Network error. Please try again.';
+            errBanner.classList.remove('hidden');
+        }
         submitBtn.innerText = 'Access System';
         submitBtn.disabled = false;
     }
@@ -227,14 +258,25 @@ function applyTheme() {
 }
 
 function toggleTheme() {
-    if (document.documentElement.classList.contains('dark')) {
-        document.documentElement.classList.remove('dark');
-        localStorage.theme = 'light';
+    const html = document.documentElement;
+    if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
     } else {
-        document.documentElement.classList.add('dark');
-        localStorage.theme = 'dark';
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
     }
 }
+
+function applyTheme() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light') {
+        document.documentElement.classList.remove('dark');
+    } else {
+        document.documentElement.classList.add('dark');
+    }
+}
+applyTheme();
 
 // Apply on load
 applyTheme();
@@ -361,10 +403,22 @@ function toggleAuthView(view) {
     const loginView = document.getElementById('admin-modal-login-view');
     const registerView = document.getElementById('admin-modal-register-view');
     const loginBanner = document.getElementById('admin-login-error');
+    const loginSuccessBanner = document.getElementById('admin-login-success');
     const registerBanner = document.getElementById('register-message-banner');
     
     if (loginBanner) loginBanner.classList.add('hidden');
+    if (loginSuccessBanner) loginSuccessBanner.classList.add('hidden');
     if (registerBanner) registerBanner.classList.add('hidden');
+
+    // Keep both forms blank, never pre-filled
+    const loginUserInput = document.getElementById('admin-username-input');
+    const loginPassInput = document.getElementById('admin-password-input');
+    const regUserInput = document.getElementById('register-username-input');
+    const regPassInput = document.getElementById('register-password-input');
+    if (loginUserInput) loginUserInput.value = '';
+    if (loginPassInput) loginPassInput.value = '';
+    if (regUserInput) regUserInput.value = '';
+    if (regPassInput) regPassInput.value = '';
     
     if (view === 'register') {
         if (loginView) loginView.classList.add('hidden');
@@ -379,24 +433,30 @@ function toggleAuthView(view) {
 async function submitRegister(event) {
     if (event) event.preventDefault();
     
-    const errBanner = document.getElementById('register-message-banner');
+    const banner = document.getElementById('register-message-banner');
     const submitBtn = document.getElementById('register-submit-btn');
     const username = document.getElementById('register-username-input').value.trim();
     const pass = document.getElementById('register-password-input').value.trim();
 
     if (!username || !pass) {
-        errBanner.innerText = 'Please fill out all fields.';
-        errBanner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+        if (banner) {
+            banner.innerText = 'Please fill out all fields.';
+            banner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+            banner.classList.remove('hidden');
+        }
         return;
     }
 
     if (pass.length < 6) {
-        errBanner.innerText = 'Password must be at least 6 characters.';
-        errBanner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+        if (banner) {
+            banner.innerText = 'Password must be at least 6 characters.';
+            banner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+            banner.classList.remove('hidden');
+        }
         return;
     }
 
-    errBanner.classList.add('hidden');
+    if (banner) banner.classList.add('hidden');
     submitBtn.innerText = 'Creating Account...';
     submitBtn.disabled = true;
 
@@ -410,28 +470,39 @@ async function submitRegister(event) {
         const data = await res.json();
         
         if (res.ok && data.status === 'success') {
-            errBanner.innerText = data.message;
-            errBanner.className = 'p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-medium';
+            currentAdminState.logged_in = true;
+            currentAdminState.user = username;
             
-            // Clear the form
-            document.getElementById('register-username-input').value = '';
-            document.getElementById('register-password-input').value = '';
+            if (banner) {
+                banner.innerText = `✓ Account created! Welcome, ${username}. Logging you in...`;
+                banner.className = 'p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-medium';
+                banner.classList.remove('hidden');
+            }
             
-            // Switch back to login view after a short delay
+            updateAdminUI(true, username, data.role || 'user');
+            clearAuthInputs();
+            
             setTimeout(() => {
-                toggleAuthView('login');
-                // Pre-fill username for convenience
-                const loginUserInput = document.getElementById('admin-username-input');
-                if (loginUserInput) loginUserInput.value = username;
-            }, 2000);
+                closeAdminModal();
+                submitBtn.innerText = 'Create Account';
+                submitBtn.disabled = false;
+                if (banner) banner.classList.add('hidden');
+            }, 1200);
         } else {
-            errBanner.innerText = data.message || 'Registration failed.';
-            errBanner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+            if (banner) {
+                banner.innerText = data.message || 'Registration failed.';
+                banner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+                banner.classList.remove('hidden');
+            }
+            submitBtn.innerText = 'Create Account';
+            submitBtn.disabled = false;
         }
     } catch (err) {
-        errBanner.innerText = 'Network error. Please try again.';
-        errBanner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
-    } finally {
+        if (banner) {
+            banner.innerText = 'Network error. Please try again.';
+            banner.className = 'p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium';
+            banner.classList.remove('hidden');
+        }
         submitBtn.innerText = 'Create Account';
         submitBtn.disabled = false;
     }

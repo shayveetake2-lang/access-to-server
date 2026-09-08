@@ -1,5 +1,9 @@
 <?php
 // api/auth/register.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../config/db_connect.php';
 
@@ -46,10 +50,21 @@ try {
     $hash = password_hash($password, PASSWORD_BCRYPT);
     $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role) VALUES (:username, :hash, 'user')");
     $insert->execute([':username' => $username, ':hash' => $hash]);
+    $newUserId = $pdo->lastInsertId();
+
+    // Auto-authenticate newly registered user
+    $token = bin2hex(random_bytes(32));
+    $_SESSION['auth_token'] = $token;
+    $_SESSION['user_id'] = $newUserId;
+    $_SESSION['username'] = $username;
+    $_SESSION['role'] = 'user';
 
     echo json_encode([
-        'status' => 'success',
-        'message'=> 'Account created successfully. You can now log in.'
+        'status'  => 'success',
+        'token'   => $token,
+        'role'    => 'user',
+        'username'=> $username,
+        'message' => 'Account created successfully! Logging you in...'
     ]);
     exit;
 } catch (Exception $e) {
