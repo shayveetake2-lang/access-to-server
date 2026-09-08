@@ -23,6 +23,29 @@ document.addEventListener('DOMContentLoaded', () => {
     initGlobalKeyboardListeners();
 });
 
+// Mobile Sidebar Navigation Handlers
+function toggleMobileSidebar() {
+    const sidebar = document.querySelector('aside');
+    const backdrop = document.getElementById('sf-mobile-backdrop');
+    if (sidebar) {
+        sidebar.classList.toggle('-translate-x-full');
+    }
+    if (backdrop) {
+        backdrop.classList.toggle('hidden');
+    }
+}
+
+function closeMobileSidebar() {
+    const sidebar = document.querySelector('aside');
+    const backdrop = document.getElementById('sf-mobile-backdrop');
+    if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.add('-translate-x-full');
+    }
+    if (backdrop && !backdrop.classList.contains('hidden')) {
+        backdrop.classList.add('hidden');
+    }
+}
+
 function initGlobalKeyboardListeners() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -32,6 +55,7 @@ function initGlobalKeyboardListeners() {
             if (notifMenu && !notifMenu.classList.contains('hidden')) notifMenu.classList.add('hidden');
             if (profileMenu && !profileMenu.classList.contains('hidden')) profileMenu.classList.add('hidden');
             if (chatWidget && !chatWidget.classList.contains('hidden')) toggleServerFlowChat();
+            closeMobileSidebar();
         }
     });
 }
