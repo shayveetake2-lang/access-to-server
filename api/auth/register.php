@@ -39,8 +39,8 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
-    @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100");
-    @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0");
+    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100"); } catch (\Exception $e) {}
+    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0"); } catch (\Exception $e) {}
 
     // Check if username exists
     $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username");
@@ -65,11 +65,20 @@ try {
     $_SESSION['role'] = 'user';
 
     echo json_encode([
-        'status'  => 'success',
-        'token'   => $token,
-        'role'    => 'user',
-        'username'=> $username,
-        'message' => 'Account created successfully! Logging you in...'
+        'status'   => 'success',
+        'token'    => $token,
+        'role'     => 'user',
+        'username' => $username,
+        'storage'  => [
+            'limit_mb'       => 100,
+            'used_mb'        => 0.0,
+            'used_bytes'     => 0,
+            'limit_bytes'    => 104857600,
+            'percent_used'   => 0,
+            'formatted_used' => '0 MB',
+            'formatted_limit'=> '100 MB'
+        ],
+        'message'  => 'Account created successfully! Logging you in...'
     ]);
     exit;
 } catch (Exception $e) {
