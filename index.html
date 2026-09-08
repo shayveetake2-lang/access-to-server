@@ -84,12 +84,7 @@
                                     My Websites & Deployer
                                 </button>
                             </li>
-                            <li>
-                                <button onclick="switchTab('storage'); closeMobileSidebar();" id="nav-tab-storage" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                                    Storage & USB Drives
-                                </button>
-                            </li>
+
                             <li>
                                 <button onclick="switchTab('data'); closeMobileSidebar();" id="nav-tab-data" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
@@ -497,134 +492,71 @@
                             <div class="text-[10px] text-slate-400 text-right mt-1 font-mono">ZeroTier mesh active</div>
                         </div>
 
-                    </div>
-                </div>
-
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <!-- TAB 2: SERVERS (Deployments & System Controls)          -->
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <div id="tab-servers" class="sf-tab-content hidden space-y-6">
-                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Websites & Git Deployer</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Deploy websites from GitHub or restart server services with one click.</p>
-                        </div>
-                    </div>
-
-                    <!-- Git Deploy Form (No Placeholder) -->
-                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
-                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Deploy New Site / Repository</h3>
-                        <div id="deploy-form-container" class="space-y-4">
-                            <div>
-                                <label for="repo-url" class="block text-xs font-medium text-slate-400 mb-1">GitHub Repository URL</label>
-                                <input type="url" id="repo-url" aria-label="GitHub Repository URL" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
-                            </div>
-                            <div class="flex gap-3">
-                                <button type="button" onclick="loadDemoRepo()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white focus:ring-2 focus:ring-cyan-500 transition-all min-h-[44px]">Load Demo Repo</button>
-                                <button id="deploy-btn" onclick="startDeployment()" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md focus:ring-2 focus:ring-cyan-400 transition-all min-h-[44px]">Start Deployment</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Service Control Panel -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button onclick="requireAdminAuth(() => fetch('/scripts/restart_web.sh'))" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-cyan-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">
-                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                Restart Web Server
-                            </div>
-                            <div class="text-[11px] text-slate-400 mt-1">Reload Apache web service</div>
-                        </button>
-                        <button onclick="requireAdminAuth(() => fetch('/scripts/restart_plex.sh'))" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-purple-500">
-                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
-                                Restart Plex
-                            </div>
-                            <div class="text-[11px] text-slate-400 mt-1">Reset media streaming daemon</div>
-                        </button>
-                        <button onclick="requireAdminAuth(() => fetch('/scripts/restart_db.sh'))" class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 hover:border-emerald-500 text-left transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">
-                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
-                                Restart Database
-                            </div>
-                            <div class="text-[11px] text-slate-400 mt-1">Flush database connections</div>
-                        </button>
-                    </div>
-
-                    <!-- Terminal Output Window -->
-                    <div class="rounded-2xl bg-[#040711] border border-slate-800 p-4 space-y-2">
-                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                            <span class="text-xs font-mono font-bold text-slate-400">Terminal Log Stream</span>
-                            <button onclick="clearTerminal()" class="text-[11px] font-mono text-cyan-400 hover:underline">Clear</button>
-                        </div>
-                        <div id="terminal" class="h-64 overflow-y-auto font-mono text-xs text-emerald-400 leading-relaxed terminal-scroll">
-                            <div id="output" class="text-slate-400"><span class="text-emerald-400">[SYSTEM]</span> Server is ready and online. Live logs will display here...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <!-- TAB 3: STORAGE (Disk Breakdown & USB Manager)           -->
-                <!-- ═══════════════════════════════════════════════════════ -->
-                <div id="tab-storage" class="sf-tab-content hidden space-y-6">
-                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Storage & USB Drives</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Check available SSD space and upload files to attached USB storage drives.</p>
-                        </div>
-                        <button onclick="loadServerStorage(); loadUsbStatus();" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-cyan-400 focus:ring-2 focus:ring-cyan-500 min-h-[44px]">Refresh Storage</button>
-                    </div>
-
-                    <!-- Internal Disk Gauge Card -->
-                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                    <!-- Storage & USB Drives Dashboard Section -->
+                    <div class="space-y-6 pt-4 border-t border-slate-200 dark:border-slate-800/80">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Primary SSD Disk</h3>
-                                <p class="text-[11px] font-mono text-slate-400" id="srv-disk-path">Loading...</p>
+                                <h3 class="text-base font-bold text-slate-900 dark:text-white">Storage & USB Drives</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Live SSD disk usage breakdown and USB drive storage management</p>
                             </div>
-                            <span id="srv-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">Checking...</span>
+                            <button onclick="loadServerStorage(); loadUsbStatus();" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-cyan-400 focus:ring-2 focus:ring-cyan-500 min-h-[44px]">Refresh Storage</button>
                         </div>
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-xs font-bold">
-                                <span class="text-slate-400">Used Space</span>
-                                <span id="srv-percent-text" class="text-cyan-400 font-mono">--%</span>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Internal Disk Gauge Card -->
+                            <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Primary SSD Disk</h3>
+                                        <p class="text-[11px] font-mono text-slate-400" id="srv-disk-path">Loading...</p>
+                                    </div>
+                                    <span id="srv-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">Checking...</span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-xs font-bold">
+                                        <span class="text-slate-400">Used Space</span>
+                                        <span id="srv-percent-text" class="text-cyan-400 font-mono">--%</span>
+                                    </div>
+                                    <div class="h-3.5 w-full rounded-full bg-slate-800 overflow-hidden" id="srv-bar-track">
+                                        <div class="h-full bg-cyan-400 rounded-full w-full" id="srv-bar-segments" style="transform-origin: left; transform: scaleX(0); transition: transform 0.6s ease-out;"></div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 pt-2 text-xs font-mono">
+                                    <div><span class="text-slate-400 block text-[10px]">USED</span><span id="srv-used-text" class="text-slate-200 font-bold">--</span></div>
+                                    <div><span class="text-slate-400 block text-[10px]">FREE</span><span id="srv-free-text" class="text-emerald-400 font-bold">--</span></div>
+                                    <div><span class="text-slate-400 block text-[10px]">TOTAL</span><span id="srv-total-text" class="text-slate-200 font-bold">--</span></div>
+                                </div>
+                                <div id="srv-breakdown-list" class="space-y-1.5 pt-2 border-t border-slate-800/80"></div>
                             </div>
-                            <div class="h-3.5 w-full rounded-full bg-slate-800 overflow-hidden" id="srv-bar-track">
-                                <div class="h-full bg-cyan-400 rounded-full w-full" id="srv-bar-segments" style="transform-origin: left; transform: scaleX(0); transition: transform 0.6s ease-out;"></div>
+
+                            <!-- USB Drive Upload & Manager Card -->
+                            <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">USB Drive Storage (/Volumes/USBDrive)</h3>
+                                    <span id="usb-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">--</span>
+                                </div>
+                                <div id="usb-warning-banner" class="hidden p-3 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-400 font-medium"></div>
+                                <div class="grid grid-cols-3 gap-4 text-xs font-mono">
+                                    <div><span class="text-slate-400 block text-[10px]">USB USED</span><span id="usb-used-text" class="text-slate-200 font-bold">--</span></div>
+                                    <div><span class="text-slate-400 block text-[10px]">USB FREE</span><span id="usb-free-text" class="text-emerald-400 font-bold">--</span></div>
+                                    <div><span class="text-slate-400 block text-[10px]">USB TOTAL</span><span id="usb-total-text" class="text-slate-200 font-bold">--</span></div>
+                                </div>
+
+                                <!-- Drag & Drop File Form -->
+                                <form id="usb-upload-form" onsubmit="event.preventDefault(); uploadUsbFile();" class="space-y-3 pt-2">
+                                    <div id="usb-drop-zone" class="p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/40 text-center hover:border-cyan-500 cursor-pointer transition-all">
+                                        <input type="file" id="usb-file-input" aria-label="Upload file to USB storage" onchange="handleUsbFileSelect(this)" class="hidden">
+                                        <label for="usb-file-input" class="cursor-pointer space-y-2 block">
+                                            <div id="usb-file-name" class="text-xs text-slate-300 font-semibold">Drop files here or click to browse</div>
+                                            <div class="text-[11px] text-slate-400">Supported formats: zip, tar, gz, sql, img, iso (Max: 2 GB)</div>
+                                        </label>
+                                    </div>
+                                    <button id="usb-upload-btn" type="submit" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">Upload File to USB Storage</button>
+                                </form>
                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-4 pt-2 text-xs font-mono">
-                            <div><span class="text-slate-400 block text-[10px]">USED</span><span id="srv-used-text" class="text-slate-200 font-bold">--</span></div>
-                            <div><span class="text-slate-400 block text-[10px]">FREE</span><span id="srv-free-text" class="text-emerald-400 font-bold">--</span></div>
-                            <div><span class="text-slate-400 block text-[10px]">TOTAL</span><span id="srv-total-text" class="text-slate-200 font-bold">--</span></div>
-                        </div>
-                        <div id="srv-breakdown-list" class="space-y-1.5 pt-2 border-t border-slate-800/80"></div>
                     </div>
 
-                    <!-- USB Drive Upload & Manager Card -->
-                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">USB Drive Storage (/Volumes/USBDrive)</h3>
-                            <span id="usb-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">--</span>
-                        </div>
-                        <div id="usb-warning-banner" class="hidden p-3 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-400 font-medium"></div>
-                        <div class="grid grid-cols-3 gap-4 text-xs font-mono">
-                            <div><span class="text-slate-400 block text-[10px]">USB USED</span><span id="usb-used-text" class="text-slate-200 font-bold">--</span></div>
-                            <div><span class="text-slate-400 block text-[10px]">USB FREE</span><span id="usb-free-text" class="text-emerald-400 font-bold">--</span></div>
-                            <div><span class="text-slate-400 block text-[10px]">USB TOTAL</span><span id="usb-total-text" class="text-slate-200 font-bold">--</span></div>
-                        </div>
-
-                        <!-- Drag & Drop File Form -->
-                        <form id="usb-upload-form" onsubmit="event.preventDefault(); uploadUsbFile();" class="space-y-3 pt-2">
-                            <div id="usb-drop-zone" class="p-6 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/40 text-center hover:border-cyan-500 cursor-pointer transition-all">
-                                <input type="file" id="usb-file-input" aria-label="Upload file to USB storage" onchange="handleUsbFileSelect(this)" class="hidden">
-                                <label for="usb-file-input" class="cursor-pointer space-y-2 block">
-                                    <div id="usb-file-name" class="text-xs text-slate-300 font-semibold">Drop files here or click to browse</div>
-                                    <div class="text-[11px] text-slate-400">Supported formats: zip, tar, gz, sql, img, iso (Max: 2 GB)</div>
-                                </label>
-                            </div>
-                            <button id="usb-upload-btn" type="submit" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">Upload File to USB Storage</button>
-                        </form>
                     </div>
                 </div>
 
