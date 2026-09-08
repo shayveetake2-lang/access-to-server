@@ -189,7 +189,7 @@ if (is_dir($sitesDir)) {
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Live Websites</h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">View and open all live websites hosted on your local server.</p>
                     </div>
-                    <a href="index.html#servers" class="px-3.5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold shadow-md hover:bg-cyan-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-cyan-400">Deploy New Site</a>
+                    <a href="index.html#servers" id="sites-deploy-btn" class="auth-required-btn px-3.5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold shadow-md hover:bg-cyan-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-cyan-400">Deploy New Site</a>
                 </div>
 
                 <!-- Grid of Sites -->

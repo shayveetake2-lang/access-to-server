@@ -179,6 +179,10 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (repoInput) repoInput.disabled = false;
         if (dbNameInput) dbNameInput.disabled = false;
 
+        // Put back all buttons and controls requiring a logged-in user
+        document.querySelectorAll('.auth-required-btn, .auth-required-action').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.logged-out-prompt').forEach(el => el.classList.add('hidden'));
+
     } else {
         if (loginView) loginView.classList.remove('hidden');
         
@@ -205,6 +209,10 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (dbBtn) { dbBtn.disabled = true; dbBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
         if (repoInput) repoInput.disabled = true;
         if (dbNameInput) dbNameInput.disabled = true;
+
+        // Remove all buttons and controls requiring a logged-in user when logged out
+        document.querySelectorAll('.auth-required-btn, .auth-required-action').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.logged-out-prompt').forEach(el => el.classList.remove('hidden'));
     }
 }
 function openAdminModal() {
