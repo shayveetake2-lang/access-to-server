@@ -3,8 +3,6 @@
     "git.autofetch": false,
     "git.decorations.enabled": true,
     "files.watcherExclude": {
-        "**/.git/objects/**": true,
-        "**/.git/subtree-cache/**": true,
-        "**/.git/index.lock": true
+        "**/.git/**": true
     }
 }

@@ -4,6 +4,7 @@ __pycache__/
 *.sqlite-wal
 *.sqlite-shm
 .kombai/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 sites/*
 !sites/.gitkeep
