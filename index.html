@@ -130,9 +130,14 @@
                     <svg class="admin-nav-icon-lock-el w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                     </svg>
-                    <span class="admin-nav-badge-active-el hidden w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span class="admin-nav-text-el whitespace-nowrap">Admin Login</span>
                 </button>
+
+                <!-- Admin Logged In Indicator (Hidden by default) -->
+                <div id="admin-logged-in-indicator" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-semibold shadow-sm cursor-default">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="whitespace-nowrap" id="admin-logged-in-username">Admin Active</span>
+                </div>
 
                 <!-- Interactive System Online Button (Opens Hardware Node Modal) -->
                 <button 
@@ -1177,6 +1182,10 @@
             const navIconLock = document.getElementById('admin-nav-icon-lock');
             const navBadgeActive = document.getElementById('admin-nav-badge-active');
             const dropdownText = document.getElementById('admin-dropdown-text');
+            
+            const adminNavBtn = document.getElementById('admin-nav-btn');
+            const adminLoggedInIndicator = document.getElementById('admin-logged-in-indicator');
+            const adminLoggedInUsername = document.getElementById('admin-logged-in-username');
 
             const loginView = document.getElementById('admin-modal-login-view');
             const panelView = document.getElementById('admin-modal-panel-view');
@@ -1191,10 +1200,12 @@
             const navDropdownWrapper = document.getElementById('nav-dropdown-wrapper');
 
             if (isLoggedIn) {
-                if (navBtnText) navBtnText.innerText = 'Admin Panel';
-                if (navIconLock) navIconLock.classList.add('hidden');
-                if (navBadgeActive) navBadgeActive.classList.remove('hidden');
-                if (dropdownText) dropdownText.innerText = 'Admin Panel (Active)';
+                if (adminNavBtn) adminNavBtn.classList.add('hidden');
+                if (adminLoggedInIndicator) {
+                    adminLoggedInIndicator.classList.remove('hidden');
+                    adminLoggedInIndicator.classList.add('inline-flex');
+                }
+                if (adminLoggedInUsername) adminLoggedInUsername.innerText = 'Admin: ' + (user || 'admin');
 
                 if (loginView) loginView.classList.add('hidden');
                 if (panelView) panelView.classList.remove('hidden');
@@ -1209,10 +1220,11 @@
                 if (usbForm) usbForm.classList.remove('hidden');
                 if (usbLock) usbLock.classList.add('hidden');
             } else {
-                if (navBtnText) navBtnText.innerText = 'Admin Login';
-                if (navIconLock) navIconLock.classList.remove('hidden');
-                if (navBadgeActive) navBadgeActive.classList.add('hidden');
-                if (dropdownText) dropdownText.innerText = 'Admin Login';
+                if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+                if (adminLoggedInIndicator) {
+                    adminLoggedInIndicator.classList.add('hidden');
+                    adminLoggedInIndicator.classList.remove('inline-flex');
+                }
 
                 if (loginView) loginView.classList.remove('hidden');
                 if (panelView) panelView.classList.add('hidden');

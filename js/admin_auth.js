@@ -22,6 +22,10 @@ function updateAdminUI(isLoggedIn, user) {
     const navBadges = document.querySelectorAll('.admin-nav-badge-active-el');
     const dropdownTexts = document.querySelectorAll('.admin-dropdown-text-el');
 
+    const adminNavBtn = document.getElementById('admin-nav-btn');
+    const adminLoggedInIndicator = document.getElementById('admin-logged-in-indicator');
+    const adminLoggedInUsername = document.getElementById('admin-logged-in-username');
+
     const loginView = document.getElementById('admin-modal-login-view');
     const panelView = document.getElementById('admin-modal-panel-view');
     const userDisplay = document.getElementById('admin-username-display');
@@ -32,10 +36,18 @@ function updateAdminUI(isLoggedIn, user) {
     const dbLock = document.getElementById('db-lock-container');
     const usbForm = document.getElementById('usb-upload-form');
     const usbLock = document.getElementById('usb-lock-container');
+    const navDropdownWrapper = document.getElementById('nav-dropdown-wrapper');
 
     const adminOnlyTools = document.querySelectorAll('.admin-only-tool');
 
     if (isLoggedIn) {
+        if (adminNavBtn) adminNavBtn.classList.add('hidden');
+        if (adminLoggedInIndicator) {
+            adminLoggedInIndicator.classList.remove('hidden');
+            adminLoggedInIndicator.classList.add('inline-flex');
+        }
+        if (adminLoggedInUsername) adminLoggedInUsername.innerText = 'Admin: ' + (user || 'admin');
+
         navBtnTexts.forEach(el => el.innerText = 'Admin Panel');
         navIconLocks.forEach(el => el.classList.add('hidden'));
         navBadges.forEach(el => el.classList.remove('hidden'));
@@ -44,6 +56,7 @@ function updateAdminUI(isLoggedIn, user) {
         if (loginView) loginView.classList.add('hidden');
         if (panelView) panelView.classList.remove('hidden');
         if (userDisplay) userDisplay.innerText = user || 'admin';
+        if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
 
         // Unlock Admin Action Cards if present on index.html
         if (deployForm) deployForm.classList.remove('hidden');
@@ -56,6 +69,12 @@ function updateAdminUI(isLoggedIn, user) {
         // Reveal Admin-Only Tools in dropdown
         adminOnlyTools.forEach(el => el.classList.remove('hidden'));
     } else {
+        if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+        if (adminLoggedInIndicator) {
+            adminLoggedInIndicator.classList.add('hidden');
+            adminLoggedInIndicator.classList.remove('inline-flex');
+        }
+
         navBtnTexts.forEach(el => el.innerText = 'Admin Login');
         navIconLocks.forEach(el => el.classList.remove('hidden'));
         navBadges.forEach(el => el.classList.add('hidden'));
@@ -63,6 +82,7 @@ function updateAdminUI(isLoggedIn, user) {
 
         if (loginView) loginView.classList.remove('hidden');
         if (panelView) panelView.classList.add('hidden');
+        if (navDropdownWrapper) navDropdownWrapper.classList.add('hidden');
 
         // Lock Admin Action Cards if present on index.html
         if (deployForm) deployForm.classList.add('hidden');

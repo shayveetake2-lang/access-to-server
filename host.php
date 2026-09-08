@@ -38,109 +38,160 @@
 </head>
 <body class="bg-surface-base text-slate-200 font-sans min-h-screen flex flex-col antialiased selection:bg-cyan-500/30 selection:text-cyan-200 bg-grid-pattern relative">
     <div class="fixed top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-4xl h-36 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 blur-3xl pointer-events-none -z-10"></div>
-<header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/75 backdrop-blur-xl transition-all">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3.5 shrink-0 min-w-0">
-            <a href="index.html" class="flex items-center gap-3 shrink-0 group select-none cursor-pointer" title="Go to Server Console Dashboard">
-                <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/15 group-hover:scale-105 transition-transform shrink-0">
-                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" /></svg>
-                </div>
-                <div class="min-w-0">
-                    <div class="flex items-center gap-2 whitespace-nowrap">
-                        <span class="font-bold text-slate-100 tracking-tight text-base sm:text-lg group-hover:text-white transition-colors">Server Console</span>
-                        <span class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800/90 text-cyan-400 border border-slate-700/60 uppercase tracking-wider">MBP 2011</span>
+<header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4">
+            
+            <!-- Left: Brand / Title & Primary Navigation -->
+            <div class="flex items-center gap-3.5 shrink-0 min-w-0">
+                <a href="index.html" class="flex items-center gap-3 shrink-0 group select-none cursor-pointer" title="Go to Server Console Dashboard">
+                    <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-1 ring-white/15 group-hover:scale-105 transition-transform shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.75 5.1a1.5 1.5 0 011.2-.6h10.1a1.5 1.5 0 011.2.6l2.1 3.45a4.5 4.5 0 01.9 2.7" />
+                        </svg>
                     </div>
-                    <p class="text-[11px] text-slate-400 font-mono hidden lg:block truncate whitespace-nowrap">ZeroTier Tunnel &bull; MAMP Apache &bull; Port 3307</p>
-                </div>
-            </a>
-            <nav class="hidden sm:flex items-center gap-1 ml-1 px-1.5 py-1 rounded-xl bg-slate-900/80 border border-slate-800">
-                <a href="index.html" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">Deployer</a>
-                <a href="host.php" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-white shadow-sm border border-slate-700/60">Host Website</a>
-                <a href="sites.php" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">Hosted Sites</a>
-            </nav>
-        </div>
-        <div class="flex items-center gap-2 sm:gap-3">
-            <!-- Admin Panel / Login Button -->
-            <button 
-                type="button" 
-                onclick="openAdminModal()" 
-                title="Admin Panel & Authentication" 
-                class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 hover:border-cyan-400/60 text-cyan-300 hover:text-white text-xs font-semibold shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
-            >
-                <svg class="admin-nav-icon-lock-el w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
-                <span class="admin-nav-badge-active-el hidden w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="admin-nav-text-el whitespace-nowrap">Admin Login</span>
-            </button>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 whitespace-nowrap">
+                            <span class="font-bold text-slate-100 tracking-tight text-base sm:text-lg group-hover:text-white transition-colors">Server Console</span>
+                            <span class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800/90 text-cyan-400 border border-slate-700/60 uppercase tracking-wider">
+                                MBP 2011
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-mono hidden lg:block truncate whitespace-nowrap">ZeroTier Tunnel &bull; MAMP Apache &bull; Port 3307</p>
+                    </div>
+                </a>
 
-            <!-- System Online Badge -->
-            <button 
-                type="button" 
-                onclick="openNodeModal()" 
-                title="Click to view Server Hardware &amp; System Specs" 
-                class="group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-medium shadow-sm shadow-emerald-900/20"
-            >
-                <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
-                <span class="hidden sm:inline tracking-wide text-emerald-300 font-mono text-[11px] font-semibold">System Online</span>
-            </button>
-            <a href="sites.php" class="hidden sm:inline-flex group relative items-center gap-2 px-3.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 hover:border-cyan-400/50 text-cyan-300 hover:text-cyan-200 text-xs font-semibold transition-all duration-200 shadow-sm shadow-cyan-950/20">
-                <svg class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" /></svg>
-                <span>Hosted Sites</span>
-            </a>
-            <a href="movies.html" class="hidden md:inline-flex group relative items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-400/50 text-amber-300 hover:text-amber-200 text-xs font-semibold transition-all duration-200 shadow-sm shadow-amber-950/20">
-                <svg class="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
-                <span>Plex Portal</span>
-            </a>
-            <div class="relative" id="nav-dropdown-wrapper">
-                <button onclick="toggleNavMenu()" id="nav-menu-btn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors">
-                    <span>Tools</span>
-                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                <!-- Navigation Tabs (Deployer / Hosted Sites) -->
+                <nav class="hidden sm:flex items-center gap-1 ml-1 px-1.5 py-1 rounded-xl bg-slate-900/80 border border-slate-800">
+                    <a href="index.html" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-white shadow-sm border border-slate-700/60">Deployer</a>
+                    <a href="sites.php" class="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">Hosted Sites</a>
+                </nav>
+            </div>
+
+            <!-- Right: Interactive Status & Quick Actions -->
+            <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+                
+                <!-- Admin Panel / Login Button -->
+                <button 
+                    type="button" 
+                    id="admin-nav-btn"
+                    onclick="openAdminModal()" 
+                    title="Admin Panel & Authentication" 
+                    class="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 hover:border-cyan-400/60 text-cyan-300 hover:text-white text-xs font-semibold shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
+                >
+                    <svg class="admin-nav-icon-lock-el w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    <span class="admin-nav-text-el whitespace-nowrap">Admin Login</span>
                 </button>
-                <div id="nav-dropdown" class="hidden absolute right-0 mt-2 w-52 rounded-xl bg-slate-900/95 border border-slate-800 shadow-2xl backdrop-blur-xl p-1.5 z-50 divide-y divide-slate-800/60">
-                    <div class="py-1">
-                        <button onclick="openAdminModal(); toggleNavMenu();" class="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-cyan-300 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer">
-                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span> <span class="admin-dropdown-text-el">Admin Login</span>
-                        </button>
-                        <a href="index.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Deployer Console
-                        </a>
-                        <a href="sites.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Hosted Sites
-                        </a>
-                        <a href="host.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-blue-400"></span> Host Website
-                        </a>
-                        <a href="movies.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Plex Media Portal
-                        </a>
-                        <a href="access.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-indigo-400"></span> Access Request
-                        </a>
-                        <a href="help.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Server Docs &amp; Help
-                        </a>
-                        <button onclick="openNodeModal(); toggleNavMenu();" class="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Hardware Node Specs
-                        </button>
-                    </div>
-                    <div class="py-1 admin-only-tool hidden">
-                        <div class="px-3 py-1 text-[10px] font-mono font-semibold text-slate-500 uppercase tracking-wider">Admin Controls</div>
-                        <a href="index.html#database-section" onclick="toggleNavMenu();" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-indigo-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-indigo-400"></span> New Database
-                        </a>
-                        <a href="debug.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-amber-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Diagnostics
-                        </a>
-                        <a href="auto_debug.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-purple-300 hover:text-white hover:bg-slate-800/80 transition-colors">
-                            <span class="w-2 h-2 rounded-full bg-purple-400"></span> Auto Debug
-                        </a>
+
+                <!-- Admin Logged In Indicator (Hidden by default) -->
+                <div id="admin-logged-in-indicator" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-semibold shadow-sm cursor-default">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="whitespace-nowrap" id="admin-logged-in-username">Admin Active</span>
+                </div>
+
+                <!-- Interactive System Online Button (Opens Hardware Node Modal) -->
+                <button 
+                    type="button" 
+                    id="sys-status-btn"
+                    onclick="openNodeModal()" 
+                    title="Click to view Server Hardware &amp; System Specs" 
+                    class="group inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-emerald-950/60 hover:bg-emerald-900/70 border border-emerald-500/30 hover:border-emerald-400/60 text-emerald-400 hover:text-emerald-300 text-xs font-medium shadow-sm shadow-emerald-950/30 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-400/50"
+                >
+                    <span class="relative flex h-2 w-2 shrink-0">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="hidden xs:inline tracking-wide text-emerald-300 font-mono text-[11px] font-semibold whitespace-nowrap">System Online</span>
+                    <svg class="w-3.5 h-3.5 text-emerald-400/70 group-hover:text-emerald-300 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                    </svg>
+                </button>
+
+                <!-- Diagnostic Tool Button -->
+                <a 
+                    href="auto_debug.php" 
+                    title="Diagnostic Tool" 
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.492-3.053c.24-.294.577-.487.94-.539l2.716-.388a.75.75 0 00.58-1.127l-3.264-5.22a.75.75 0 00-1.11-.157l-1.92 1.92-3.265-5.22a.75.75 0 00-1.11-.157l-1.92 1.92 2.492-3.053c.24-.294.577-.487.94-.539l2.716-.388z" />
+                    </svg>
+                    <span>Diagnostics</span>
+                </a>
+
+                <!-- Host Website Button -->
+                <a 
+                    href="host.php" 
+                    title="Host a Website" 
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                    </svg>
+                    <span>Host Site</span>
+                </a>
+
+                <!-- Tools Dropdown Menu Button (Admin Only) -->
+                <div class="relative hidden" id="nav-dropdown-wrapper">
+                    <button 
+                        onclick="toggleNavMenu()" 
+                        id="nav-menu-btn" 
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                    >
+                        <span>Tools</span>
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Content -->
+                    <div id="nav-dropdown" class="hidden absolute right-0 mt-2 w-52 rounded-xl bg-slate-900/95 border border-slate-800 shadow-2xl backdrop-blur-xl p-1.5 z-50 divide-y divide-slate-800/60">
+                        <div class="py-1">
+                            <button onclick="openAdminModal(); toggleNavMenu();" class="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-cyan-300 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> <span class="admin-dropdown-text-el">Admin Login</span>
+                            </button>
+                            <a href="index.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Deployer Console
+                            </a>
+                            <a href="sites.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Hosted Sites
+                            </a>
+                            <a href="host.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-blue-400"></span> Host Website
+                            </a>
+                            <a href="movies.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Plex Media Portal
+                            </a>
+                            <a href="access.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span> Access Request
+                            </a>
+                            <a href="help.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Server Docs &amp; Help
+                            </a>
+                            <button onclick="openNodeModal(); toggleNavMenu();" class="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Hardware Node Specs
+                            </button>
+                        </div>
+                        <div class="py-1 admin-only-tool hidden">
+                            <div class="px-3 py-1 text-[10px] font-mono font-semibold text-slate-500 uppercase tracking-wider">Admin Controls</div>
+                            <a href="index.html#database-section" onclick="toggleNavMenu();" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-indigo-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span> New Database
+                            </a>
+                            <a href="debug.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-amber-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Diagnostics
+                            </a>
+                            <a href="auto_debug.php" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-purple-300 hover:text-white hover:bg-slate-800/80 transition-colors">
+                                <span class="w-2 h-2 rounded-full bg-purple-400"></span> Auto Debug
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            </div>
         </div>
-    </div>
-</header>
+    </header>
 <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
     <div class="space-y-6">
         <div class="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 text-sm text-slate-400">
@@ -498,5 +549,92 @@
         </div>
     </div>
 </div>
+
+    <script>
+        // ================= ADMIN AUTHENTICATION LOGIC =================
+        let currentAdminState = { logged_in: false, user: null };
+
+        async function checkAdminAuth() {
+            try {
+                const res = await fetch('api/system/admin_auth.php?action=status');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    currentAdminState.logged_in = data.logged_in;
+                    currentAdminState.user = data.user;
+                    updateAdminUI(data.logged_in, data.user);
+                }
+            } catch (err) {
+                console.error('Failed to check admin auth status', err);
+            }
+        }
+
+        function updateAdminUI(isLoggedIn, user) {
+            const navBtnText = document.getElementById('admin-nav-text');
+            const navIconLock = document.getElementById('admin-nav-icon-lock');
+            const navBadgeActive = document.getElementById('admin-nav-badge-active');
+            const dropdownText = document.getElementById('admin-dropdown-text');
+            
+            const adminNavBtn = document.getElementById('admin-nav-btn');
+            const adminLoggedInIndicator = document.getElementById('admin-logged-in-indicator');
+            const adminLoggedInUsername = document.getElementById('admin-logged-in-username');
+
+            const loginView = document.getElementById('admin-modal-login-view');
+            const panelView = document.getElementById('admin-modal-panel-view');
+            const userDisplay = document.getElementById('admin-username-display');
+
+            const deployForm = document.getElementById('deploy-form-container');
+            const deployLock = document.getElementById('deploy-lock-container');
+            const dbForm = document.getElementById('db-form-container');
+            const dbLock = document.getElementById('db-lock-container');
+            const usbForm = document.getElementById('usb-upload-form');
+            const usbLock = document.getElementById('usb-lock-container');
+            const navDropdownWrapper = document.getElementById('nav-dropdown-wrapper');
+
+            if (isLoggedIn) {
+                if (adminNavBtn) adminNavBtn.classList.add('hidden');
+                if (adminLoggedInIndicator) {
+                    adminLoggedInIndicator.classList.remove('hidden');
+                    adminLoggedInIndicator.classList.add('inline-flex');
+                }
+                if (adminLoggedInUsername) adminLoggedInUsername.innerText = 'Admin: ' + (user || 'admin');
+
+                if (loginView) loginView.classList.add('hidden');
+                if (panelView) panelView.classList.remove('hidden');
+                if (userDisplay) userDisplay.innerText = user || 'admin';
+                if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
+
+                // Unlock Admin Forms
+                if (deployForm) deployForm.classList.remove('hidden');
+                if (deployLock) deployLock.classList.add('hidden');
+                if (dbForm) dbForm.classList.remove('hidden');
+                if (dbLock) dbLock.classList.add('hidden');
+                if (usbForm) usbForm.classList.remove('hidden');
+                if (usbLock) usbLock.classList.add('hidden');
+            } else {
+                if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+                if (adminLoggedInIndicator) {
+                    adminLoggedInIndicator.classList.add('hidden');
+                    adminLoggedInIndicator.classList.remove('inline-flex');
+                }
+
+                if (loginView) loginView.classList.remove('hidden');
+                if (panelView) panelView.classList.add('hidden');
+                if (navDropdownWrapper) navDropdownWrapper.classList.add('hidden');
+
+                // Lock Admin Forms for non-logged-in users
+                if (deployForm) deployForm.classList.add('hidden');
+                if (deployLock) deployLock.classList.remove('hidden');
+                if (dbForm) dbForm.classList.add('hidden');
+                if (dbLock) dbLock.classList.remove('hidden');
+                if (usbForm) usbForm.classList.add('hidden');
+                if (usbLock) usbLock.classList.remove('hidden');
+            }
+        }
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAdminAuth();
+        });
+    </script>
 </body>
 </html>
