@@ -7,7 +7,7 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
 // Handle CORS Preflight (OPTIONS request)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
@@ -29,5 +29,3 @@ set_error_handler(function($severity, $message, $file, $line) {
     }
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
-?>
-

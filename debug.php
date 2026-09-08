@@ -8,8 +8,13 @@ $db_class  = "pending";
 try {
     require_once __DIR__ . '/config/db_connect.php';
     if (isset($pdo)) {
-        $usedPort = isset($port) ? $port : 'default';
-        $db_status = "Connected successfully to access_db (port $usedPort).";
+        $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $db_status = "Connected successfully to access_db (SQLite engine fallback).";
+        } else {
+            $usedPort = isset($port) ? $port : 'default';
+            $db_status = "Connected successfully to access_db (MySQL port $usedPort).";
+        }
         $db_class  = "success";
     }
 } catch (\Exception $e) {

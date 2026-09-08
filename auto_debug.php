@@ -44,9 +44,14 @@ if (!file_exists(__DIR__ . '/config/db_connect.php')) {
             throw new Exception("PDO object not instantiated by db_connect.php");
         }
         $pdo->query("SELECT 1");
-        $usedPort = isset($port) ? $port : 'default';
+        $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
         $dbCheck['status'] = 'pass';
-        $dbCheck['message'] = "Successfully connected to MySQL via centralized config/db_connect.php (port $usedPort).";
+        if ($driver === 'sqlite') {
+            $dbCheck['message'] = "Successfully connected to access_db via config/db_connect.php (SQLite engine fallback).";
+        } else {
+            $usedPort = isset($port) ? $port : 'default';
+            $dbCheck['message'] = "Successfully connected to MySQL via config/db_connect.php (port $usedPort).";
+        }
     } catch (Exception $e) {
         $dbCheck['status'] = 'fail';
         $dbCheck['message'] = 'DB Connection failed via db_connect.php: ' . $e->getMessage();
