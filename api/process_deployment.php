@@ -29,6 +29,36 @@ if (!is_dir($targetBaseDir)) {
 
 $targetDir = $targetBaseDir . '/' . $projectName;
 
+// ==========================================
+// Storage Quota Middleware Check
+// ==========================================
+require_once __DIR__ . '/../config/db_connect.php';
+
+$username = $_SESSION['username'] ?? 'admin';
+$limitMB = 100.0;
+try {
+    $stmt = $pdo->prepare("SELECT storage_limit_mb FROM sys_users WHERE username = :u LIMIT 1");
+    $stmt->execute([':u' => $username]);
+    if ($row = $stmt->fetch()) {
+        $limitMB = (float)($row['storage_limit_mb'] ?? 100);
+    }
+} catch (\Exception $e) {}
+
+$currentUsedMB = function_exists('getDirectorySizeMB') ? getDirectorySizeMB($targetDir) : 0.0;
+$userBaseDir = $targetBaseDir . '/' . preg_replace('/[^a-zA-Z0-9_-]/', '', $username);
+if (is_dir($userBaseDir)) {
+    $currentUsedMB = max($currentUsedMB, getDirectorySizeMB($userBaseDir));
+}
+
+if ($currentUsedMB >= $limitMB) {
+    http_response_code(403);
+    echo json_encode([
+        'status'  => 'error',
+        'message' => 'Storage limit exceeded. Used: ' . $currentUsedMB . 'MB / Limit: ' . $limitMB . 'MB.'
+    ]);
+    exit;
+}
+
 if (is_dir($targetDir)) {
     echo json_encode(['status' => 'error', 'message' => 'Project with that name already exists. Please choose a different name.']);
     exit;

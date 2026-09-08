@@ -5,3 +5,5 @@ __pycache__/
 *.sqlite-shm
 .kombai/
 .vscode/
+sites/*
+!sites/.gitkeep

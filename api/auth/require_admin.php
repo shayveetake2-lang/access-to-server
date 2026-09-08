@@ -5,8 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 function requireAdmin() {
-    $headers = getallheaders();
-    $authHeader = $headers['Authorization'] ?? '';
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $authHeader = $headers['Authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     
     $token = '';
     if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {

@@ -65,6 +65,8 @@ function initSQLiteSchema(PDO $pdo) {
             username VARCHAR(50) NOT NULL UNIQUE,
             password_hash VARCHAR(255) NOT NULL,
             role VARCHAR(20) DEFAULT 'user',
+            storage_limit_mb INTEGER DEFAULT 100,
+            storage_used_mb FLOAT DEFAULT 0.0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )",
         "CREATE TABLE IF NOT EXISTS admin_users (
@@ -122,19 +124,27 @@ function initSQLiteSchema(PDO $pdo) {
         } catch (\Exception $e) {}
     }
 
+    // Auto-migrate storage columns if missing
+    try {
+        @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INTEGER DEFAULT 100");
+    } catch (\Exception $e) {}
+    try {
+        @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0");
+    } catch (\Exception $e) {}
+
     try {
         $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = 'admin'");
         $stmt->execute();
         if (!$stmt->fetch()) {
             $hash = password_hash('123456789', PASSWORD_BCRYPT);
-            $pdo->exec("INSERT INTO sys_users (username, password_hash, role) VALUES ('admin', '$hash', 'admin')");
+            $pdo->exec("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES ('admin', '$hash', 'admin', 100)");
         }
 
         $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = 'user'");
         $stmt->execute();
         if (!$stmt->fetch()) {
             $hash = password_hash('password', PASSWORD_BCRYPT);
-            $pdo->exec("INSERT INTO sys_users (username, password_hash, role) VALUES ('user', '$hash', 'user')");
+            $pdo->exec("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES ('user', '$hash', 'user', 100)");
         }
 
         $stmt = $pdo->prepare("SELECT id FROM admin_users WHERE username = 'admin'");
@@ -146,6 +156,34 @@ function initSQLiteSchema(PDO $pdo) {
     } catch (\Exception $e) {}
 
     $initialized = true;
+}
+
+/**
+ * Storage Calculator Helper:
+ * Calculates total size of a directory in Megabytes (MB).
+ *
+ * @param string $dirPath Target directory path
+ * @return float Total size in MB (rounded to 2 decimal places)
+ */
+function getDirectorySizeMB(string $dirPath): float {
+    if (!is_dir($dirPath) || !is_readable($dirPath)) {
+        return 0.0;
+    }
+    $totalBytes = 0;
+    try {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dirPath, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $totalBytes += $file->getSize();
+            }
+        }
+    } catch (\Exception $e) {
+        return 0.0;
+    }
+    return round($totalBytes / (1024 * 1024), 2);
 }
 
 /**

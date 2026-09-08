@@ -1,23 +1,90 @@
 let currentAdminState = { logged_in: false, user: null };
 
-async function checkAdminAuth() {
+async function checkAuthOnLoad(loginPayload = null) {
+    const token = localStorage.getItem('auth_token');
+    const storedRole = localStorage.getItem('user_role') || 'member';
+    const storedUser = localStorage.getItem('user_name') || 'User';
+    const storedStorage = localStorage.getItem('user_storage');
+
+    if (loginPayload && loginPayload.storage) {
+        updateUserStorageUI(loginPayload.storage);
+    } else if (storedStorage) {
+        try {
+            updateUserStorageUI(JSON.parse(storedStorage));
+        } catch(e) {}
+    }
+
     try {
         const res = await fetch('api/system/admin_auth.php?action=status');
         const data = await res.json();
         if (data && data.status === 'success' && data.logged_in) {
             currentAdminState.logged_in = true;
-            currentAdminState.user = data.user || 'Admin';
-            updateAdminUI(true, currentAdminState.user, 'admin');
+            currentAdminState.user = data.user || storedUser || 'Admin';
+            updateAdminUI(true, currentAdminState.user, data.role || storedRole);
+        } else if (token) {
+            currentAdminState.logged_in = true;
+            currentAdminState.user = storedUser;
+            updateAdminUI(true, storedUser, storedRole);
         } else {
             currentAdminState.logged_in = false;
             currentAdminState.user = null;
-            updateAdminUI(false, null, 'user');
+            updateAdminUI(false, null, 'guest');
         }
     } catch(e) {
-        currentAdminState.logged_in = false;
-        currentAdminState.user = null;
-        updateAdminUI(false, null, 'user');
+        if (token) {
+            currentAdminState.logged_in = true;
+            currentAdminState.user = storedUser;
+            updateAdminUI(true, storedUser, storedRole);
+        } else {
+            currentAdminState.logged_in = false;
+            currentAdminState.user = null;
+            updateAdminUI(false, null, 'guest');
+        }
     }
+}
+
+async function checkAdminAuth() {
+    return checkAuthOnLoad();
+}
+
+function updateUserStorageUI(storage) {
+    if (!storage) return;
+    const limitMB = parseFloat(storage.limit_mb || 100.0);
+    const usedMB = parseFloat(storage.used_mb || 0.0);
+    const freeMB = Math.max(0, roundTwoDecimals(limitMB - usedMB));
+    const percent = storage.percent_used !== undefined 
+        ? parseFloat(storage.percent_used) 
+        : (limitMB > 0 ? Math.min(100, Math.round((usedMB / limitMB) * 100)) : 0);
+
+    const percentEl = document.getElementById('user-quota-percent-text');
+    const barFillEl = document.getElementById('user-quota-bar-fill');
+    const usedEl = document.getElementById('user-quota-used-text');
+    const freeEl = document.getElementById('user-quota-free-text');
+    const limitEl = document.getElementById('user-quota-limit-text');
+    const statusPill = document.getElementById('user-quota-status-pill');
+
+    if (percentEl) percentEl.textContent = percent + '%';
+    if (barFillEl) barFillEl.style.width = percent + '%';
+    if (usedEl) usedEl.textContent = usedMB.toFixed(2) + ' MB';
+    if (freeEl) freeEl.textContent = freeMB.toFixed(2) + ' MB';
+    if (limitEl) limitEl.textContent = limitMB.toFixed(2) + ' MB';
+
+    if (statusPill) {
+        if (percent >= 100) {
+            statusPill.textContent = 'Quota Exceeded';
+            statusPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
+        } else if (percent >= 80) {
+            statusPill.textContent = 'Near Limit';
+            statusPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20';
+        } else {
+            statusPill.textContent = 'Within Limit';
+            statusPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+        }
+    }
+}
+
+function roundTwoDecimals(num) {
+    return Math.round((num + Number.EPSILON) * 100) / 100;
 }
 
 function requireAdminAuth(callback) {
@@ -175,19 +242,20 @@ async function submitAdminLogin(event) {
         
         if (data.status === 'success') {
             currentAdminState.logged_in = true;
-            currentAdminState.user = username;
+            currentAdminState.user = data.username || username;
             
-            if (data.token) {
-                localStorage.setItem('auth_token', data.token);
-            }
+            if (data.token) localStorage.setItem('auth_token', data.token);
+            if (data.role) localStorage.setItem('user_role', data.role);
+            localStorage.setItem('user_name', data.username || username);
+            if (data.storage) localStorage.setItem('user_storage', JSON.stringify(data.storage));
             
             if (successBanner) {
-                successBanner.innerText = `✓ Login successful! Welcome back, ${username}.`;
+                successBanner.innerText = `✓ Login successful! Welcome back, ${currentAdminState.user}.`;
                 successBanner.classList.remove('hidden');
             }
             
             submitBtn.innerText = 'Access Granted!';
-            updateAdminUI(true, username, data.role);
+            checkAuthOnLoad(data);
             
             setTimeout(() => {
                 closeAdminModal();

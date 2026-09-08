@@ -33,9 +33,14 @@ try {
             username VARCHAR(50) NOT NULL UNIQUE,
             password_hash VARCHAR(255) NOT NULL,
             role VARCHAR(20) DEFAULT 'user',
+            storage_limit_mb INT DEFAULT 100,
+            storage_used_mb FLOAT DEFAULT 0.0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
+
+    @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100");
+    @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0");
 
     // Check if username exists
     $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username");
@@ -48,7 +53,7 @@ try {
 
     // Insert new user
     $hash = password_hash($password, PASSWORD_BCRYPT);
-    $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role) VALUES (:username, :hash, 'user')");
+    $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES (:username, :hash, 'user', 100)");
     $insert->execute([':username' => $username, ':hash' => $hash]);
     $newUserId = $pdo->lastInsertId();
 

@@ -507,8 +507,95 @@
                                 </div>
                                 <button id="usb-upload-btn" type="submit" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">Upload to USB</button>
                             </form>
+                        <!-- CARD 7: User Storage Quota Card -->
+                        <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s-8-1.79-8-4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                                            </svg>
+                                            User Storage Quota
+                                        </h3>
+                                        <p class="text-[11px] text-slate-400 font-mono" id="user-quota-subtitle">Allocated Quota vs Usage</p>
+                                    </div>
+                                    <span id="user-quota-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Within Limit</span>
+                                </div>
+
+                                <div class="space-y-1.5 my-3">
+                                    <div class="flex justify-between text-xs font-bold">
+                                        <span class="text-slate-400">Storage Used</span>
+                                        <span id="user-quota-percent-text" class="text-cyan-400 font-mono">0%</span>
+                                    </div>
+                                    <!-- Tailwind Progress Bar Track -->
+                                    <div class="h-3.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative">
+                                        <div id="user-quota-bar-fill" class="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full transition-all duration-500" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-2 pt-2 text-xs font-mono">
+                                    <div>
+                                        <span class="text-slate-400 block text-[10px]">USED</span>
+                                        <span id="user-quota-used-text" class="text-slate-900 dark:text-slate-200 font-bold">0.00 MB</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-400 block text-[10px]">FREE</span>
+                                        <span id="user-quota-free-text" class="text-emerald-400 font-bold">100.00 MB</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-400 block text-[10px]">LIMIT</span>
+                                        <span id="user-quota-limit-text" class="text-slate-900 dark:text-slate-200 font-bold">100.00 MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+                                <span>Default Quota: <strong class="text-slate-300 font-mono">100 MB</strong></span>
+                                <button onclick="checkAuthOnLoad()" class="text-cyan-400 hover:underline">Refresh Quota</button>
+                            </div>
                         </div>
 
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- TAB 2: MY WEBSITES & DEPLOYER                           -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <div id="tab-servers" class="sf-tab-content hidden space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Websites & Deployer</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Deploy web applications directly from Git repositories onto your MAMP web node.</p>
+                        </div>
+                    </div>
+
+                    <!-- Git Deploy Form Card -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Deploy Git Repository</h3>
+                            <button onclick="loadDemoRepo()" class="text-xs text-cyan-400 hover:underline">Load Demo Repo</button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label for="repo-url" class="block text-xs font-medium text-slate-400 mb-1">Git Repository URL (HTTPS or SSH)</label>
+                                <input type="url" id="repo-url" placeholder="https://github.com/username/repository.git" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button onclick="startDeployment()" class="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all">Start Deployment</button>
+                                <button onclick="clearTerminal()" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all">Clear Terminal Log</button>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Deployment Terminal Stream Output -->
+                        <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-slate-400 font-mono">Real-time Execution Output Stream</span>
+                            </div>
+                            <div id="output" class="p-4 rounded-xl bg-slate-950 text-slate-300 font-mono text-xs h-64 overflow-y-auto terminal-scroll leading-relaxed border border-slate-800">
+                                <span class="text-emerald-400">[SYSTEM]</span> Ready to receive deployment stream.
+                            </div>
+                        </div>
                     </div>
                 </div>
 

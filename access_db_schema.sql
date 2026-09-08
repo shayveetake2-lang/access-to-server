@@ -5,6 +5,16 @@ USE access_db;
 -- ==========================================
 -- SYSTEM TABLES (Prefix: sys_)
 -- ==========================================
+CREATE TABLE IF NOT EXISTS sys_users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) DEFAULT 'user',
+    storage_limit_mb INT DEFAULT 100,
+    storage_used_mb FLOAT DEFAULT 0.0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS sys_deploy_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     project_name VARCHAR(100) NOT NULL,
