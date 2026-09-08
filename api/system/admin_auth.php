@@ -53,12 +53,14 @@ try {
 $action = $_REQUEST['action'] ?? 'status';
 
 if ($action === 'status') {
-    $isLoggedIn = !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
-    $username = $_SESSION['admin_user'] ?? null;
+    $isLoggedIn = !empty($_SESSION['auth_token']) || (!empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true);
+    $username = $_SESSION['username'] ?? $_SESSION['admin_user'] ?? null;
+    $role = $_SESSION['role'] ?? (!empty($_SESSION['admin_logged_in']) ? 'admin' : 'guest');
     echo json_encode([
         'status'    => 'success',
-        'logged_in' => $isLoggedIn,
-        'user'      => $username
+        'logged_in' => (bool)$isLoggedIn,
+        'user'      => $username,
+        'role'      => $role
     ]);
     exit;
 }
@@ -129,8 +131,14 @@ if ($action === 'login') {
 }
 
 if ($action === 'logout') {
-    unset($_SESSION['admin_logged_in']);
-    unset($_SESSION['admin_user']);
+    $_SESSION = [];
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
     session_destroy();
 
     echo json_encode([

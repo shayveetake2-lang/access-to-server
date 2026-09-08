@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . "/../auth/require_admin.php"; requireAdmin(); ?>
+<?php require_once __DIR__ . "/../auth/require_auth.php"; requireAuth(); ?>
 <?php
 // provision_db.php
 if (session_status() === PHP_SESSION_NONE) {

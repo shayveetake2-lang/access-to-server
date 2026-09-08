@@ -112,7 +112,7 @@
 
                     <div class="hidden md:flex items-center gap-2 min-w-0">
                         <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">Mode:</span>
-                        <span id="sf-user-mode-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-300 truncate">Standard User (Read-Only Actions)</span>
+                        <span id="sf-user-mode-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400 border border-slate-700/60 truncate">No User Logged In</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">

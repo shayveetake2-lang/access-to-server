@@ -95,7 +95,7 @@ function requireAdminAuth(callback) {
         openAdminModal();
         const errBanner = document.getElementById('admin-login-error');
         if (errBanner) {
-            errBanner.innerText = '🔒 Admin login required to perform this server action.';
+            errBanner.innerText = '🔒 Please log in to perform this server action.';
             errBanner.classList.remove('hidden');
         }
     }
@@ -125,6 +125,29 @@ function updateAdminUI(isLoggedIn, user, role) {
     const sfProfileContainer = document.getElementById('sf-profile-container');
     const sfProfileUsername = document.getElementById('sf-profile-username');
 
+    // Update Mode Pill (No User Logged In / Standard User / Admin Mode)
+    const modePills = document.querySelectorAll('#sf-user-mode-pill');
+    modePills.forEach(pill => {
+        if (!isLoggedIn) {
+            pill.textContent = 'No User Logged In';
+            pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400 border border-slate-700/60 truncate';
+        } else if (role === 'admin') {
+            pill.textContent = 'Admin Mode';
+            pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 truncate';
+        } else {
+            pill.textContent = 'Standard User';
+            pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 truncate';
+        }
+    });
+
+    // Deploy and Database Auth Gates
+    const deployAuthBanner = document.getElementById('deploy-auth-banner');
+    const dbAuthBanner = document.getElementById('db-auth-banner');
+    const deployBtn = document.getElementById('deploy-submit-btn');
+    const dbBtn = document.getElementById('db-btn');
+    const repoInput = document.getElementById('repo-url');
+    const dbNameInput = document.getElementById('db-name');
+
     if (isLoggedIn) {
         if (loginView) loginView.classList.add('hidden');
         
@@ -149,6 +172,13 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (adminLoggedInUsername) adminLoggedInUsername.innerText = user;
         if (adminLogoutBtn) adminLogoutBtn.classList.remove('hidden');
 
+        if (deployAuthBanner) deployAuthBanner.classList.add('hidden');
+        if (dbAuthBanner) dbAuthBanner.classList.add('hidden');
+        if (deployBtn) { deployBtn.disabled = false; deployBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+        if (dbBtn) { dbBtn.disabled = false; dbBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+        if (repoInput) repoInput.disabled = false;
+        if (dbNameInput) dbNameInput.disabled = false;
+
     } else {
         if (loginView) loginView.classList.remove('hidden');
         
@@ -168,6 +198,13 @@ function updateAdminUI(isLoggedIn, user, role) {
         dropdownTexts.forEach(el => el.innerText = 'Login');
         navIconLocks.forEach(el => el.classList.remove('hidden'));
         navBadges.forEach(el => el.classList.add('hidden'));
+
+        if (deployAuthBanner) deployAuthBanner.classList.remove('hidden');
+        if (dbAuthBanner) dbAuthBanner.classList.remove('hidden');
+        if (deployBtn) { deployBtn.disabled = true; deployBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        if (dbBtn) { dbBtn.disabled = true; dbBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        if (repoInput) repoInput.disabled = true;
+        if (dbNameInput) dbNameInput.disabled = true;
     }
 }
 function openAdminModal() {

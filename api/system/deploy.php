@@ -16,8 +16,8 @@ function sendMsg($msg) {
 // ==========================================
 // 1. Token Verification Check (Token Auth)
 // ==========================================
-require_once __DIR__ . '/../auth/require_admin.php';
-requireAdmin();
+require_once __DIR__ . '/../auth/require_auth.php';
+requireAuth();
 
 // ==========================================
 // 2. Set SSE Headers for Streaming Output

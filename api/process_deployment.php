@@ -4,9 +4,9 @@ header('Content-Type: application/json');
 // Ensure error reporting is off for clean JSON output
 error_reporting(0);
 
-// Enforce admin authentication to prevent RCE vulnerabilities
-require_once __DIR__ . '/auth/require_admin.php';
-requireAdmin();
+// Enforce authentication to prevent unauthorized execution
+require_once __DIR__ . '/auth/require_auth.php';
+requireAuth();
 
 $projectName = isset($_POST['project_name']) ? preg_replace('/[^a-zA-Z0-9-_]/', '', $_POST['project_name']) : '';
 $deployMethod = isset($_POST['deploy_method']) ? $_POST['deploy_method'] : '';

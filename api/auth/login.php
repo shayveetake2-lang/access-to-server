@@ -65,7 +65,15 @@ try {
         $_SESSION['auth_token'] = $token;
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
-        $_SESSION['role'] = $user['role']; 
+        $role = ($user['role'] === 'admin') ? 'admin' : 'user';
+        $_SESSION['role'] = $role;
+        if ($role === 'admin') {
+            $_SESSION['admin_logged_in'] = true;
+            $_SESSION['admin_user'] = $user['username'];
+        } else {
+            $_SESSION['admin_logged_in'] = false;
+            unset($_SESSION['admin_user']);
+        } 
 
         // Calculate current real-time directory storage usage for user
         $userSitesDir = realpath(__DIR__ . '/../../sites') . '/' . preg_replace('/[^a-zA-Z0-9_-]/', '', $user['username']);
