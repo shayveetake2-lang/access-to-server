@@ -46,8 +46,9 @@ window.fetch = async function(...args) {
 document.addEventListener('click', (e) => {
     if (currentAdminState.logged_in) return;
 
+    // Only intercept actionable elements (buttons, links, action controls) — not whole container forms
     const restrictedTarget = e.target.closest(
-        '#deploy-submit-btn, #db-btn, .auth-required-btn, .auth-required-action, .auth-required-nav, .auth-admin-nav, [data-auth-required]'
+        '#deploy-submit-btn, #db-btn, button.auth-required-btn, a.auth-required-btn, .auth-required-action, .auth-required-nav, .auth-admin-nav, [data-auth-required]'
     );
 
     if (restrictedTarget) {
@@ -73,49 +74,55 @@ async function checkAuthOnLoad(loginPayload = null) {
         return;
     }
 
-    // STRICT LOGGED-OUT DEFAULT:
-    // Explicitly lock down the state and hide all restricted features immediately on page load
-    currentAdminState.logged_in = false;
-    currentAdminState.user = null;
-    updateAdminUI(false, null, 'guest');
-
-    const activeSession = sessionStorage.getItem('active_session_token');
-    // If no active session exists, stay strictly logged out
-    if (!activeSession) {
-        return;
-    }
-
+    const activeToken = sessionStorage.getItem('active_session_token') || localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('user_name');
+    const storedRole = localStorage.getItem('user_role');
     const storedStorage = localStorage.getItem('user_storage');
     if (storedStorage) {
         try { updateUserStorageUI(JSON.parse(storedStorage)); } catch(e) {}
     }
 
+    // Query status endpoint to see if PHP session or token is authenticated
     try {
-        const res = await fetch('api/system/admin_auth.php?action=status', {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        const url = activeToken 
+            ? `api/system/admin_auth.php?action=status&token=${encodeURIComponent(activeToken)}`
+            : 'api/system/admin_auth.php?action=status';
+        const res = await fetch(url, {
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                ...(activeToken ? { 'Authorization': `Bearer ${activeToken}` } : {})
+            }
         });
         const data = await res.json();
         if (data && data.status === 'success' && data.logged_in) {
             currentAdminState.logged_in = true;
-            currentAdminState.user = data.user || 'Admin';
-            updateAdminUI(true, currentAdminState.user, data.role || 'admin');
+            currentAdminState.user = data.user || storedUser || 'Admin';
+            sessionStorage.setItem('active_session_token', activeToken || 'active');
+            updateAdminUI(true, currentAdminState.user, data.role || storedRole || 'admin');
 
             const targetTab = window.pendingTabId || window.location.hash.replace('#', '');
             if (targetTab && typeof window.switchTab === 'function') {
                 window.switchTab(targetTab);
                 window.pendingTabId = null;
             }
-        } else {
-            sessionStorage.removeItem('active_session_token');
-            currentAdminState.logged_in = false;
-            currentAdminState.user = null;
-            updateAdminUI(false, null, 'guest');
+            return;
         }
-    } catch(e) {
-        currentAdminState.logged_in = false;
-        currentAdminState.user = null;
-        updateAdminUI(false, null, 'guest');
+    } catch(e) {}
+
+    // If local token and user exist, preserve authenticated state
+    if (activeToken && storedUser) {
+        currentAdminState.logged_in = true;
+        currentAdminState.user = storedUser;
+        sessionStorage.setItem('active_session_token', activeToken);
+        updateAdminUI(true, storedUser, storedRole || 'user');
+        return;
     }
+
+    // Default to unauthenticated state when not logged in
+    currentAdminState.logged_in = false;
+    currentAdminState.user = null;
+    sessionStorage.removeItem('active_session_token');
+    updateAdminUI(false, null, 'guest');
 }
 
 async function checkAdminAuth() {
@@ -221,6 +228,10 @@ function updateAdminUI(isLoggedIn, user, role) {
     const dbBtn = document.getElementById('db-btn');
     const repoInput = document.getElementById('repo-url');
     const dbNameInput = document.getElementById('db-name');
+    const deployControls = document.getElementById('deploy-controls');
+    const deployTerminalCard = document.getElementById('deploy-terminal-card');
+    const dbFormContainer = document.getElementById('db-form-container');
+    const loggedOutPrompts = document.querySelectorAll('.logged-out-prompt');
 
     if (isLoggedIn) {
         if (loginView) loginView.classList.add('hidden');
@@ -253,9 +264,14 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (repoInput) repoInput.disabled = false;
         if (dbNameInput) dbNameInput.disabled = false;
 
+        // Explicitly reveal Deployer and Database creation sections when logged in
+        if (deployControls) deployControls.classList.remove('hidden');
+        if (deployTerminalCard) deployTerminalCard.classList.remove('hidden');
+        if (dbFormContainer) dbFormContainer.classList.remove('hidden');
+        loggedOutPrompts.forEach(p => p.classList.add('hidden'));
+
         // Put back all buttons, controls, and sidebar navigation requiring a logged-in user
         document.querySelectorAll('.auth-required-btn, .auth-required-action, .auth-required-nav').forEach(el => el.classList.remove('hidden'));
-        document.querySelectorAll('.logged-out-prompt').forEach(el => el.classList.add('hidden'));
 
         if (role === 'admin') {
             document.querySelectorAll('.auth-admin-nav').forEach(el => el.classList.remove('hidden'));
@@ -290,9 +306,14 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (repoInput) repoInput.disabled = true;
         if (dbNameInput) dbNameInput.disabled = true;
 
+        // Explicitly hide Deployer and Database creation sections when logged out
+        if (deployControls) deployControls.classList.add('hidden');
+        if (deployTerminalCard) deployTerminalCard.classList.add('hidden');
+        if (dbFormContainer) dbFormContainer.classList.add('hidden');
+        loggedOutPrompts.forEach(p => p.classList.remove('hidden'));
+
         // Remove all buttons, controls, and sidebar navigation requiring a logged-in user when logged out
         document.querySelectorAll('.auth-required-btn, .auth-required-action, .auth-required-nav, .auth-admin-nav').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.logged-out-prompt').forEach(el => el.classList.remove('hidden'));
 
         // If currently viewing a restricted tab in index.html, return to overview
         const activeTabEl = document.querySelector('.sf-tab-content:not(.hidden)');
