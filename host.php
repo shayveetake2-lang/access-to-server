@@ -126,9 +126,9 @@
                     </div>
                     <!-- Login Button / Profile Dropdown -->
                     <div class="relative flex items-center gap-2">
-                        <button id="admin-nav-btn" onclick="openAdminModal()" class="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-sm focus:ring-2 focus:ring-cyan-400 transition-all flex items-center gap-1.5 min-h-[44px]">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            <span>Login</span>
+                        <button id="admin-nav-btn" type="button" onclick="openAdminModal(event)" class="admin-login-trigger px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-sm focus:ring-2 focus:ring-cyan-400 transition-all flex items-center gap-1.5 min-h-[44px]">
+                            <svg class="admin-nav-icon-lock-el w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            <span class="admin-nav-text-el">Login</span>
                         </button>
 
                         <div id="sf-profile-container" class="relative hidden">
@@ -205,7 +205,7 @@
     </div>
 
     <!-- Admin Auth Modal -->
-    <div id="admin-auth-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div id="admin-auth-modal" class="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
         <div class="w-full max-w-md p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 relative">
             <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
 
@@ -264,7 +264,7 @@
         </div>
     </div>
 
-    <script src="js/serverflow_core.js"></script>
-    <script src="js/admin_auth.js"></script>
+    <script src="js/serverflow_core.js?v=20260910_v3"></script>
+    <script src="js/admin_auth.js?v=20260910_v3"></script>
 </body>
 </html>

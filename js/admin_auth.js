@@ -352,7 +352,11 @@ function updateAdminUI(isLoggedIn, user, role) {
         }
     }
 }
-function openAdminModal() {
+function openAdminModal(e) {
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+        e.stopPropagation();
+    }
     // Clear input fields
     clearAuthInputs();
     
@@ -363,8 +367,24 @@ function openAdminModal() {
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '99999', 'important');
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+
+        const loginView = document.getElementById('admin-modal-login-view');
+        if (loginView) {
+            loginView.classList.remove('hidden');
+            loginView.style.setProperty('display', 'block', 'important');
+        }
+
+        const userInput = document.getElementById('admin-username-input');
+        if (userInput) {
+            setTimeout(() => { try { userInput.focus(); } catch(err){} }, 50);
+        }
     }
 }
+window.openAdminModal = openAdminModal;
 
 function clearAuthInputs() {
     const adminUser = document.getElementById('admin-username-input');
@@ -383,8 +403,10 @@ function closeAdminModal() {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        modal.style.setProperty('display', 'none', 'important');
     }
 }
+window.closeAdminModal = closeAdminModal;
 
 async function submitAdminLogin(event) {
     if (event) event.preventDefault();
@@ -518,6 +540,15 @@ function closeNodeModal() {
 
 // Global Event Listeners
 document.addEventListener('click', (e) => {
+    // Delegated click handler specifically for login buttons across all pages
+    const loginTrigger = e.target.closest('#admin-nav-btn, .admin-login-trigger, [data-action="open-login"]');
+    if (loginTrigger) {
+        e.preventDefault();
+        e.stopPropagation();
+        openAdminModal(e);
+        return;
+    }
+
     const wrapper = document.getElementById('nav-dropdown-wrapper');
     const dropdown = document.getElementById('nav-dropdown');
     if (wrapper && !wrapper.contains(e.target) && dropdown && !dropdown.classList.contains('hidden')) {
@@ -729,13 +760,14 @@ function toggleAuthView(view) {
     if (regPassInput) regPassInput.value = '';
     
     if (view === 'register') {
-        if (loginView) loginView.classList.add('hidden');
-        if (registerView) registerView.classList.remove('hidden');
+        if (loginView) { loginView.classList.add('hidden'); loginView.style.setProperty('display', 'none', 'important'); }
+        if (registerView) { registerView.classList.remove('hidden'); registerView.style.setProperty('display', 'block', 'important'); }
     } else {
-        if (registerView) registerView.classList.add('hidden');
-        if (loginView) loginView.classList.remove('hidden');
+        if (registerView) { registerView.classList.add('hidden'); registerView.style.setProperty('display', 'none', 'important'); }
+        if (loginView) { loginView.classList.remove('hidden'); loginView.style.setProperty('display', 'block', 'important'); }
     }
 }
+window.toggleAuthView = toggleAuthView;
 
 // Handle Registration Submission
 async function submitRegister(event) {
