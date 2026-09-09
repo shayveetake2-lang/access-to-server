@@ -11,19 +11,25 @@ function requireAdmin() {
     $token = '';
     if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
         $token = $matches[1];
-    } elseif (!empty($_GET['token'])) {
-        $token = $_GET['token'];
     }
     
-    // Check token or active admin session
     $sessionToken = $_SESSION['auth_token'] ?? null;
     $adminLogged = !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
-    $validToken = (!empty($token) && $token === $sessionToken) || (!empty($sessionToken)) || $adminLogged;
-
-    if (!$validToken) {
-        http_response_code(401);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid or missing authentication token.']);
-        exit;
+    
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    if ($method !== 'GET') {
+        if (empty($token) || $token !== $sessionToken) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'CSRF validation failed or token missing.']);
+            exit;
+        }
+    } else {
+        $validToken = (!empty($token) && $token === $sessionToken) || (!empty($sessionToken)) || $adminLogged;
+        if (!$validToken) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid or missing authentication token.']);
+            exit;
+        }
     }
 
     $role = $_SESSION['role'] ?? $_SESSION['user_role'] ?? ($adminLogged ? 'admin' : null);

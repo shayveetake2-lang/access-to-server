@@ -273,7 +273,7 @@ if ($requestMethod === 'POST') {
 
     // Move uploaded file to USB destination
     if (@move_uploaded_file($file['tmp_name'], $targetFilePath)) {
-        @chmod($targetFilePath, 0666);
+        @chmod($targetFilePath, 0644);
         $updatedStorage = getUsbStorageStatus($usbMountPath);
         echo json_encode([
             'status'       => 'success',

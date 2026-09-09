@@ -24,21 +24,7 @@ try {
     @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100");
     @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0");
 
-    // Create default admin and standard user if they don't exist
-    $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = 'admin'");
-    $stmt->execute();
-    if (!$stmt->fetch()) {
-        $hash = password_hash('123456789', PASSWORD_BCRYPT);
-        $pdo->exec("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES ('admin', '$hash', 'admin', 100)");
-    }
-
-    $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = 'user'");
-    $stmt->execute();
-    if (!$stmt->fetch()) {
-        $hash = password_hash('password', PASSWORD_BCRYPT);
-        $pdo->exec("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES ('user', '$hash', 'user', 100)");
-    }
-} catch (Exception $e) {
+    } catch (Exception $e) {
     // Ignore schema errors here
 }
 

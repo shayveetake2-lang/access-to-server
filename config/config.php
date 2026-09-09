@@ -5,7 +5,7 @@
 define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
 define('DB_NAME', getenv('DB_NAME') ?: 'access_db');
 define('DB_USER', getenv('DB_USER') ?: 'server_app');
-define('DB_PASS', getenv('DB_PASS') ?: 'SuperSecureDBP@ss2026!');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_CHARSET', 'utf8mb4');
 define('DB_SQLITE_PATH', sys_get_temp_dir() . '/access_db.sqlite');
 
