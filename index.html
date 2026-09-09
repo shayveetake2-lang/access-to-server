@@ -268,13 +268,13 @@
 
                         <div id="sf-profile-container" class="relative hidden">
                             <button id="sf-profile-btn" class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-cyan-500 transition-all min-h-[44px]">
-                                <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
+                                <div id="sf-profile-avatar" class="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
                                 <span id="sf-profile-username" class="text-xs font-semibold text-slate-800 dark:text-slate-200">Admin</span>
                                 <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
 
                             <div id="sf-profile-menu" class="hidden absolute right-0 mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2 z-50 space-y-1">
-                                <button onclick="switchTab('settings')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                <button onclick="typeof switchTab === 'function' ? switchTab('settings') : (window.location.href = 'index.html#settings')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                                     Account Settings
                                 </button>
                                 <button id="admin-logout-btn" onclick="submitAdminLogout()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-rose-500 hover:bg-rose-500/10 transition-all">
@@ -644,6 +644,8 @@
                             <button onclick="openAdminModal()" class="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-sm transition-all shrink-0">Sign In to Deploy</button>
                         </div>
 
+                        <!-- Deploy Form Controls (Only visible when logged in) -->
+                        <div id="deploy-controls" class="auth-required-btn space-y-3 hidden">
                         <!-- Deploy Form Controls -->
                         <div id="deploy-controls" class="space-y-3">
                             <div>
@@ -656,6 +658,8 @@
                             </div>
                         </div>
 
+                        <!-- Real-time Deployment Terminal Stream Output (Only visible when logged in) -->
+                        <div id="deploy-terminal-card" class="auth-required-btn mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 hidden">
                         <!-- Real-time Deployment Terminal Stream Output -->
                         <div id="deploy-terminal-card" class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
                             <div class="flex items-center justify-between mb-2">
@@ -772,6 +776,7 @@
                             <button onclick="openAdminModal()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all shrink-0">Sign In to Create DB</button>
                         </div>
 
+                        <div id="db-form-container" class="auth-required-btn space-y-4 hidden">
                         <div id="db-form-container" class="space-y-4">
                             <div>
                                 <label for="db-name" class="block text-xs font-medium text-slate-400 mb-1">Database Name</label>

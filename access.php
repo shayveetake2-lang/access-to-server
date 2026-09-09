@@ -129,10 +129,29 @@ exit;
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         <span id="admin-logged-in-username">Admin Active</span>
                     </div>
-                    <div class="relative">
-                        <button id="admin-nav-btn" onclick="openAdminModal()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-cyan-400 transition-all flex items-center gap-2">
-                            <span>🛡️ Admin Login</span>
+                    <!-- Login Button / Profile Dropdown -->
+                    <div class="relative flex items-center gap-2">
+                        <button id="admin-nav-btn" onclick="openAdminModal()" class="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-sm focus:ring-2 focus:ring-cyan-400 transition-all flex items-center gap-1.5 min-h-[44px]">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            <span>Login</span>
                         </button>
+
+                        <div id="sf-profile-container" class="relative hidden">
+                            <button id="sf-profile-btn" class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-cyan-500 transition-all min-h-[44px]">
+                                <div id="sf-profile-avatar" class="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center text-white text-[11px] font-bold">A</div>
+                                <span id="sf-profile-username" class="text-xs font-semibold text-slate-800 dark:text-slate-200">Admin</span>
+                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+
+                            <div id="sf-profile-menu" class="hidden absolute right-0 mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2 z-50 space-y-1">
+                                <button onclick="typeof switchTab === 'function' ? switchTab('settings') : (window.location.href = 'index.html#settings')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                    Account Settings
+                                </button>
+                                <button id="admin-logout-btn" onclick="submitAdminLogout()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-rose-500 hover:bg-rose-500/10 transition-all">
+                                    Log Out
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
