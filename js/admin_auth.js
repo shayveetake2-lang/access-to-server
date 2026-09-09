@@ -28,7 +28,9 @@ window.fetch = async function(...args) {
 
     try {
         const response = await _sfOriginalFetch.call(this, resource, config);
-        if (response.status === 401 && !currentAdminState.logged_in) {
+        const urlStr = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : '');
+        const isAuthEndpoint = urlStr.includes('api/auth/login.php') || urlStr.includes('api/auth/register.php');
+        if (response.status === 401 && !currentAdminState.logged_in && !isAuthEndpoint) {
             openAdminModal();
             const errBanner = document.getElementById('admin-login-error');
             if (errBanner) {
@@ -46,10 +48,9 @@ window.fetch = async function(...args) {
 document.addEventListener('click', (e) => {
     if (currentAdminState.logged_in) return;
 
-    // Only intercept actionable elements (buttons, links, action controls) — not whole container forms
+    // Intercept restricted buttons, links, action controls, and diagnostic tools protected by Basic Auth
     const restrictedTarget = e.target.closest(
-        '#deploy-submit-btn, #db-btn, .auth-required-btn, .auth-required-action, .auth-required-nav, .auth-admin-nav, [data-auth-required]'
-        '#deploy-submit-btn, #db-btn, button.auth-required-btn, a.auth-required-btn, .auth-required-action, .auth-required-nav, .auth-admin-nav, [data-auth-required]'
+        '#deploy-submit-btn, #db-btn, .auth-required-btn, .auth-required-action, .auth-required-nav, .auth-admin-nav, [data-auth-required], a[href*="auto_debug"], a[href*="debug.php"]'
     );
 
     if (restrictedTarget) {
@@ -83,6 +84,7 @@ async function checkAuthOnLoad(loginPayload = null) {
 
     const activeSession = sessionStorage.getItem('active_session_token');
     // If no active session exists, stay strictly logged out
+    // If no active session exists in this browser session, stay strictly logged out
     if (!activeSession) {
         return;
     }
@@ -97,8 +99,6 @@ async function checkAuthOnLoad(loginPayload = null) {
 
     // Query status endpoint to see if PHP session or token is authenticated
     try {
-        const res = await fetch('api/system/admin_auth.php?action=status', {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         const url = activeToken 
             ? `api/system/admin_auth.php?action=status&token=${encodeURIComponent(activeToken)}`
             : 'api/system/admin_auth.php?action=status';
@@ -111,8 +111,6 @@ async function checkAuthOnLoad(loginPayload = null) {
         const data = await res.json();
         if (data && data.status === 'success' && data.logged_in) {
             currentAdminState.logged_in = true;
-            currentAdminState.user = data.user || 'Admin';
-            updateAdminUI(true, currentAdminState.user, data.role || 'admin');
             currentAdminState.user = data.user || storedUser || 'Admin';
             sessionStorage.setItem('active_session_token', activeToken || 'active');
             updateAdminUI(true, currentAdminState.user, data.role || storedRole || 'admin');
@@ -130,10 +128,11 @@ async function checkAuthOnLoad(loginPayload = null) {
             return;
         }
     } catch(e) {
+        sessionStorage.removeItem('active_session_token');
         currentAdminState.logged_in = false;
         currentAdminState.user = null;
         updateAdminUI(false, null, 'guest');
-    } catch(e) {}
+    }
 
     // If local token and user exist, preserve authenticated state
     if (activeToken && storedUser) {
@@ -360,12 +359,6 @@ function openAdminModal() {
     // Reset view to login
     toggleAuthView('login');
     
-    // If already logged in, this button acts as a logout
-    if (currentAdminState.logged_in) {
-        submitAdminLogout();
-        return;
-    }
-    
     const modal = document.getElementById('admin-auth-modal');
     if (modal) {
         modal.classList.remove('hidden');
@@ -412,8 +405,10 @@ async function submitAdminLogin(event) {
 
     if (errBanner) errBanner.classList.add('hidden');
     if (successBanner) successBanner.classList.add('hidden');
-    submitBtn.innerText = 'Verifying...';
-    submitBtn.disabled = true;
+    if (submitBtn) {
+        submitBtn.innerText = 'Verifying...';
+        submitBtn.disabled = true;
+    }
 
     try {
         const res = await fetch('api/auth/login.php', {
@@ -439,13 +434,15 @@ async function submitAdminLogin(event) {
                 successBanner.classList.remove('hidden');
             }
             
-            submitBtn.innerText = 'Access Granted!';
+            if (submitBtn) submitBtn.innerText = 'Access Granted!';
             checkAuthOnLoad(data);
             
             setTimeout(() => {
                 closeAdminModal();
-                submitBtn.innerText = 'Access System';
-                submitBtn.disabled = false;
+                if (submitBtn) {
+                    submitBtn.innerText = 'Sign In';
+                    submitBtn.disabled = false;
+                }
                 if (successBanner) successBanner.classList.add('hidden');
                 
                 const targetTab = window.pendingTabId || window.location.hash.replace('#', '');
@@ -453,22 +450,26 @@ async function submitAdminLogin(event) {
                     window.switchTab(targetTab);
                     window.pendingTabId = null;
                 }
-            }, 1200);
+            }, 1000);
         } else {
             if (errBanner) {
                 errBanner.innerText = data.message || 'Invalid username or password.';
                 errBanner.classList.remove('hidden');
             }
-            submitBtn.innerText = 'Access System';
-            submitBtn.disabled = false;
+            if (submitBtn) {
+                submitBtn.innerText = 'Sign In';
+                submitBtn.disabled = false;
+            }
         }
     } catch (err) {
         if (errBanner) {
             errBanner.innerText = 'Network error. Please try again.';
             errBanner.classList.remove('hidden');
         }
-        submitBtn.innerText = 'Access System';
-        submitBtn.disabled = false;
+        if (submitBtn) {
+            submitBtn.innerText = 'Sign In';
+            submitBtn.disabled = false;
+        }
     }
 }
 
