@@ -122,3 +122,4 @@ echo json_encode([
     'count' => count($events),
     'events' => array_slice($events, 0, 30)
 ]);
+

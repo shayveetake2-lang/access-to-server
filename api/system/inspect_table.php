@@ -58,3 +58,4 @@ try {
         'message' => 'Error reading table: ' . $e->getMessage()
     ]);
 }
+

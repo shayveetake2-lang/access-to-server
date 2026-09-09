@@ -112,3 +112,4 @@ try {
         'message' => 'Failed to fetch database telemetry: ' . $e->getMessage()
     ]);
 }
+

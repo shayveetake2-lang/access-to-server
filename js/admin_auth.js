@@ -1,6 +1,70 @@
 let currentAdminState = { logged_in: false, user: null };
 
+// Explicitly default to unauthenticated state immediately when script loads
+currentAdminState.logged_in = false;
+currentAdminState.user = null;
+
+// Intercept window.fetch to prevent native browser Basic Auth popups
+// (attaches X-Requested-With header to suppress WWW-Authenticate browser challenges,
+// and routes any 401 response directly to our custom Tailwind login modal)
+const _sfOriginalFetch = window.fetch;
+window.fetch = async function(...args) {
+    let [resource, config] = args;
+    config = config || {};
+
+    if (!config.headers) {
+        config.headers = {};
+    }
+
+    if (config.headers instanceof Headers) {
+        if (!config.headers.has('X-Requested-With')) {
+            config.headers.set('X-Requested-With', 'XMLHttpRequest');
+        }
+    } else if (Array.isArray(config.headers)) {
+        config.headers.push(['X-Requested-With', 'XMLHttpRequest']);
+    } else if (typeof config.headers === 'object') {
+        config.headers['X-Requested-With'] = 'XMLHttpRequest';
+    }
+
+    try {
+        const response = await _sfOriginalFetch.call(this, resource, config);
+        if (response.status === 401 && !currentAdminState.logged_in) {
+            openAdminModal();
+            const errBanner = document.getElementById('admin-login-error');
+            if (errBanner) {
+                errBanner.innerText = '🔒 Session expired or authentication required. Please sign in.';
+                errBanner.classList.remove('hidden');
+            }
+        }
+        return response;
+    } catch (err) {
+        throw err;
+    }
+};
+
+// Global click capture to intercept clicks on restricted features before browser basic auth or inline handlers
+document.addEventListener('click', (e) => {
+    if (currentAdminState.logged_in) return;
+
+    const restrictedTarget = e.target.closest(
+        '#deploy-submit-btn, #db-btn, .auth-required-btn, .auth-required-action, .auth-required-nav, .auth-admin-nav, [data-auth-required]'
+    );
+
+    if (restrictedTarget) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        openAdminModal();
+        const errBanner = document.getElementById('admin-login-error');
+        if (errBanner) {
+            errBanner.innerText = '🔒 Please sign in with your account to access this feature.';
+            errBanner.classList.remove('hidden');
+        }
+    }
+}, true); // Capture phase ensures execution before bubbling or element-level event listeners
+
 async function checkAuthOnLoad(loginPayload = null) {
+    // If explicit login payload passed (e.g. from submitAdminLogin)
     if (loginPayload) {
         currentAdminState.logged_in = true;
         currentAdminState.user = loginPayload.username || 'Admin';
@@ -9,23 +73,27 @@ async function checkAuthOnLoad(loginPayload = null) {
         return;
     }
 
+    // STRICT LOGGED-OUT DEFAULT:
+    // Explicitly lock down the state and hide all restricted features immediately on page load
+    currentAdminState.logged_in = false;
+    currentAdminState.user = null;
+    updateAdminUI(false, null, 'guest');
+
     const activeSession = sessionStorage.getItem('active_session_token');
+    // If no active session exists, stay strictly logged out
+    if (!activeSession) {
+        return;
+    }
+
     const storedStorage = localStorage.getItem('user_storage');
-    
     if (storedStorage) {
         try { updateUserStorageUI(JSON.parse(storedStorage)); } catch(e) {}
     }
 
-    // Default to Logged Out state on site load unless user has actively logged in this session
-    if (!activeSession) {
-        currentAdminState.logged_in = false;
-        currentAdminState.user = null;
-        updateAdminUI(false, null, 'guest');
-        return;
-    }
-
     try {
-        const res = await fetch('api/system/admin_auth.php?action=status');
+        const res = await fetch('api/system/admin_auth.php?action=status', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
         const data = await res.json();
         if (data && data.status === 'success' && data.logged_in) {
             currentAdminState.logged_in = true;

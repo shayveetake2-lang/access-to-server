@@ -121,12 +121,7 @@
                                     Media Player (Plex)
                                 </a>
                             </li>
-                            <li>
-                                <a href="access.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
-                                    <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                                    Request Access
-                                </a>
-                            </li>
+
                             <li>
                                 <a href="host.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
@@ -298,39 +293,51 @@
                 <!-- TAB 1: OVERVIEW (Welcome Header)                        -->
                 <!-- ═══════════════════════════════════════════════════════ -->
                 <div id="tab-overview" class="sf-tab-content space-y-6">
-                    <!-- House Rules & Instructions Section -->
-                    <div class="rounded-2xl border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50/70 dark:bg-cyan-950/20 shadow-lg shadow-cyan-500/5 dark:shadow-cyan-500/10 overflow-hidden">
-                        <div class="flex items-center gap-2.5 p-4 bg-cyan-100/60 dark:bg-cyan-900/30 border-b border-cyan-200/80 dark:border-cyan-500/20">
-                            <svg class="w-5 h-5 text-cyan-600 dark:text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                            </svg>
-                            <h3 class="text-sm font-bold text-cyan-900 dark:text-cyan-200 tracking-wide uppercase">House Rules &amp; Instructions</h3>
-                        </div>
-                        <div class="p-5 text-sm text-slate-700 dark:text-slate-300 space-y-4">
+                    <!-- Collapsible House Rules & Instructions (Closed by default) -->
+                    <details class="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-sm transition-all overflow-hidden">
+                        <summary class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer list-none select-none transition-colors border-b border-transparent group-open:border-slate-200 dark:group-open:border-slate-800">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wide uppercase">House Rules &amp; Instructions</span>
+                                <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400">4 items</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-400">
+                                <span class="text-[11px] font-medium hidden sm:inline text-slate-400 group-open:hidden">View rules</span>
+                                <span class="text-[11px] font-medium hidden group-open:sm:inline text-slate-400">Hide rules</span>
+                                <svg class="w-4 h-4 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </summary>
+                        <div class="p-5 text-xs text-slate-600 dark:text-slate-300 space-y-3.5 bg-white dark:bg-[#0f172a]">
                             <div class="flex items-start gap-3">
-                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-200/80 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400 font-bold text-xs shrink-0 mt-0.5">1</span>
+                                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-bold text-[10px] shrink-0 mt-0.5">1</span>
                                 <p><strong class="text-slate-900 dark:text-white font-semibold">Give your GitHub repository a unique name</strong> so you do not overwrite another person's folder.</p>
                             </div>
                             <div class="flex items-start gap-3">
-                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-200/80 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400 font-bold text-xs shrink-0 mt-0.5">2</span>
-                                <p><strong class="text-slate-900 dark:text-white font-semibold">Always use relative paths</strong> for images and CSS (e.g., <code class="px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-slate-800 text-cyan-800 dark:text-cyan-300 font-mono text-xs">images/pic.jpg</code>).</p>
+                                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-bold text-[10px] shrink-0 mt-0.5">2</span>
+                                <p><strong class="text-slate-900 dark:text-white font-semibold">Always use relative paths</strong> for images and CSS (e.g., <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 font-mono text-[11px]">images/pic.jpg</code>).</p>
                             </div>
                             <div class="flex items-start gap-3">
-                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-200/80 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400 font-bold text-xs shrink-0 mt-0.5">3</span>
+                                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-bold text-[10px] shrink-0 mt-0.5">3</span>
                                 <p><strong class="text-slate-900 dark:text-white font-semibold">Downtime is normal.</strong> If the 2011 Mac goes to sleep or the tunnel drops, your site will temporarily go offline.</p>
                             </div>
                             <div class="flex items-start gap-3">
-                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-200/80 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400 font-bold text-xs shrink-0 mt-0.5">4</span>
+                                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-bold text-[10px] shrink-0 mt-0.5">4</span>
                                 <p><strong class="text-slate-900 dark:text-white font-semibold">Storage Limit:</strong> Each account is strictly allocated 100MB of SSD space for hosting websites and database data. Please monitor your usage via the dashboard.</p>
                             </div>
                         </div>
-                    </div>
+                    </details>
                     
-                    <!-- Overview Header Subbar (Updated to just "Welcome") -->
-                    <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
+                    <!-- Overview Header Subbar -->
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Welcome</h2>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                            <p class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                                 MacBook Pro 2011 · ZeroTier connected · <span class="live-time-display">Checked 14:32</span>
                             </p>
                         </div>
@@ -638,7 +645,7 @@
                         </div>
 
                         <!-- Deploy Form Controls (Only visible when logged in) -->
-                        <div id="deploy-controls" class="auth-required-btn space-y-3">
+                        <div id="deploy-controls" class="auth-required-btn space-y-3 hidden">
                             <div>
                                 <label for="repo-url" class="block text-xs font-medium text-slate-400 mb-1">Git Repository URL (HTTPS or SSH)</label>
                                 <input type="url" id="repo-url" placeholder="https://github.com/username/repository.git" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
@@ -650,7 +657,7 @@
                         </div>
 
                         <!-- Real-time Deployment Terminal Stream Output (Only visible when logged in) -->
-                        <div id="deploy-terminal-card" class="auth-required-btn mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                        <div id="deploy-terminal-card" class="auth-required-btn mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 hidden">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-xs font-bold text-slate-400 font-mono">Real-time Execution Output Stream</span>
                             </div>
@@ -765,7 +772,7 @@
                             <button onclick="openAdminModal()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all shrink-0">Sign In to Create DB</button>
                         </div>
 
-                        <div id="db-form-container" class="auth-required-btn space-y-4">
+                        <div id="db-form-container" class="auth-required-btn space-y-4 hidden">
                             <div>
                                 <label for="db-name" class="block text-xs font-medium text-slate-400 mb-1">Database Name</label>
                                 <input type="text" id="db-name" aria-label="Database Name" placeholder="e.g. app_store_db" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">

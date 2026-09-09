@@ -1,3 +1,8 @@
+<?php
+// access.php — Deprecated: Feature removed. Redirecting to home dashboard.
+header("Location: index.html", true, 301);
+exit;
+?>
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
