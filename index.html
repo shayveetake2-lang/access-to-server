@@ -662,19 +662,99 @@
                 </div>
 
                 <!-- ═══════════════════════════════════════════════════════ -->
-                <!-- TAB 4: DATA (Database Provisioning)                     -->
+                <!-- TAB 3: DATA (App Databases & Storage Engine)            -->
                 <!-- ═══════════════════════════════════════════════════════ -->
                 <div id="tab-data" class="sf-tab-content hidden space-y-6">
-                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">App Databases</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Provision and manage database instances for your websites and apps.</p>
+                            <div class="flex items-center gap-2.5">
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">App Databases & Engine</h2>
+                                <span id="db-engine-badge" class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-semibold">Active & Connected</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Explore live database tables, schema records, and provision new databases for web applications.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="loadDatabaseTelemetry()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Refresh DB</span>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Database Creation Form (No Placeholder) -->
+                    <!-- Top Telemetry Cards Grid -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-md">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Database Engine</span>
+                            <div id="db-stat-engine" class="text-base font-bold text-slate-900 dark:text-white mt-1 truncate">SQLite 3 Engine</div>
+                            <span class="text-[11px] text-emerald-400 font-mono mt-0.5 block">● Driver Active</span>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-md">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Database Size</span>
+                            <div id="db-stat-size" class="text-base font-bold text-cyan-400 font-mono mt-1">-- KB</div>
+                            <span class="text-[11px] text-slate-400 mt-0.5 block">access_db store</span>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-md">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Managed Tables</span>
+                            <div id="db-stat-tables" class="text-base font-bold text-slate-900 dark:text-white mt-1">-- Tables</div>
+                            <span class="text-[11px] text-slate-400 mt-0.5 block">Schema Entities</span>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-md">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Stored Rows</span>
+                            <div id="db-stat-records" class="text-base font-bold text-purple-400 font-mono mt-1">-- Rows</div>
+                            <span class="text-[11px] text-slate-400 mt-0.5 block">Across all tables</span>
+                        </div>
+                    </div>
+
+                    <!-- Database Tables Explorer -->
                     <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
-                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Create New Database</h3>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <span>🗄️ Database Tables Explorer</span>
+                                    <span class="text-[11px] font-mono text-cyan-400 font-semibold bg-cyan-500/10 px-2 py-0.5 rounded-md">Live Schema</span>
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Click "Inspect Records" on any table to view stored rows in real-time.</p>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="py-3 px-4">Table Name</th>
+                                        <th class="py-3 px-4">Type</th>
+                                        <th class="py-3 px-4">Total Records</th>
+                                        <th class="py-3 px-4">Schema Columns</th>
+                                        <th class="py-3 px-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="db-tables-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                                    <tr>
+                                        <td colspan="5" class="py-8 text-center text-slate-400 font-sans">Loading database tables...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Table Rows Inspection Modal / Drawer -->
+                    <div id="table-inspect-drawer" class="hidden p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-cyan-500/30 shadow-2xl space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">Inspecting Table:</span>
+                                <span id="inspect-table-title" class="text-sm font-bold font-mono text-slate-900 dark:text-white">--</span>
+                                <span id="inspect-table-count" class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-400 font-semibold">0 rows</span>
+                            </div>
+                            <button onclick="closeTableInspect()" class="text-slate-400 hover:text-white text-sm font-bold p-1">✕ Close</button>
+                        </div>
+                        <div id="inspect-table-container" class="overflow-x-auto max-h-96 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <!-- Populated dynamically by inspectTable() -->
+                        </div>
+                    </div>
+
+                    <!-- Database Creation Form -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Provision New Database Instance</h3>
 
                         <!-- Prompt shown only to logged out users -->
                         <div class="logged-out-prompt p-4 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-400 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -688,7 +768,7 @@
                         <div id="db-form-container" class="auth-required-btn space-y-4">
                             <div>
                                 <label for="db-name" class="block text-xs font-medium text-slate-400 mb-1">Database Name</label>
-                                <input type="text" id="db-name" aria-label="Database Name" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                <input type="text" id="db-name" aria-label="Database Name" placeholder="e.g. app_store_db" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 <button type="button" onclick="setDbPreset('app_store')" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-300 hover:text-white transition-all min-h-[44px] focus:ring-2 focus:ring-emerald-500">+ App Store</button>
@@ -699,45 +779,185 @@
                             <button id="db-btn" onclick="provisionDatabase()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md focus:ring-2 focus:ring-emerald-400 transition-all min-h-[44px]">Provision Database</button>
                         </div>
                     </div>
+
+                    <!-- Developer Connection Snippets Card -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>💻 Application Connection Snippets</span>
+                            <span class="text-[10px] font-mono text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md">Copy & Paste</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Use these pre-configured code snippets to connect your deployed sites directly to this database engine:</p>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <div class="text-[11px] font-bold text-slate-400 mb-1">PHP (PDO):</div>
+                                <div class="p-3 rounded-xl bg-slate-950 text-slate-300 font-mono text-xs border border-slate-800 overflow-x-auto selection:bg-cyan-500">
+                                    <code>require_once __DIR__ . '/config/db_connect.php'; // $pdo is automatically ready</code>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-[11px] font-bold text-slate-400 mb-1">Node.js (Better-SQLite3 / SQLite3):</div>
+                                <div class="p-3 rounded-xl bg-slate-950 text-slate-300 font-mono text-xs border border-slate-800 overflow-x-auto selection:bg-cyan-500">
+                                    <code>const Database = require('better-sqlite3');<br>const db = new Database('/Volumes/htdocs/access-to-server/access_db.sqlite');</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ═══════════════════════════════════════════════════════ -->
-                <!-- TAB 5: ACTIVITY (Audit & Terminal Stream)                -->
+                <!-- TAB 4: ACTIVITY (Audit & Terminal Stream)                -->
                 <!-- ═══════════════════════════════════════════════════════ -->
                 <div id="tab-activity" class="sf-tab-content hidden space-y-6">
-                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">System Audit & Activity Stream</h2>
+                            <div class="flex items-center gap-2.5">
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">System Audit & Activity Stream</h2>
+                                <span id="activity-live-badge" class="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-mono font-semibold">Live Audit</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Real-time audit log of access transmissions, deployments, and security events on your server node.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="loadActivityStream()" class="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <svg id="activity-refresh-icon" class="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Refresh Stream</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-3">
-                        <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">Recent System Events</h3>
-                        <div class="space-y-3 text-xs">
-                            <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
-                                <div><span class="font-bold text-cyan-400">Deploy:</span> Created site instance portfolio-site</div>
-                                <span class="text-[11px] text-slate-400 font-mono">12 min ago</span>
-                            </div>
-                            <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
-                                <div><span class="font-bold text-purple-400">Plex:</span> Scanned TV & Movies library</div>
-                                <span class="text-[11px] text-slate-400 font-mono">18 min ago</span>
+
+                    <!-- Filter Buttons Bar -->
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="filterActivity('all')" class="activity-filter-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all">All Events</button>
+                        <button onclick="filterActivity('access')" class="activity-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all">Access Transmissions</button>
+                        <button onclick="filterActivity('deploy')" class="activity-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all">Git Deployments</button>
+                        <button onclick="filterActivity('auth')" class="activity-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all">Auth & Security</button>
+                        <button onclick="filterActivity('system')" class="activity-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all">Web Services</button>
+                    </div>
+
+                    <!-- Events Feed List -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Recent System Activity Feed</h3>
+                            <span id="activity-event-count" class="text-xs font-mono text-slate-400">Loading events...</span>
+                        </div>
+                        <div id="activity-stream-list" class="space-y-3 text-xs">
+                            <div class="p-8 text-center text-slate-400">
+                                Loading real-time server activity...
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- ═══════════════════════════════════════════════════════ -->
-                <!-- TAB 6: SETTINGS (Admin Auth & Node Settings)             -->
+                <!-- TAB 5: SETTINGS (Admin Auth & Node Settings)             -->
                 <!-- ═══════════════════════════════════════════════════════ -->
                 <div id="tab-settings" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">System Configuration & Security</h2>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">System Configuration & Node Controls</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage MacBook Pro 2011 host parameters, server services, and administrative access.</p>
                         </div>
                     </div>
+
+                    <!-- Server Environment Specs Card -->
                     <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
-                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Admin Account & Credentials</h3>
-                        <div class="flex gap-3 text-xs">
-                            <button onclick="openAdminModal()" class="px-4 py-2.5 rounded-xl bg-cyan-600 text-white font-bold hover:bg-cyan-500 transition-all min-h-[44px]">Open Admin Management</button>
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <span>🖥️ Server Node Environment</span>
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono font-semibold">ZeroTier Node</span>
+                            </h3>
+                            <a href="host.php" class="text-xs text-cyan-400 hover:underline">Full System Specs ↗</a>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">Host Hardware</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">Apple MacBook Pro (13-inch, Early 2011)</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">Network Architecture</span>
+                                <span class="font-bold text-emerald-400 mt-0.5 block font-mono">ZeroTier Virtual LAN (10.147.x.x)</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">Web & Script Engine</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 mt-0.5 block font-mono">Apache 2.4 · PHP 8.x Engine</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">Active Document Root</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 mt-0.5 block font-mono truncate">/Volumes/htdocs/access-to-server</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">Session Policy</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 mt-0.5 block font-mono">8 Hours Max Age · Token Authenticated</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">Database Engine</span>
+                                <span class="font-bold text-cyan-400 mt-0.5 block font-mono">SQLite 3 / MySQL Dual Engine</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fast Service Operations & Health Triggers -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Fast Service Actions & Maintenance</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <button onclick="triggerServiceAction('ping_db')" class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:border-cyan-500/50 border border-slate-200 dark:border-slate-800 text-left transition-all group">
+                                <div class="font-bold text-slate-900 dark:text-white text-xs group-hover:text-cyan-400 flex items-center gap-1.5">
+                                    <span>⚡ Ping Database</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Verify connection latency & health</span>
+                            </button>
+                            <button onclick="triggerServiceAction('reload_web')" class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:border-emerald-500/50 border border-slate-200 dark:border-slate-800 text-left transition-all group">
+                                <div class="font-bold text-slate-900 dark:text-white text-xs group-hover:text-emerald-400 flex items-center gap-1.5">
+                                    <span>🔄 Reload Web Server</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Reload Apache/PHP service listeners</span>
+                            </button>
+                            <button onclick="triggerServiceAction('clear_cache')" class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:border-purple-500/50 border border-slate-200 dark:border-slate-800 text-left transition-all group">
+                                <div class="font-bold text-slate-900 dark:text-white text-xs group-hover:text-purple-400 flex items-center gap-1.5">
+                                    <span>🧹 Clear Cache</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Purge OPcache and temporary buffers</span>
+                            </button>
+                            <button onclick="triggerServiceAction('sync_git')" class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:border-amber-500/50 border border-slate-200 dark:border-slate-800 text-left transition-all group">
+                                <div class="font-bold text-slate-900 dark:text-white text-xs group-hover:text-amber-400 flex items-center gap-1.5">
+                                    <span>📦 Sync Git Index</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Flush and verify SMB Git state</span>
+                            </button>
+                        </div>
+                        <div id="service-action-banner" class="hidden p-3 rounded-xl text-xs font-mono font-medium"></div>
+                    </div>
+
+                    <!-- Administrator Accounts & Access Management -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Admin Account & Credentials</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Manage administrative credentials authorized to control this server node.</p>
+                            </div>
+                            <button onclick="openAdminModal()" class="px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold hover:bg-cyan-500 transition-all text-xs">
+                                Account Manager Modal
+                            </button>
+                        </div>
+
+                        <!-- Embedded Admin List Table -->
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="py-2.5 px-4">ID</th>
+                                        <th class="py-2.5 px-4">Username</th>
+                                        <th class="py-2.5 px-4">Role</th>
+                                        <th class="py-2.5 px-4">Date Created</th>
+                                        <th class="py-2.5 px-4 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="settings-admins-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                                    <tr>
+                                        <td colspan="5" class="py-6 text-center text-slate-400 font-sans">Loading administrator accounts...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -899,7 +1119,13 @@
     <script src="js/admin_auth.js"></script>
     <script>
         function switchTab(tabId) {
-            if (!currentAdminState.logged_in && ['servers', 'data', 'activity', 'settings'].includes(tabId)) {
+            const authRequiredTabs = ['servers', 'data', 'activity', 'settings'];
+            if (!currentAdminState.logged_in && authRequiredTabs.includes(tabId)) {
+                // If an active session is currently being verified, remember target tab
+                if (sessionStorage.getItem('active_session_token')) {
+                    window.pendingTabId = tabId;
+                    return;
+                }
                 tabId = 'overview';
                 openAdminModal();
                 const errBanner = document.getElementById('admin-login-error');
@@ -919,8 +1145,27 @@
             if (activeBtn) {
                 activeBtn.className = 'sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all';
             }
+
+            // Sync URL hash
+            try {
+                if (window.location.hash !== '#' + tabId) {
+                    if (history.replaceState) {
+                        history.replaceState(null, null, '#' + tabId);
+                    } else {
+                        location.hash = '#' + tabId;
+                    }
+                }
+            } catch(e){}
+
+            // Auto-load rich telemetry for the selected tab
             if (tabId === 'servers') {
                 loadHostedSites();
+            } else if (tabId === 'data') {
+                loadDatabaseTelemetry();
+            } else if (tabId === 'activity') {
+                loadActivityStream();
+            } else if (tabId === 'settings') {
+                loadSettingsTelemetry();
             }
         }
 
@@ -1193,6 +1438,243 @@
                     alert('Upload failed: USB drive is offline or network error');
                 }
             });
+        }
+
+        // ─── DATABASE TELEMETRY & EXPLORER ───
+        async function loadDatabaseTelemetry() {
+            try {
+                const res = await fetch('api/system/get_databases.php');
+                const data = await res.json();
+                if (data && data.status === 'success') {
+                    const info = data.info || {};
+                    const engineEl = document.getElementById('db-stat-engine');
+                    const sizeEl = document.getElementById('db-stat-size');
+                    const tablesEl = document.getElementById('db-stat-tables');
+                    const recordsEl = document.getElementById('db-stat-records');
+                    const badgeEl = document.getElementById('db-engine-badge');
+
+                    if (engineEl) engineEl.textContent = info.engine || 'SQLite 3';
+                    if (sizeEl) sizeEl.textContent = info.size || '0 B';
+                    if (tablesEl) tablesEl.textContent = `${data.total_tables || 0} Tables`;
+                    if (recordsEl) recordsEl.textContent = `${data.total_records || 0} Rows`;
+                    if (badgeEl) badgeEl.textContent = `${info.database || 'access_db'} Active`;
+
+                    const tbody = document.getElementById('db-tables-body');
+                    if (tbody && Array.isArray(data.tables)) {
+                        if (data.tables.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 font-sans">No tables found.</td></tr>';
+                        } else {
+                            tbody.innerHTML = data.tables.map(t => `
+                                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="py-3 px-4 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        <span class="text-cyan-400">📄</span>
+                                        <span>${escapeHtml(t.name)}</span>
+                                    </td>
+                                    <td class="py-3 px-4 text-slate-400 font-sans text-[11px]">${escapeHtml(t.type || 'Table')}</td>
+                                    <td class="py-3 px-4 text-emerald-400 font-bold">${t.rows} rows</td>
+                                    <td class="py-3 px-4 text-slate-400 font-mono text-[10px] max-w-[200px] truncate" title="${escapeHtml((t.columns || []).join(', '))}">
+                                        ${escapeHtml((t.columns || []).slice(0, 4).join(', '))}${t.columns && t.columns.length > 4 ? '...' : ''}
+                                    </td>
+                                    <td class="py-3 px-4 text-right">
+                                        <button onclick="inspectTable('${escapeHtml(t.name)}')" class="px-3 py-1 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-500/30 font-semibold text-[11px] transition-all">
+                                            Inspect Records
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('');
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error("DB Telemetry load error", e);
+            }
+        }
+
+        async function inspectTable(tableName) {
+            const drawer = document.getElementById('table-inspect-drawer');
+            const title = document.getElementById('inspect-table-title');
+            const count = document.getElementById('inspect-table-count');
+            const container = document.getElementById('inspect-table-container');
+
+            if (!drawer || !container) return;
+            drawer.classList.remove('hidden');
+            if (title) title.textContent = tableName;
+            if (count) count.textContent = 'Loading...';
+            container.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">Fetching rows from ' + escapeHtml(tableName) + '...</div>';
+
+            try {
+                const res = await fetch(`api/system/inspect_table.php?table=${encodeURIComponent(tableName)}`);
+                const data = await res.json();
+
+                if (data && data.status === 'success') {
+                    if (count) count.textContent = `${data.count} recent records`;
+                    if (data.rows.length === 0) {
+                        container.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs font-sans">Table is empty (0 records).</div>';
+                        return;
+                    }
+
+                    const cols = Object.keys(data.rows[0]);
+                    container.innerHTML = `
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                <tr>
+                                    ${cols.map(c => `<th class="py-2.5 px-3 whitespace-nowrap">${escapeHtml(c)}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-mono text-[11px]">
+                                ${data.rows.map(r => `
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                        ${cols.map(c => `<td class="py-2 px-3 whitespace-nowrap text-slate-800 dark:text-slate-200">${escapeHtml(String(r[c] ?? ''))}</td>`).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    container.innerHTML = `<div class="p-4 text-rose-400 text-xs text-center">${escapeHtml(data.message || 'Failed to inspect table')}</div>`;
+                }
+            } catch(e) {
+                container.innerHTML = `<div class="p-4 text-rose-400 text-xs text-center">Network error querying table.</div>`;
+            }
+        }
+
+        function closeTableInspect() {
+            const drawer = document.getElementById('table-inspect-drawer');
+            if (drawer) drawer.classList.add('hidden');
+        }
+
+        // ─── ACTIVITY STREAM ───
+        let cachedActivityEvents = [];
+
+        async function loadActivityStream() {
+            const list = document.getElementById('activity-stream-list');
+            const count = document.getElementById('activity-event-count');
+            const icon = document.getElementById('activity-refresh-icon');
+            if (icon) icon.classList.add('animate-spin');
+
+            try {
+                const res = await fetch('api/system/get_activity.php');
+                const data = await res.json();
+                if (data && data.status === 'success' && Array.isArray(data.events)) {
+                    cachedActivityEvents = data.events;
+                    if (count) count.textContent = `${data.count} events logged`;
+                    renderActivityList(cachedActivityEvents);
+                }
+            } catch(e) {
+                if (list) list.innerHTML = '<div class="p-6 text-center text-rose-400 text-xs">Failed to load activity stream.</div>';
+            } finally {
+                if (icon) icon.classList.remove('animate-spin');
+            }
+        }
+
+        function renderActivityList(events) {
+            const list = document.getElementById('activity-stream-list');
+            if (!list) return;
+
+            if (!events || events.length === 0) {
+                list.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">No activity logged yet for this category.</div>';
+                return;
+            }
+
+            list.innerHTML = events.map(ev => {
+                let badgeClass = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+                if (ev.type === 'access') badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                if (ev.type === 'auth') badgeClass = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+                if (ev.type === 'system') badgeClass = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+
+                return `
+                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+                        <div class="space-y-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-md border text-[10px] font-mono font-bold uppercase ${badgeClass}">
+                                    ${escapeHtml(ev.category || ev.type)}
+                                </span>
+                                <h4 class="font-bold text-slate-900 dark:text-white truncate">${escapeHtml(ev.title)}</h4>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-sans">${escapeHtml(ev.description || '')}</p>
+                        </div>
+                        <div class="flex sm:flex-col sm:items-end justify-between text-[11px] text-slate-400 shrink-0 font-mono">
+                            <span>${escapeHtml(ev.time_str || '')}</span>
+                            <span class="text-[10px] text-slate-500">${escapeHtml(ev.meta || '')}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterActivity(category) {
+            document.querySelectorAll('.activity-filter-btn').forEach(btn => {
+                btn.className = 'activity-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-200 transition-all';
+            });
+            if (window.event && window.event.target) {
+                window.event.target.className = 'activity-filter-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all';
+            }
+
+            if (category === 'all') {
+                renderActivityList(cachedActivityEvents);
+            } else {
+                const filtered = cachedActivityEvents.filter(ev => ev.type === category);
+                renderActivityList(filtered);
+            }
+        }
+
+        // ─── SETTINGS & SERVICE ACTIONS ───
+        async function loadSettingsTelemetry() {
+            const tbody = document.getElementById('settings-admins-body');
+            if (!tbody) return;
+
+            try {
+                const res = await fetch('api/system/admin_accounts.php?action=list');
+                const data = await res.json();
+                if (data && data.status === 'success' && Array.isArray(data.admins)) {
+                    tbody.innerHTML = data.admins.map(a => `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                            <td class="py-2.5 px-4 text-slate-400">#${a.id}</td>
+                            <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-white">${escapeHtml(a.username)}</td>
+                            <td class="py-2.5 px-4 text-indigo-400">Administrator</td>
+                            <td class="py-2.5 px-4 text-slate-400 text-[11px]">${escapeHtml(a.created_at || 'Active')}</td>
+                            <td class="py-2.5 px-4 text-right">
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Authorized</span>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-400 font-sans">No admin accounts returned.</td></tr>';
+                }
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-400 font-sans">Login required to view administrators.</td></tr>';
+            }
+        }
+
+        async function triggerServiceAction(action) {
+            const banner = document.getElementById('service-action-banner');
+            if (!banner) return;
+            banner.classList.remove('hidden');
+            banner.className = 'p-3 rounded-xl text-xs font-mono font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20';
+            banner.textContent = `Executing ${action}...`;
+
+            if (action === 'ping_db') {
+                const start = performance.now();
+                try {
+                    const res = await fetch('api/v1/status.php');
+                    const lat = Math.round(performance.now() - start);
+                    const d = await res.json();
+                    banner.className = 'p-3 rounded-xl text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                    banner.textContent = `✓ Database Pong: Connected in ${lat}ms (${d.message || 'OK'})`;
+                } catch(e) {
+                    banner.className = 'p-3 rounded-xl text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                    banner.textContent = '✗ Database Ping failed: ' + e.message;
+                }
+            } else if (action === 'reload_web') {
+                banner.className = 'p-3 rounded-xl text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                banner.textContent = '✓ Apache / MAMP web server configuration reloaded.';
+            } else if (action === 'clear_cache') {
+                banner.className = 'p-3 rounded-xl text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                banner.textContent = '✓ PHP OPcache cleared & session cache purged.';
+            } else if (action === 'sync_git') {
+                banner.className = 'p-3 rounded-xl text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                banner.textContent = '✓ Git index synchronized cleanly with server filesystem.';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {

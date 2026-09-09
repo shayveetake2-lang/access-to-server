@@ -15,9 +15,10 @@ function requireAdmin() {
         $token = $_GET['token'];
     }
     
-    // Fallback to checking session if no Bearer token provided
+    // Check token or active admin session
     $sessionToken = $_SESSION['auth_token'] ?? null;
-    $validToken = (!empty($token) && $token === $sessionToken) || (!empty($sessionToken));
+    $adminLogged = !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+    $validToken = (!empty($token) && $token === $sessionToken) || (!empty($sessionToken)) || $adminLogged;
 
     if (!$validToken) {
         http_response_code(401);
@@ -25,7 +26,8 @@ function requireAdmin() {
         exit;
     }
 
-    if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    $role = $_SESSION['role'] ?? $_SESSION['user_role'] ?? ($adminLogged ? 'admin' : null);
+    if ($role !== 'admin') {
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Access denied. Admin role required.']);
         exit;

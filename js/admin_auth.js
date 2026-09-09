@@ -31,6 +31,12 @@ async function checkAuthOnLoad(loginPayload = null) {
             currentAdminState.logged_in = true;
             currentAdminState.user = data.user || 'Admin';
             updateAdminUI(true, currentAdminState.user, data.role || 'admin');
+
+            const targetTab = window.pendingTabId || window.location.hash.replace('#', '');
+            if (targetTab && typeof window.switchTab === 'function') {
+                window.switchTab(targetTab);
+                window.pendingTabId = null;
+            }
         } else {
             sessionStorage.removeItem('active_session_token');
             currentAdminState.logged_in = false;
@@ -321,6 +327,12 @@ async function submitAdminLogin(event) {
                 submitBtn.innerText = 'Access System';
                 submitBtn.disabled = false;
                 if (successBanner) successBanner.classList.add('hidden');
+                
+                const targetTab = window.pendingTabId || window.location.hash.replace('#', '');
+                if (targetTab && typeof window.switchTab === 'function') {
+                    window.switchTab(targetTab);
+                    window.pendingTabId = null;
+                }
             }, 1200);
         } else {
             if (errBanner) {
