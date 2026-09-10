@@ -57,9 +57,13 @@ class ServerActionHelper {
                             $line = preg_replace('/(password|token|key|secret)=[^&\s]+/', '$1=***', $line);
                             return substr($line, 0, 300); // truncate
                         }, $lines);
-                        return ['status' => 'success', 'logs' => $filtered];
+                        
+                        return ['status' => 'success', 'message' => "Here are the recent logs:
+" . implode("
+", $filtered)];
                     }
-                    return ['status' => 'success', 'logs' => []];
+                    return ['status' => 'success', 'message' => 'No logs found.'];
+
             }
         } catch (\Exception $e) {
             return ['status' => 'error', 'message' => 'Failed to execute action.'];

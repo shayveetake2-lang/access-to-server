@@ -72,7 +72,7 @@ $systemPrompt .= "- Do not invent live server state, CPU temperatures, logs, cre
 $systemPrompt .= "- Do not expose raw account data, API keys, raw DB rows, or hashes.\n";
 $systemPrompt .= "- You can propose fixes and run them only after confirmation.\n";
 $systemPrompt .= "- Return your response in JSON format. The JSON should match this schema: { \"answer\": \"string\", \"confidence\": \"high|medium|low\", \"answer_type\": \"general_guidance|action_proposed|needs_more_info\", \"diagnostics_used\": boolean, \"proposed_actions\": [ { \"action_id\": \"string\", \"label\": \"string\", \"description\": \"string\", \"params\": {} } ] }\n";
-$systemPrompt .= "- Allowed action_ids for proposed_actions: restart_plex, restart_database, restart_web_service, recheck_diagnostics, inspect_hosted_sites, inspect_filtered_logs, deploy_site, provision_database.\n";
+$systemPrompt .= "- If the user asks to review recent errors or logs, you MUST propose the action `inspect_filtered_logs` to fetch them.\n- Allowed action_ids for proposed_actions: restart_plex, restart_database, restart_web_service, recheck_diagnostics, inspect_hosted_sites, inspect_filtered_logs, deploy_site, provision_database.\n";
 $systemPrompt .= "- For deploy_site, you MUST require a valid GitHub URL. If missing, ask for it. When proposing, set params: { \"repo_url\": \"https://github.com/...\" }.\n";
 $systemPrompt .= "- For provision_database, you MUST require a safe database name (letters, numbers, underscores). If missing or unsafe, ask for it. When proposing, set params: { \"db_name\": \"example_db\" }.\n";
 $systemPrompt .= "- For example, if the user asks to restart Plex, set answer_type to 'action_proposed' and include a proposed action with action_id 'restart_plex'.\n";
@@ -114,7 +114,7 @@ foreach ($history as $turn) {
 $messages[] = ['role' => 'user', 'content' => $userMessage];
 
 $payload = json_encode([
-    'model' => 'llama-3.3-70b-versatile',
+    'model' => 'openai/gpt-oss-20b',
     'messages' => $messages,
     'temperature' => 0.1,
     'max_tokens' => 2000,
@@ -130,10 +130,16 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Authorization: Bearer ' . $apiKey
 ]);
 curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$curlError = curl_error($ch);
 curl_close($ch);
+
+if ($httpCode !== 200) { error_log('Groq API Error [' . $httpCode . ']: ' . $curlError . ' - ' . substr($response, 0, 300)); }
+
 
 if ($httpCode === 200) {
     $data = json_decode($response, true);
@@ -151,8 +157,9 @@ if ($httpCode === 200) {
 
 echo json_encode([
     'status' => 'error',
-    'reply' => 'I cannot reach the AI service right now. Please try again.',
-    'answer' => 'I cannot reach the AI service right now. Please try again.',
+    'message' => 'API Error [' . $httpCode . ']: ' . $curlError . ' - ' . substr($response, 0, 200) . ((!isset($parsed) || $parsed === null) ? ' (JSON Parse failed)' : ''),
+    'reply' => 'I cannot reach the AI service right now.',
+    'answer' => 'I cannot reach the AI service right now.',
     'answer_type' => 'service_error',
     'confidence' => 'low'
 ]);

@@ -258,8 +258,7 @@ async function approveServerAction(actionId, paramsStr, btnId) {
             
             es.onmessage = (event) => {
                 const msg = event.data;
-                outputMsg += msg + "
-";
+                outputMsg += msg + '\n';
                 if (msg.includes('Deployment Complete')) {
                     es.close();
                     appendChatMessage('bot', `Deployment of ${repo} completed successfully!`);
@@ -294,12 +293,10 @@ async function approveServerAction(actionId, paramsStr, btnId) {
             });
             const text = await res.text();
             if (res.ok) {
-                appendChatMessage('bot', `Database provisioned successfully!
-${text}`);
+                appendChatMessage('bot', `Database provisioned successfully!\n${text}`);
                 if (btn) btn.innerText = 'Completed';
             } else {
-                appendChatMessage('bot', `Failed to provision database:
-${text}`);
+                appendChatMessage('bot', `Failed to provision database:\n${text}`);
                 if (btn) {
                     btn.innerText = 'Failed';
                     btn.classList.add('bg-rose-600');
@@ -367,15 +364,28 @@ function appendChatMessage(sender, messageText, metadata = null) {
             if (metadata.proposed_actions && metadata.proposed_actions.length > 0) {
                 metaHtml += `<div class="mt-3 space-y-2 border-t border-slate-200 dark:border-slate-700 pt-2">`;
                 metadata.proposed_actions.forEach((act, idx) => {
-                    const btnId = 'action-btn-' + Date.now() + '-' + idx;
+                                        const btnId = 'action-btn-' + Date.now() + '-' + idx;
                     const paramStr = encodeURIComponent(JSON.stringify(act.params || {}));
+                    
+                    let extraInputs = '';
+                    if (act.action_id === 'deploy_site') {
+                        let currentVal = (act.params && act.params.repo_url && !act.params.repo_url.includes('...')) ? act.params.repo_url : '';
+                        extraInputs = `<input type="text" id="input-${btnId}-repo_url" class="mt-1 w-full text-[10px] p-1.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500" placeholder="Paste GitHub URL here..." value="${currentVal}" />`;
+                    } else if (act.action_id === 'provision_database') {
+                        let currentVal = (act.params && act.params.db_name && !act.params.db_name.includes('example')) ? act.params.db_name : '';
+                        extraInputs = `<input type="text" id="input-${btnId}-db_name" class="mt-1 w-full text-[10px] p-1.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500" placeholder="Type safe database_name here..." value="${currentVal}" />`;
+                    }
+                    
                     metaHtml += `
-                        <div class="flex items-center justify-between p-2 rounded bg-slate-200 dark:bg-slate-700/50">
-                            <div>
-                                <div class="text-[10px] font-bold text-slate-800 dark:text-slate-200">${escapeHtml(act.label)}</div>
-                                <div class="text-[9px] text-slate-500 dark:text-slate-400">${escapeHtml(act.description)}</div>
+                        <div class="flex flex-col p-2 rounded bg-slate-200 dark:bg-slate-700/50">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-[10px] font-bold text-slate-800 dark:text-slate-200">${escapeHtml(act.label)}</div>
+                                    <div class="text-[9px] text-slate-500 dark:text-slate-400">${escapeHtml(act.description)}</div>
+                                </div>
+                                <button id="${btnId}" onclick="approveServerAction('${act.action_id}', '${paramStr}', '${btnId}')" class="px-2 py-1 rounded bg-cyan-600 text-white text-[10px] font-bold hover:bg-cyan-500 transition-colors ml-2 flex-shrink-0">Approve</button>
                             </div>
-                            <button id="${btnId}" onclick="approveServerAction('${act.action_id}', '${paramStr}', '${btnId}')" class="px-2 py-1 rounded bg-cyan-600 text-white text-[10px] font-bold hover:bg-cyan-500 transition-colors">Approve</button>
+                            ${extraInputs ? `<div class="mt-2">${extraInputs}</div>` : ''}
                         </div>
                     `;
                 });
