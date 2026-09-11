@@ -607,6 +607,8 @@
                     </div>
                 </div>
 
+                </div>
+
                 <!-- ═══════════════════════════════════════════════════════ -->
                 <!-- TAB 2: MY WEBSITES & DEPLOYER                           -->
                 <!-- ═══════════════════════════════════════════════════════ -->
@@ -657,10 +659,8 @@
                             <button type="button" onclick="openAdminModal(event)" class="admin-login-trigger px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-sm transition-all shrink-0">Sign In to Deploy</button>
                         </div>
 
-                        <!-- Deploy Form Controls (Only visible when logged in) -->
-                        <div id="deploy-controls" class="auth-required-btn space-y-3 hidden">
                         <!-- Deploy Form Controls -->
-                        <div id="deploy-controls" class="space-y-3">
+                        <div id="deploy-controls" class="auth-required-btn space-y-3 hidden">
                             <div>
                                 <label for="repo-url" class="block text-xs font-medium text-slate-400 mb-1">Git Repository URL (HTTPS or SSH)</label>
                                 <input type="url" id="repo-url" placeholder="https://github.com/username/repository.git" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
@@ -671,10 +671,7 @@
                             </div>
                         </div>
 
-                        <!-- Real-time Deployment Terminal Stream Output (Only visible when logged in) -->
-                        <div id="deploy-terminal-card" class="auth-required-btn mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 hidden">
-                        <!-- Real-time Deployment Terminal Stream Output -->
-                        <div id="deploy-terminal-card" class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                        <div id="deploy-terminal-card" class="auth-required-btn hidden mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-xs font-bold text-slate-400 font-mono">Real-time Execution Output Stream</span>
                             </div>
@@ -789,8 +786,7 @@
                             <button type="button" onclick="openAdminModal(event)" class="admin-login-trigger px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all shrink-0">Sign In to Create DB</button>
                         </div>
 
-                        <div id="db-form-container" class="auth-required-btn space-y-4 hidden">
-                        <div id="db-form-container" class="space-y-4">
+                        <div id="db-form-container" class="auth-required-btn hidden space-y-4">
                             <div>
                                 <label for="db-name" class="block text-xs font-medium text-slate-400 mb-1">Database Name</label>
                                 <input type="text" id="db-name" aria-label="Database Name" placeholder="e.g. app_store_db" class="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
@@ -1209,7 +1205,7 @@
                     if (data.sites.length === 0) {
                         grid.innerHTML = `
                             <div class="col-span-full p-8 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-center text-slate-400 text-xs">
-                                No live websites hosted yet on this server.
+                                No websites deployed to user.
                             </div>
                         `;
                         return;

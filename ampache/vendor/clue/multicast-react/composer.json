@@ -1,0 +1,35 @@
+{
+    "name": "clue/multicast-react",
+    "description": "Simple, event-driven multicast UDP message client and server for ReactPHP.",
+    "keywords": ["multicast", "mcast", "udp", "ReactPHP", "async"],
+    "homepage": "https://github.com/clue/reactphp-multicast",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Christian Lück",
+            "email": "christian@clue.engineering"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Clue\\React\\Multicast\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Clue\\Tests\\React\\Multicast\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=5.3",
+        "react/event-loop": "^1.2",
+        "react/datagram": "~1.0"
+    },
+    "require-dev": {
+        "clue/hexdump": "0.2.*",
+        "phpunit/phpunit": "^9.6 ||^6.0 || ^5.7 || ^4.8.36"
+    },
+    "suggest": {
+        "ext-sockets": "Requires PHP 5.4+ and the low level socket API for listening on multicast addresses (socket options to send IGMP announcements)"
+    }
+}

@@ -1,0 +1,248 @@
+
+#: ./untranslated-strings.txt:3
+msgid "Connected Users"
+msgstr ""
+
+#: ./untranslated-strings.txt:7
+msgid "Catalog Size"
+msgstr ""
+
+#: ./untranslated-strings.txt:11
+msgid "Catalog Time"
+msgstr ""
+
+#: ./untranslated-strings.txt:15
+msgid "Total Users"
+msgstr ""
+
+#: ./untranslated-strings.txt:22
+msgid "httpQ Active Instance"
+msgstr ""
+
+#: ./untranslated-strings.txt:26
+msgid "Show current song in Web Player page title"
+msgstr ""
+
+#: ./untranslated-strings.txt:30
+msgid "feature"
+msgstr ""
+
+#: ./untranslated-strings.txt:34
+msgid "query"
+msgstr ""
+
+#: ./untranslated-strings.txt:38
+msgid "transcoding"
+msgstr ""
+
+#: ./untranslated-strings.txt:42
+msgid "custom"
+msgstr ""
+
+#: ./untranslated-strings.txt:46
+msgid "theme"
+msgstr ""
+
+#: ./untranslated-strings.txt:50
+msgid "localplay"
+msgstr ""
+
+#: ./untranslated-strings.txt:54
+msgid "player"
+msgstr ""
+
+#: ./untranslated-strings.txt:58
+msgid "mpd"
+msgstr ""
+
+#: ./untranslated-strings.txt:62
+msgid "httpq"
+msgstr ""
+
+#: ./untranslated-strings.txt:66
+msgid "lastfm"
+msgstr ""
+
+#: ./untranslated-strings.txt:70
+msgid "home"
+msgstr ""
+
+#: ./untranslated-strings.txt:74
+msgid "library"
+msgstr ""
+
+#: ./untranslated-strings.txt:78
+msgid "browse"
+msgstr ""
+
+#: ./untranslated-strings.txt:82
+msgid "backend"
+msgstr ""
+
+#: ./untranslated-strings.txt:86
+msgid "privacy"
+msgstr ""
+
+#: ./untranslated-strings.txt:90
+msgid "update"
+msgstr ""
+
+#: ./untranslated-strings.txt:94
+msgid "share"
+msgstr ""
+
+#: ./untranslated-strings.txt:98
+msgid "upload"
+msgstr ""
+
+#: ./untranslated-strings.txt:102
+msgid "notification"
+msgstr ""
+
+#: ./untranslated-strings.txt:106
+msgid "metadata"
+msgstr ""
+
+#: ./untranslated-strings.txt:110
+msgid "podcast"
+msgstr ""
+
+#: ./untranslated-strings.txt:114
+msgid "catalog"
+msgstr ""
+
+#: ./untranslated-strings.txt:118
+msgid "subsonic"
+msgstr ""
+
+#: ./untranslated-strings.txt:119
+msgid "7digital"
+msgstr ""
+
+#: ./untranslated-strings.txt:120
+msgid "Amazon"
+msgstr ""
+
+#: ./untranslated-strings.txt:121
+msgid "Bit.ly"
+msgstr ""
+
+#: ./untranslated-strings.txt:122
+msgid "Catalog Favorites"
+msgstr ""
+
+#: ./untranslated-strings.txt:123
+msgid "ChartLyrics"
+msgstr ""
+
+#: ./untranslated-strings.txt:124
+msgid "Discogs"
+msgstr ""
+
+#: ./untranslated-strings.txt:125
+msgid "Facebook"
+msgstr ""
+
+#: ./untranslated-strings.txt:126
+msgid "Flattr"
+msgstr ""
+
+#: ./untranslated-strings.txt:127
+msgid "Flickr"
+msgstr ""
+
+#: ./untranslated-strings.txt:129
+msgid "GoogleAnalytics"
+msgstr ""
+
+#: ./untranslated-strings.txt:130
+msgid "GoogleMaps"
+msgstr ""
+
+#: ./untranslated-strings.txt:131
+msgid "Gravatar"
+msgstr ""
+
+#: ./untranslated-strings.txt:132
+msgid "Headphones"
+msgstr ""
+
+#: ./untranslated-strings.txt:133
+msgid "Last.FM"
+msgstr ""
+
+#: ./untranslated-strings.txt:134
+msgid "Libravatar"
+msgstr ""
+
+#: ./untranslated-strings.txt:135
+msgid "Libre.FM"
+msgstr ""
+
+#: ./untranslated-strings.txt:136
+msgid "ListenBrainz"
+msgstr ""
+
+#: ./untranslated-strings.txt:137
+msgid "Lyrist Lyrics"
+msgstr ""
+
+#: ./untranslated-strings.txt:138
+msgid "Matomo"
+msgstr ""
+
+#: ./untranslated-strings.txt:140
+msgid "Omdb"
+msgstr ""
+
+#: ./untranslated-strings.txt:141
+msgid "Paypal"
+msgstr ""
+
+#: ./untranslated-strings.txt:142
+msgid "Personal Favorites"
+msgstr ""
+
+#: ./untranslated-strings.txt:143
+msgid "Piwik"
+msgstr ""
+
+#: ./untranslated-strings.txt:144
+msgid "RatingMatch"
+msgstr ""
+
+#: ./untranslated-strings.txt:145
+msgid "RSSView"
+msgstr ""
+
+#: ./untranslated-strings.txt:146
+msgid "Shout Home"
+msgstr ""
+
+#: ./untranslated-strings.txt:147
+msgid "Stream Bandwidth"
+msgstr ""
+
+#: ./untranslated-strings.txt:148
+msgid "Stream Hits"
+msgstr ""
+
+#: ./untranslated-strings.txt:149
+msgid "Stream Time"
+msgstr ""
+
+#: ./untranslated-strings.txt:150
+msgid "TheAudioDb"
+msgstr ""
+
+#: ./untranslated-strings.txt:151
+msgid "Tvdb"
+msgstr ""
+
+#: ./untranslated-strings.txt:152
+msgid "Twitter"
+msgstr ""
+
+#: ./untranslated-strings.txt:153
+msgid "YOURLS"
+msgstr ""

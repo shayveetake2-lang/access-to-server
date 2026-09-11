@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * vim:set softtabstop=4 shiftwidth=4 expandtab:
+ *
+ * LICENSE: GNU Affero General Public License, version 3 (AGPL-3.0-or-later)
+ * Copyright Ampache.org, 2001-2024
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+namespace Ampache\Module\WebDav;
+
+use Ampache\Module\Authentication\AuthenticationManagerInterface;
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryTestCase;
+use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Sabre\DAV\Auth\Plugin;
+use Sabre\DAV\ICollection;
+use Sabre\DAV\Server;
+
+class WebDavFactoryTest extends MockeryTestCase
+{
+    private AuthenticationManagerInterface&MockInterface $authenticationManager;
+
+    private WebDavFactory $subject;
+
+    protected function setUp(): void
+    {
+        $this->authenticationManager = Mockery::mock(AuthenticationManagerInterface::class);
+
+        $this->subject = new WebDavFactory(
+            $this->authenticationManager
+        );
+    }
+
+    /**
+     * @param class-string $expected_instance_name
+     * @param list<mixed> $params
+     */
+    #[DataProvider(methodName: 'methodDataProvider')]
+    public function testFactoryMethods(string $method, string $expected_instance_name, array $params): void
+    {
+        static::assertInstanceOf(
+            $expected_instance_name,
+            call_user_func_array([$this->subject, $method], $params)
+        );
+    }
+
+    public function testCreateServerReturnsInstance(): void
+    {
+        static::assertInstanceOf(
+            Server::class,
+            $this->subject->createServer(
+                $this->createMock(ICollection::class)
+            )
+        );
+    }
+
+    public static function methodDataProvider(): array
+    {
+        return [
+            ['createWebDavAuth', WebDavAuth::class, []],
+            ['createWebDavCatalog', WebDavCatalog::class, [666]],
+            ['createPlugin', Plugin::class, [null]]
+        ];
+    }
+}
