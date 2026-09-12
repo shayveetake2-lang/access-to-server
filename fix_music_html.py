@@ -15,7 +15,7 @@ content = content.replace(
 # 3. Action Buttons
 content = content.replace(
     '<a href="#" onclick="event.preventDefault(); window.open(\'http://\' + window.location.hostname + \':32400/web\', \'_blank\');" target="_blank" class="auth-required-btn hidden px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md hover:bg-purple-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-purple-400 transition-all">Launch Plex Web ↗</a>',
-    '<a href="http://10.247.192.231:8888/ampache/public/" target="_blank" class="auth-required-btn hidden px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-bold shadow-md hover:bg-green-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-green-400 transition-all">Launch Ampache ↗</a>'
+    '<a href="https://ciceronem.serveousercontent.com/ampache/public/login.php" target="_blank" class="auth-required-btn hidden px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-bold shadow-md hover:bg-green-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-green-400 transition-all">Launch Ampache ↗</a>'
 )
 
 content = content.replace(

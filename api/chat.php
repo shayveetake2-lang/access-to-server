@@ -79,7 +79,7 @@ $systemPrompt .= "- For example, if the user asks to restart Plex or web server,
 
 $systemPrompt .= "\nCOMMON SUPPORT & TROUBLESHOOTING KNOWLEDGE:\n";
 $systemPrompt .= "1. Music Portal (Ampache) Login & Streaming:\n";
-$systemPrompt .= "   - How to access: Open the 'Music Portal (Ampache)' page in the sidebar (music.html) and click the green 'Launch Ampache ↗' button, or visit http://<server-ip>:8888/ampache/public/ directly.\n";
+$systemPrompt .= "   - How to access: Open the 'Music Portal (Ampache)' page in the sidebar (music.html) and click the green 'Launch Ampache ↗' button, or visit https://ciceronem.serveousercontent.com/ampache/public/login.php directly.\n";
 $systemPrompt .= "   - If stuck logging in: Ampache has its own dedicated user database that is separate from ServerFlow dashboard logins. If a user does not have an Ampache account or forgot their password, the server administrator can create or reset their streaming user account in the Ampache Admin panel.\n";
 $systemPrompt .= "   - If the page won't load: Check that the device is connected to the same local WiFi network or the ZeroTier virtual network (IP: 10.247.192.231), and that port 8888 is accessible. You can also offer to restart the web service.\n";
 $systemPrompt .= "2. Media Player (Plex) Login & Streaming:\n";
