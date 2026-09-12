@@ -127,14 +127,14 @@
                                     My Live Websites
                                 </a>
                             </li>
-                            <li class="auth-required-nav hidden">
-                                <a href="movies.html" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                            <li>
+<a href="movies.html" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
                                     Media Player (Plex)
                                 </a>
                             </li>
-                            <li class="auth-required-nav hidden">
-                                <a href="music.html" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
+                            <li>
+<a href="music.html" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
                                     Music Portal (Ampache)
                                 </a>
@@ -379,7 +379,7 @@
                                 <div class="relative w-28 h-28 shrink-0 flex items-center justify-center">
                                     <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                                         <path class="text-slate-200 dark:text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                        <path class="text-cyan-400 stroke-current" stroke-dasharray="98.2, 100" stroke-width="3.5" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                        <path class="text-emerald-400 stroke-current" stroke-dasharray="98.2, 100" stroke-width="3.5" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                     </svg>
                                     <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                                         <span class="text-lg font-bold text-slate-900 dark:text-white leading-none">98.2%</span>
@@ -420,12 +420,12 @@
 
                         <!-- CARD 2: Traffic -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
-                            <div class="flex items-center justify-between mb-4">
-                                <div>
-                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Traffic</h3>
-                                    <span class="text-[10px] text-slate-400 font-mono">Unit: Requests / min</span>
+                            <div class="flex items-start justify-between mb-4 gap-2">
+                                <div class="min-w-0">
+                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate">Traffic</h3>
+                                    <span class="text-[10px] text-slate-400 font-mono block truncate">Requests / min</span>
                                 </div>
-                                <select class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-2 py-1 focus:outline-none">
+                                <select class="shrink-0 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-2 py-1 focus:outline-none">
                                     <option>Requests</option>
                                     <option>Bandwidth</option>
                                 </select>
@@ -499,31 +499,34 @@
                         <!-- CARD 5: Primary SSD Disk (Replaces Activity) -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
-                                <div class="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Primary SSD Disk</h3>
-                                        <p class="text-[11px] font-mono text-slate-400" id="srv-disk-path">Loading...</p>
+                                <div class="flex items-start justify-between mb-4 gap-2">
+                                    <div class="min-w-0">
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate">Primary SSD Disk</h3>
+                                        <p class="text-[11px] font-mono text-slate-400 truncate" id="srv-disk-path">Loading...</p>
                                     </div>
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 shrink-0">
                                         <span id="srv-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">Checking...</span>
-                                        <button onclick="loadServerStorage()" class="text-slate-400 hover:text-cyan-400 p-1" title="Refresh Storage">
+                                        <button onclick="loadServerStorage()" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0" title="Refresh Storage">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="space-y-1 my-2">
-                                    <div class="flex justify-between text-xs font-bold">
-                                        <span class="text-slate-400">Used Space</span>
-                                        <span id="srv-percent-text" class="text-cyan-400 font-mono">--%</span>
+                                <div class="flex items-center gap-4 my-2">
+                                    <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+                                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                            <path class="text-slate-200 dark:text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                            <path id="srv-donut-segment" class="text-purple-500 stroke-current" stroke-dasharray="0, 100" stroke-width="3.5" stroke-linecap="round" fill="none" style="transition: stroke-dasharray 0.6s ease-out;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                        </svg>
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                            <span id="srv-percent-text" class="text-lg font-bold text-slate-900 dark:text-white leading-none">--%</span>
+                                            <span class="text-[10px] text-slate-400 mt-0.5">Used</span>
+                                        </div>
                                     </div>
-                                    <div class="h-3.5 w-full rounded-full bg-slate-800 overflow-hidden" id="srv-bar-track">
-                                        <div class="h-full bg-cyan-400 rounded-full w-full" id="srv-bar-segments" style="transform-origin: left; transform: scaleX(0); transition: transform 0.6s ease-out;"></div>
+                                    <div class="flex-1 grid grid-cols-1 gap-2 text-xs font-mono">
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 text-[10px]">USED</span><span id="srv-used-text" class="text-slate-200 font-bold">--</span></div>
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 text-[10px]">FREE</span><span id="srv-free-text" class="text-emerald-400 font-bold">--</span></div>
+                                        <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800/80"><span class="text-slate-400 text-[10px]">TOTAL</span><span id="srv-total-text" class="text-slate-200 font-bold">--</span></div>
                                     </div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-4 pt-2 text-xs font-mono">
-                                    <div><span class="text-slate-400 block text-[10px]">USED</span><span id="srv-used-text" class="text-slate-200 font-bold">--</span></div>
-                                    <div><span class="text-slate-400 block text-[10px]">FREE</span><span id="srv-free-text" class="text-emerald-400 font-bold">--</span></div>
-                                    <div><span class="text-slate-400 block text-[10px]">TOTAL</span><span id="srv-total-text" class="text-slate-200 font-bold">--</span></div>
                                 </div>
                             </div>
                             <div id="srv-breakdown-list" class="space-y-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80"></div>
@@ -532,11 +535,11 @@
                         <!-- CARD 6: USB Drive Storage (Replaces Host Telemetry) -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
-                                <div class="flex items-center justify-between mb-4">
-                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate pr-2">USB Drive Storage</h3>
+                                <div class="flex items-center justify-between mb-4 gap-2">
+                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate min-w-0">USB Drive Storage</h3>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <span id="usb-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">--</span>
-                                        <button onclick="loadUsbStatus()" class="text-slate-400 hover:text-cyan-400 p-1" title="Refresh USB Status">
+                                        <button onclick="loadUsbStatus()" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0" title="Refresh USB Status">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                         </button>
                                     </div>
@@ -1027,31 +1030,31 @@
             <!-- Messages Area (Welcome Header updated to "Welcome — what do you need help with?") -->
             <!-- Messages Area -->
             <div id="sf-chat-messages" class="p-4 h-80 overflow-y-auto space-y-3 text-xs leading-relaxed bg-slate-50/50 dark:bg-slate-950/50">
+                <!-- Welcome Bot Message -->
                 <div class="flex items-start gap-2.5">
                     <div class="w-7 h-7 rounded-full bg-cyan-600/20 text-cyan-400 flex items-center justify-center text-xs font-bold shrink-0">SF</div>
-                    <div class="px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-800 dark:text-slate-200">
-                        Welcome — what do you need help with?
-                        How can I help you with ServerFlow today?
+                    <div class="px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-800 dark:text-slate-200 leading-relaxed max-w-[85%]">
+                        Welcome — what do you need help with? How can I help you with ServerFlow today?
                     </div>
                 </div>
 
-                <!-- Prompt Chips -->
+                <!-- Suggested Chats / Quick Prompt Chips -->
                 <div class="flex flex-wrap gap-1.5 pt-1">
                     <button onclick="sendQuickPrompt('Diagnose server health')" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-[11px] font-semibold transition-all">Diagnose server health</button>
-                    <button onclick="sendQuickPrompt('Why did deployment fail?')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Why did deployment fail?</button>
-                    <button onclick="sendQuickPrompt('Check storage and USB')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Check storage and USB</button>
-                    <button onclick="sendQuickPrompt('Review recent errors')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Review recent errors</button>
+                    <button onclick="sendQuickPrompt('How do I deploy a website?')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">How do I deploy a website?</button>
+                    <button onclick="sendQuickPrompt('Check storage and USB')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Check storage and USB</button>
+                    <button onclick="sendQuickPrompt('Review recent errors')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Review recent errors</button>
+                    <button onclick="sendQuickPrompt('Where are the beginner guides?')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Where are the beginner guides?</button>
                 </div>
             </div>
 
-            <!-- Chat Input Footer (No Placeholder) -->
+            <!-- Chat Input Footer -->
             <div class="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
-                <input type="text" id="sf-chat-input" class="flex-1 px-3.5 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500">
+                <input type="text" id="sf-chat-input" class="flex-1 px-3.5 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500" placeholder="Ask ServerFlow Help...">
                 <button onclick="submitServerFlowChat()" class="p-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white text-xs font-bold shadow-md transition-all">✈</button>
             </div>
         </div>
 
-        <!-- Floating Chat FAB Button -->
         <button onclick="toggleServerFlowChat()" class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-2xl flex items-center justify-center hover:scale-105 transition-transform group">
             <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -1368,8 +1371,8 @@
                     const percent = Math.round(data.percent_used || 0);
                     const text = document.getElementById('srv-percent-text');
                     if (text) text.textContent = percent + '%';
-                    const bar = document.getElementById('srv-bar-segments');
-                    if (bar) bar.style.transform = `scaleX(${percent / 100})`;
+                    const donut = document.getElementById('srv-donut-segment');
+                    if (donut) donut.setAttribute('stroke-dasharray', `${percent}, 100`);
                     const used = document.getElementById('srv-used-text');
                     if (used) used.textContent = data.used_formatted || (data.used_gb !== undefined ? data.used_gb + ' GB' : '--');
                     const free = document.getElementById('srv-free-text');
