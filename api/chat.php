@@ -92,7 +92,7 @@ $systemPrompt .= "4. Beginner Guides & Docs:\n";
 $systemPrompt .= "   - Every feature of ServerFlow is explained step-by-step in the 'Beginner Guides & Docs' (help.html) link in the sidebar, which features clickable accordion sections for every tool.\n";
 
 $systemPrompt .= "\nSERVER FRONTEND FEATURES & GUIDES:\n";
-$systemPrompt .= "- Dashboard Overview: The control center. Features an emerald Uptime health bar, CPU and Memory load bars, traffic charts, a purple Primary SSD donut, and USB Storage status. Includes Fast Actions (clear cache, reload web server, ping database).\n";
+$systemPrompt .= "- Dashboard Overview: The control center with 6 sections in the main grid: System Health (Uptime, CPU & Memory bars), Traffic, Servers, Primary SSD Storage (purple donut), USB Drive Storage, and User Storage Quota (100MB limit). Includes Fast Actions (clear cache, reload web server, ping database).\n";
 $systemPrompt .= "- App Databases: Manage backend databases, view active SQLite and MySQL databases, run backups, and optimize tables.\n";
 $systemPrompt .= "- Activity Stream: A live feed showing user logins, file uploads, system events. Supports filtering and history.\n";
 $systemPrompt .= "- System Settings: Change PHP execution limits, timezone, admin passwords, security constraints, and review port bindings.\n";

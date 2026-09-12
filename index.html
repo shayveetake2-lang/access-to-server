@@ -509,7 +509,7 @@
                             </div>
                         </div>
 
-                        <!-- CARD 5: Primary SSD Disk (Replaces Activity) -->
+                        <!-- CARD 4: Primary SSD Storage -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
                                 <div class="flex items-start justify-between mb-4 gap-2">
@@ -545,7 +545,7 @@
                             <div id="srv-breakdown-list" class="space-y-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80"></div>
                         </div>
 
-                        <!-- CARD 6: USB Drive Storage (Replaces Host Telemetry) -->
+                        <!-- CARD 5: USB Drive Storage -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
                                 <div class="flex items-center justify-between mb-4 gap-2">
@@ -578,20 +578,22 @@
                                 </div>
                                 <button id="usb-upload-btn" type="submit" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">Upload to USB</button>
                             </form>
-                        <!-- CARD 7: User Storage Quota Card -->
+                        </div>
+
+                        <!-- CARD 6: User Storage Quota Card -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
-                                <div class="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                            <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div class="flex items-start justify-between mb-4 gap-2">
+                                    <div class="min-w-0">
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 truncate">
+                                            <svg class="w-4 h-4 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s-8-1.79-8-4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
                                             </svg>
-                                            User Storage Quota
+                                            <span class="truncate">User Storage Quota</span>
                                         </h3>
-                                        <p class="text-[11px] text-slate-400 font-mono" id="user-quota-subtitle">Allocated Quota vs Usage</p>
+                                        <p class="text-[11px] text-slate-400 font-mono truncate" id="user-quota-subtitle">Allocated Quota vs Usage</p>
                                     </div>
-                                    <span id="user-quota-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Within Limit</span>
+                                    <span id="user-quota-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">Within Limit</span>
                                 </div>
 
                                 <div class="space-y-1.5 my-3">
@@ -608,15 +610,15 @@
                                 <div class="grid grid-cols-3 gap-2 pt-2 text-xs font-mono">
                                     <div>
                                         <span class="text-slate-400 block text-[10px]">USED</span>
-                                        <span id="user-quota-used-text" class="text-slate-900 dark:text-slate-200 font-bold">0.00 MB</span>
+                                        <span id="user-quota-used-text" class="text-slate-900 dark:text-slate-200 font-bold truncate">0.00 MB</span>
                                     </div>
                                     <div>
                                         <span class="text-slate-400 block text-[10px]">FREE</span>
-                                        <span id="user-quota-free-text" class="text-emerald-400 font-bold">100.00 MB</span>
+                                        <span id="user-quota-free-text" class="text-emerald-400 font-bold truncate">100.00 MB</span>
                                     </div>
                                     <div>
                                         <span class="text-slate-400 block text-[10px]">LIMIT</span>
-                                        <span id="user-quota-limit-text" class="text-slate-900 dark:text-slate-200 font-bold">100.00 MB</span>
+                                        <span id="user-quota-limit-text" class="text-slate-900 dark:text-slate-200 font-bold truncate">100.00 MB</span>
                                     </div>
                                 </div>
                             </div>
@@ -627,8 +629,6 @@
                         </div>
 
                     </div>
-                </div>
-
                 </div>
 
                 <!-- ═══════════════════════════════════════════════════════ -->
