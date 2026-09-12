@@ -16,8 +16,9 @@ if ($s8889) {
         $port = '3307';
     }
 }
-$user = 'root';
-$pass = 'root';
+require_once __DIR__ . '/config/config.php';
+$user = getenv('DB_USER') ?: (defined('DB_USER') ? DB_USER : 'server_app');
+$pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : (defined('DB_PASS') ? DB_PASS : '');
 
 try {
     // Connect without DB first to create it

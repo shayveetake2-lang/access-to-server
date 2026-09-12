@@ -1479,10 +1479,16 @@
             requireAdminAuth(async () => {
                 const fileInput = document.getElementById('usb-file-input');
                 if (!fileInput || !fileInput.files[0]) return alert('Select a file to upload');
+                const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
+                if (token) formData.append('token', token);
                 try {
-                    const res = await fetch('usb_manager.php?action=upload', { method: 'POST', body: formData });
+                    const res = await fetch('usb_manager.php?action=upload', { 
+                        method: 'POST', 
+                        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                        body: formData 
+                    });
                     const data = await res.json();
                     if (data && data.status === 'success') {
                         alert(data.message || 'File uploaded successfully to USB storage');
@@ -1498,8 +1504,15 @@
 
         // ─── DATABASE TELEMETRY & EXPLORER ───
         async function loadDatabaseTelemetry() {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            const tbody = document.getElementById('db-tables-body');
             try {
-                const res = await fetch('api/system/get_databases.php');
+                const res = await fetch('api/system/get_databases.php', {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (!res.ok) {
+                    throw new Error(`HTTP status ${res.status}`);
+                }
                 const data = await res.json();
                 if (data && data.status === 'success') {
                     const info = data.info || {};
@@ -1509,16 +1522,15 @@
                     const recordsEl = document.getElementById('db-stat-records');
                     const badgeEl = document.getElementById('db-engine-badge');
 
-                    if (engineEl) engineEl.textContent = info.engine || 'SQLite 3';
+                    if (engineEl) engineEl.textContent = info.engine || 'Active';
                     if (sizeEl) sizeEl.textContent = info.size || '0 B';
                     if (tablesEl) tablesEl.textContent = `${data.total_tables || 0} Tables`;
                     if (recordsEl) recordsEl.textContent = `${data.total_records || 0} Rows`;
                     if (badgeEl) badgeEl.textContent = `${info.database || 'access_db'} Active`;
 
-                    const tbody = document.getElementById('db-tables-body');
                     if (tbody && Array.isArray(data.tables)) {
                         if (data.tables.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 font-sans">No tables found.</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 font-sans">No tables found in this database.</td></tr>';
                         } else {
                             tbody.innerHTML = data.tables.map(t => `
                                 <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
@@ -1540,9 +1552,16 @@
                             `).join('');
                         }
                     }
+                } else {
+                    throw new Error(data ? data.message : 'Database query returned non-success status');
                 }
             } catch(e) {
-                console.error("DB Telemetry load error", e);
+                console.warn("DB Telemetry load error (handling gracefully):", e);
+                const badgeEl = document.getElementById('db-engine-badge');
+                if (badgeEl) badgeEl.textContent = 'Offline / Reconnecting';
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-amber-400/90 font-sans text-xs"><div class="flex items-center justify-center gap-2"><span>⚠️</span><span>Database unreachable or offline. Check MySQL service on port 8889 or verify admin login.</span></div></td></tr>`;
+                }
             }
         }
 
@@ -1558,8 +1577,14 @@
             if (count) count.textContent = 'Loading...';
             container.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">Fetching rows from ' + escapeHtml(tableName) + '...</div>';
 
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
-                const res = await fetch(`api/system/inspect_table.php?table=${encodeURIComponent(tableName)}`);
+                const res = await fetch(`api/system/inspect_table.php?table=${encodeURIComponent(tableName)}`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (!res.ok) {
+                    throw new Error(`HTTP status ${res.status}`);
+                }
                 const data = await res.json();
 
                 if (data && data.status === 'success') {
@@ -1590,7 +1615,7 @@
                     container.innerHTML = `<div class="p-4 text-rose-400 text-xs text-center">${escapeHtml(data.message || 'Failed to inspect table')}</div>`;
                 }
             } catch(e) {
-                container.innerHTML = `<div class="p-4 text-rose-400 text-xs text-center">Network error querying table.</div>`;
+                container.innerHTML = `<div class="p-4 text-amber-400 text-xs text-center">Unable to query table: Database is unreachable or requires Admin authorization.</div>`;
             }
         }
 
@@ -1608,16 +1633,22 @@
             const icon = document.getElementById('activity-refresh-icon');
             if (icon) icon.classList.add('animate-spin');
 
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
-                const res = await fetch('api/system/get_activity.php');
+                const res = await fetch('api/system/get_activity.php', {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (!res.ok) throw new Error(`HTTP status ${res.status}`);
                 const data = await res.json();
                 if (data && data.status === 'success' && Array.isArray(data.events)) {
                     cachedActivityEvents = data.events;
                     if (count) count.textContent = `${data.count} events logged`;
                     renderActivityList(cachedActivityEvents);
+                } else {
+                    throw new Error(data ? data.message : 'Failed to retrieve events');
                 }
             } catch(e) {
-                if (list) list.innerHTML = '<div class="p-6 text-center text-rose-400 text-xs">Failed to load activity stream.</div>';
+                if (list) list.innerHTML = '<div class="p-6 text-center text-amber-400/90 text-xs font-sans flex items-center justify-center gap-2"><span>⚠️</span><span>Activity Stream requires Admin authorization or backend database is reconnecting.</span></div>';
             } finally {
                 if (icon) icon.classList.remove('animate-spin');
             }
@@ -1679,8 +1710,12 @@
             const tbody = document.getElementById('settings-admins-body');
             if (!tbody) return;
 
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
-                const res = await fetch('api/system/admin_accounts.php?action=list');
+                const res = await fetch('api/system/admin_accounts.php?action=list', {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (!res.ok) throw new Error(`HTTP status ${res.status}`);
                 const data = await res.json();
                 if (data && data.status === 'success' && Array.isArray(data.admins)) {
                     tbody.innerHTML = data.admins.map(a => `
@@ -1698,7 +1733,7 @@
                     tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-400 font-sans">No admin accounts returned.</td></tr>';
                 }
             } catch(e) {
-                tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-400 font-sans">Login required to view administrators.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-amber-400/90 font-sans text-xs">Admin authorization required to view administrator directory.</td></tr>';
             }
         }
 

@@ -118,14 +118,69 @@ if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true
     $systemPrompt .= "\nUSER IS NOT LOGGED IN. No live diagnostics available.";
 }
 
+// =========================================================
+// 1. Python AI Service Mapping (Port 5005)
+// =========================================================
+$pythonHost = getEnvVar('PYTHON_AI_HOST', '127.0.0.1');
+$pythonPort = getEnvVar('PYTHON_AI_PORT', '5005');
+$pythonApiUrl = getEnvVar('PYTHON_AI_URL', "http://{$pythonHost}:{$pythonPort}/chat");
+
+$pyPayload = json_encode([
+    'message' => $userMessage,
+    'history' => $history,
+    'system_prompt' => $systemPrompt,
+    'diagnostics_used' => $diagnosticsUsed
+]);
+
+$chPy = curl_init($pythonApiUrl);
+curl_setopt($chPy, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($chPy, CURLOPT_POST, true);
+curl_setopt($chPy, CURLOPT_POSTFIELDS, $pyPayload);
+curl_setopt($chPy, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+curl_setopt($chPy, CURLOPT_TIMEOUT, 3);
+curl_setopt($chPy, CURLOPT_CONNECTTIMEOUT, 1);
+
+$pyResponse = @curl_exec($chPy);
+$pyHttpCode = curl_getinfo($chPy, CURLINFO_HTTP_CODE);
+curl_close($chPy);
+
+if ($pyHttpCode === 200 && !empty($pyResponse)) {
+    $pyData = json_decode($pyResponse, true);
+    if (is_array($pyData)) {
+        if (!isset($pyData['status'])) $pyData['status'] = 'success';
+        if (!isset($pyData['reply']) && isset($pyData['answer'])) $pyData['reply'] = $pyData['answer'];
+        if (!isset($pyData['answer']) && isset($pyData['reply'])) $pyData['answer'] = $pyData['reply'];
+        echo json_encode($pyData);
+        exit();
+    }
+}
+
+// =========================================================
+// 2. Groq Cloud AI API Fallback
+// =========================================================
 $apiKey = getEnvVar('GROQ_API_KEY');
 if (empty($apiKey) || $apiKey === 'YOUR_GROQ_API_KEY_HERE') {
+    // Intelligent local fallback if Python service and Groq are unconfigured
+    $q = strtolower($userMessage);
+    if (strpos($q, 'music') !== false || strpos($q, 'login') !== false || strpos($q, 'portal') !== false) {
+        echo json_encode([
+            'status' => 'success',
+            'reply' => "If you are experiencing issues logging into the Music Portal or server portals, verify that your account has been provisioned under User Management. Note that Server Specs & IP and System Settings require Admin role access, while standard users can access Music, Movies, and Live Sites. Try clearing session cookies or re-authenticating from the top profile bar.",
+            'answer' => "If you are experiencing issues logging into the Music Portal or server portals, verify that your account has been provisioned under User Management. Note that Server Specs & IP and System Settings require Admin role access, while standard users can access Music, Movies, and Live Sites. Try clearing session cookies or re-authenticating from the top profile bar.",
+            'confidence' => 'high',
+            'answer_type' => 'general_guidance',
+            'diagnostics_used' => $diagnosticsUsed
+        ]);
+        exit();
+    }
+    
     echo json_encode([
         'status' => 'success',
-        'reply' => 'I cannot reach the AI service because the Groq API key is not configured. I am operating in fallback mode.',
-        'answer' => 'I cannot reach the AI service because the Groq API key is not configured.',
+        'reply' => 'The Python AI service (port 5005) and Groq API are currently in offline fallback mode. ServerFlow Help is available for standard navigation and server guidance.',
+        'answer' => 'The Python AI service (port 5005) and Groq API are currently in offline fallback mode. ServerFlow Help is available for standard navigation and server guidance.',
         'confidence' => 'low',
-        'answer_type' => 'service_error'
+        'answer_type' => 'service_error',
+        'diagnostics_used' => $diagnosticsUsed
     ]);
     exit();
 }

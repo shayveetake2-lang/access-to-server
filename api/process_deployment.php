@@ -4,9 +4,9 @@ header('Content-Type: application/json');
 // Ensure error reporting is off for clean JSON output
 error_reporting(0);
 
-// Enforce authentication to prevent unauthorized execution
-require_once __DIR__ . '/auth/require_auth.php';
-requireAuth();
+// Enforce admin authentication to prevent unauthorized execution
+require_once __DIR__ . '/auth/require_admin.php';
+requireAdmin();
 
 $projectName = isset($_POST['project_name']) ? preg_replace('/[^a-zA-Z0-9-_]/', '', $_POST['project_name']) : '';
 $deployMethod = isset($_POST['deploy_method']) ? $_POST['deploy_method'] : '';
@@ -103,7 +103,24 @@ if ($deployMethod === 'github') {
     $fileExtension = strtolower(pathinfo($_FILES['zip_file']['name'], PATHINFO_EXTENSION));
     
     if ($fileExtension !== 'zip') {
-        echo json_encode(['status' => 'error', 'message' => 'Only .zip files are allowed.']);
+        echo json_encode(['status' => 'error', 'message' => 'Security Error: Only .zip files are allowed.']);
+        exit;
+    }
+    
+    // Strict MIME Type Validation via finfo
+    $detectedMime = '';
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $detectedMime = finfo_file($finfo, $fileTmpPath);
+        finfo_close($finfo);
+    } elseif (function_exists('mime_content_type')) {
+        $detectedMime = mime_content_type($fileTmpPath);
+    }
+    
+    $allowedMimes = ['application/zip', 'application/x-zip-compressed', 'application/x-zip', 'multipart/x-zip', 'application/octet-stream'];
+    if (!empty($detectedMime) && !in_array($detectedMime, $allowedMimes, true)) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => "Security Error: Disallowed MIME type ('$detectedMime'). Upload aborted."]);
         exit;
     }
     
@@ -114,6 +131,52 @@ if ($deployMethod === 'github') {
     
     $zip = new ZipArchive;
     if ($zip->open($fileTmpPath) === TRUE) {
+        $forbiddenExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'phar', 'exe', 'sh', 'cgi', 'pl', 'py', 'asp', 'aspx', 'jsp', 'bat', 'cmd', 'htaccess'];
+        
+        // Validate all zip contents before extracting (prevent RCE and Zip Slip)
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $entryName = $zip->getNameIndex($i);
+            if ($entryName === false) continue;
+            
+            // Check for Zip Slip / Path Traversal
+            if (strpos($entryName, '../') !== false || strpos($entryName, '..\\') !== false || strpos($entryName, '/..') !== false || strpos($entryName, '\\..') !== false) {
+                $zip->close();
+                @rmdir($targetDir);
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Security Error: Path traversal attempt detected in archive.']);
+                exit;
+            }
+            
+            // Skip directory entries
+            if (substr($entryName, -1) === '/' || substr($entryName, -1) === '\\') {
+                continue;
+            }
+            
+            $entryBase = basename($entryName);
+            $entryExt = strtolower(pathinfo($entryBase, PATHINFO_EXTENSION));
+            $entryParts = explode('.', strtolower($entryBase));
+            
+            // Check extension against forbidden executable list
+            if (in_array($entryExt, $forbiddenExtensions, true)) {
+                $zip->close();
+                @rmdir($targetDir);
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => "Security Error: Prohibited executable script found in archive ('$entryBase'). Upload aborted."]);
+                exit;
+            }
+            
+            // Check double extension attacks (e.g. exploit.php.png)
+            foreach ($entryParts as $part) {
+                if (in_array($part, $forbiddenExtensions, true)) {
+                    $zip->close();
+                    @rmdir($targetDir);
+                    http_response_code(400);
+                    echo json_encode(['status' => 'error', 'message' => "Security Error: Suspicious script pattern detected in filename ('$entryBase'). Upload aborted."]);
+                    exit;
+                }
+            }
+        }
+        
         $zip->extractTo($targetDir);
         $zip->close();
         echo json_encode([
@@ -123,7 +186,7 @@ if ($deployMethod === 'github') {
         ]);
     } else {
         // Clean up the created directory on failure
-        rmdir($targetDir);
+        @rmdir($targetDir);
         echo json_encode(['status' => 'error', 'message' => 'Failed to unzip the file.']);
     }
     exit;
