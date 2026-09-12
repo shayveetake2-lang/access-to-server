@@ -97,19 +97,19 @@
                                 </button>
                             </li>
 
-                            <li class="auth-required-nav hidden">
+                            <li class="auth-required-nav auth-admin-nav hidden">
                                 <button onclick="switchTab('data'); closeMobileSidebar();" id="nav-tab-data" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
                                     App Databases
                                 </button>
                             </li>
-                            <li class="auth-required-nav hidden">
+                            <li class="auth-required-nav auth-admin-nav hidden">
                                 <button onclick="switchTab('activity'); closeMobileSidebar();" id="nav-tab-activity" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                     Activity Stream
                                 </button>
                             </li>
-                            <li class="auth-required-nav hidden">
+                            <li class="auth-required-nav auth-admin-nav hidden">
                                 <button onclick="switchTab('settings'); closeMobileSidebar();" id="nav-tab-settings" class="sf-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     System Settings
@@ -140,7 +140,7 @@
                                 </a>
                             </li>
 
-                            <li>
+                            <li class="auth-required-nav auth-admin-nav hidden">
                                 <a href="host.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all">
                                     <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                                     Server Specs & IP
@@ -292,7 +292,7 @@
                             </button>
 
                             <div id="sf-profile-menu" class="hidden absolute right-0 mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2 z-50 space-y-1">
-                                <button onclick="typeof switchTab === 'function' ? switchTab('settings') : (window.location.href = 'index.html#settings')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                                <button onclick="typeof switchTab === 'function' ? switchTab('settings') : (window.location.href = 'index.html#settings')" class="auth-admin-nav hidden w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                                     Account Settings
                                 </button>
                                 <button id="admin-logout-btn" onclick="submitAdminLogout()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-rose-500 hover:bg-rose-500/10 transition-all">
@@ -1164,8 +1164,13 @@
     <script src="js/admin_auth.js?v=20260910_v3"></script>
     <script>
         function switchTab(tabId) {
-            const authRequiredTabs = ['servers', 'data', 'activity', 'settings'];
-            if (!currentAdminState.logged_in && authRequiredTabs.includes(tabId)) {
+            const adminRequiredTabs = ['data', 'activity', 'settings'];
+            const authRequiredTabs = ['servers', ...adminRequiredTabs];
+
+            const currentUserRole = currentAdminState.role || localStorage.getItem('user_role') || 'guest';
+            const isLoggedIn = currentAdminState.logged_in || !!localStorage.getItem('auth_token') || !!sessionStorage.getItem('active_session_token');
+
+            if (!isLoggedIn && authRequiredTabs.includes(tabId)) {
                 // If an active session is currently being verified, remember target tab
                 if (sessionStorage.getItem('active_session_token')) {
                     window.pendingTabId = tabId;
@@ -1177,6 +1182,12 @@
                 if (errBanner) {
                     errBanner.innerText = '🔒 Please log in to access this section.';
                     errBanner.classList.remove('hidden');
+                }
+            } else if (adminRequiredTabs.includes(tabId) && currentUserRole !== 'admin') {
+                tabId = 'overview';
+                const output = document.getElementById('output');
+                if (output) {
+                    output.innerHTML += `<br><span class="text-rose-400 font-semibold">[ACCESS DENIED] Admin privileges required for '${tabId}'.</span>`;
                 }
             }
             document.querySelectorAll('.sf-tab-content').forEach(el => el.classList.add('hidden'));

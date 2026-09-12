@@ -76,19 +76,6 @@ async function checkAuthOnLoad(loginPayload = null) {
         return;
     }
 
-    // STRICT LOGGED-OUT DEFAULT:
-    // Explicitly lock down the state and hide all restricted features immediately on page load
-    currentAdminState.logged_in = false;
-    currentAdminState.user = null;
-    updateAdminUI(false, null, 'guest');
-
-    const activeSession = sessionStorage.getItem('active_session_token');
-    // If no active session exists, stay strictly logged out
-    // If no active session exists in this browser session, stay strictly logged out
-    if (!activeSession) {
-        return;
-    }
-
     const activeToken = sessionStorage.getItem('active_session_token') || localStorage.getItem('auth_token');
     const storedUser = localStorage.getItem('user_name');
     const storedRole = localStorage.getItem('user_role');
@@ -97,7 +84,22 @@ async function checkAuthOnLoad(loginPayload = null) {
         try { updateUserStorageUI(JSON.parse(storedStorage)); } catch(e) {}
     }
 
-    // Query status endpoint to see if PHP session or token is authenticated
+    // If neither token nor stored user exists, stay strictly in guest state
+    if (!activeToken && !storedUser) {
+        currentAdminState.logged_in = false;
+        currentAdminState.user = null;
+        updateAdminUI(false, null, 'guest');
+        return;
+    }
+
+    // Optimistically render authenticated state if stored credentials exist (prevents flash of logged out UI)
+    if (storedUser) {
+        currentAdminState.logged_in = true;
+        currentAdminState.user = storedUser;
+        updateAdminUI(true, storedUser, storedRole || 'user');
+    }
+
+    // Query status endpoint to verify session / token with the backend
     try {
         const url = activeToken 
             ? `api/system/admin_auth.php?action=status&token=${encodeURIComponent(activeToken)}`
@@ -113,6 +115,7 @@ async function checkAuthOnLoad(loginPayload = null) {
             currentAdminState.logged_in = true;
             currentAdminState.user = data.user || storedUser || 'Admin';
             sessionStorage.setItem('active_session_token', activeToken || 'active');
+            if (data.role) localStorage.setItem('user_role', data.role);
             updateAdminUI(true, currentAdminState.user, data.role || storedRole || 'admin');
 
             const targetTab = window.pendingTabId || window.location.hash.replace('#', '');
@@ -120,34 +123,29 @@ async function checkAuthOnLoad(loginPayload = null) {
                 window.switchTab(targetTab);
                 window.pendingTabId = null;
             }
+        } else if (res.status === 401 || (data && data.status === 'error')) {
+            // Explicit rejection from server: clear state
+            sessionStorage.removeItem('active_session_token');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('user_name');
+            currentAdminState.logged_in = false;
+            currentAdminState.user = null;
+            updateAdminUI(false, null, 'guest');
+        }
+    } catch(e) {
+        // If temporary network interruption occurs, maintain local session
+        if (storedUser) {
+            currentAdminState.logged_in = true;
+            currentAdminState.user = storedUser;
+            updateAdminUI(true, storedUser, storedRole || 'user');
         } else {
             sessionStorage.removeItem('active_session_token');
             currentAdminState.logged_in = false;
             currentAdminState.user = null;
             updateAdminUI(false, null, 'guest');
-            return;
         }
-    } catch(e) {
-        sessionStorage.removeItem('active_session_token');
-        currentAdminState.logged_in = false;
-        currentAdminState.user = null;
-        updateAdminUI(false, null, 'guest');
     }
-
-    // If local token and user exist, preserve authenticated state
-    if (activeToken && storedUser) {
-        currentAdminState.logged_in = true;
-        currentAdminState.user = storedUser;
-        sessionStorage.setItem('active_session_token', activeToken);
-        updateAdminUI(true, storedUser, storedRole || 'user');
-        return;
-    }
-
-    // Default to unauthenticated state when not logged in
-    currentAdminState.logged_in = false;
-    currentAdminState.user = null;
-    sessionStorage.removeItem('active_session_token');
-    updateAdminUI(false, null, 'guest');
 }
 
 async function checkAdminAuth() {
@@ -208,6 +206,7 @@ function requireAdminAuth(callback) {
 }
 
 function updateAdminUI(isLoggedIn, user, role) {
+    currentAdminState.role = isLoggedIn ? (role || 'user') : 'guest';
     const navBtnTexts = document.querySelectorAll('.admin-nav-text-el');
     const navIconLocks = document.querySelectorAll('.admin-nav-icon-lock-el');
     const navBadges = document.querySelectorAll('.admin-nav-badge-active-el');

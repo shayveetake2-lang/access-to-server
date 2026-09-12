@@ -9,6 +9,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch($method) {
     case 'GET':
+        require_once __DIR__ . '/../auth/require_admin.php';
+        requireAdmin();
         // Fetch all user messages for the iOS app to display
         $stmt = $db->prepare("SELECT id, name, email, message, created_at FROM user_inputs ORDER BY created_at DESC");
         $stmt->execute();

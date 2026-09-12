@@ -65,10 +65,10 @@ try {
         $userSitesDir = realpath(__DIR__ . '/../../sites') . '/' . preg_replace('/[^a-zA-Z0-9_-]/', '', $user['username']);
         $actualUsedMB = function_exists('getDirectorySizeMB') ? getDirectorySizeMB($userSitesDir) : 0.0;
         
-        // Update database with latest usage
+        // Update database with latest usage and persist auth_token
         try {
-            $upd = $pdo->prepare("UPDATE sys_users SET storage_used_mb = :used WHERE id = :id");
-            $upd->execute([':used' => $actualUsedMB, ':id' => $user['id']]);
+            $upd = $pdo->prepare("UPDATE sys_users SET storage_used_mb = :used, auth_token = :token WHERE id = :id");
+            $upd->execute([':used' => $actualUsedMB, ':token' => $token, ':id' => $user['id']]);
         } catch (\Exception $ue) {}
 
         $limitMB = (float)$user['storage_limit_mb'];

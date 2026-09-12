@@ -4,11 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 header('Content-Type: application/json; charset=UTF-8');
 
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    http_response_code(401);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized. Admin access required.']);
-    exit;
-}
+require_once __DIR__ . '/../auth/require_admin.php';
+requireAdmin();
 
 $logFile = __DIR__ . '/../../error_log';
 if (!file_exists($logFile)) {

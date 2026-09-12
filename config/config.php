@@ -67,6 +67,7 @@ function initSQLiteSchema(PDO $pdo) {
             role VARCHAR(20) DEFAULT 'user',
             storage_limit_mb INTEGER DEFAULT 100,
             storage_used_mb FLOAT DEFAULT 0.0,
+            auth_token VARCHAR(64) DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )",
         "CREATE TABLE IF NOT EXISTS admin_users (
@@ -130,6 +131,9 @@ function initSQLiteSchema(PDO $pdo) {
     } catch (\Exception $e) {}
     try {
         @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0");
+    } catch (\Exception $e) {}
+    try {
+        @$pdo->exec("ALTER TABLE sys_users ADD COLUMN auth_token VARCHAR(64) DEFAULT NULL");
     } catch (\Exception $e) {}
 
     try {

@@ -53,6 +53,32 @@ try {
 $action = $_REQUEST['action'] ?? 'status';
 
 if ($action === 'status') {
+    $token = trim($_REQUEST['token'] ?? '');
+    if (empty($token)) {
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $authHeader = $headers['Authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            $token = trim($matches[1]);
+        }
+    }
+
+    if (!empty($token) && empty($_SESSION['auth_token'])) {
+        try {
+            $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE auth_token = :t LIMIT 1");
+            $stmt->execute([':t' => $token]);
+            if ($u = $stmt->fetch()) {
+                $_SESSION['auth_token'] = $token;
+                $_SESSION['user_id'] = $u['id'];
+                $_SESSION['username'] = $u['username'];
+                $_SESSION['role'] = $u['role'];
+                $_SESSION['admin_logged_in'] = ($u['role'] === 'admin');
+                if ($u['role'] === 'admin') {
+                    $_SESSION['admin_user'] = $u['username'];
+                }
+            }
+        } catch (\Exception $e) {}
+    }
+
     $isLoggedIn = !empty($_SESSION['auth_token']) || (!empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true);
     $username = $_SESSION['username'] ?? $_SESSION['admin_user'] ?? null;
     $role = $_SESSION['role'] ?? (!empty($_SESSION['admin_logged_in']) ? 'admin' : 'guest');
@@ -107,6 +133,11 @@ if ($action === 'login') {
             $_SESSION['role'] = 'admin';
             $_SESSION['auth_token'] = $token;
 
+            try {
+                $uStmt = $pdo->prepare("UPDATE sys_users SET auth_token = :t WHERE username = :u");
+                $uStmt->execute([':t' => $token, ':u' => $userRow['username']]);
+            } catch (\Exception $e) {}
+
             echo json_encode([
                 'status'   => 'success',
                 'message'  => 'Admin authentication successful.',
@@ -131,6 +162,16 @@ if ($action === 'login') {
 }
 
 if ($action === 'logout') {
+    $token = trim($_REQUEST['token'] ?? '');
+    if (empty($token) && !empty($_SESSION['auth_token'])) {
+        $token = $_SESSION['auth_token'];
+    }
+    if (!empty($token)) {
+        try {
+            $upd = $pdo->prepare("UPDATE sys_users SET auth_token = NULL WHERE auth_token = :t");
+            $upd->execute([':t' => $token]);
+        } catch (\Exception $e) {}
+    }
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();

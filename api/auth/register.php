@@ -51,14 +51,14 @@ try {
         exit;
     }
 
-    // Insert new user
-    $hash = password_hash($password, PASSWORD_BCRYPT);
-    $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES (:username, :hash, 'user', 100)");
-    $insert->execute([':username' => $username, ':hash' => $hash]);
-    $newUserId = $pdo->lastInsertId();
-
     // Auto-authenticate newly registered user
     $token = bin2hex(random_bytes(32));
+
+    // Insert new user with token
+    $hash = password_hash($password, PASSWORD_BCRYPT);
+    $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb, auth_token) VALUES (:username, :hash, 'user', 100, :token)");
+    $insert->execute([':username' => $username, ':hash' => $hash, ':token' => $token]);
+    $newUserId = $pdo->lastInsertId();
     $_SESSION['auth_token'] = $token;
     $_SESSION['user_id'] = $newUserId;
     $_SESSION['username'] = $username;

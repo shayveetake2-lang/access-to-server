@@ -7,8 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../auth/require_auth.php';
-requireAuth();
+require_once __DIR__ . '/../auth/require_admin.php';
+requireAdmin();
 
 require_once __DIR__ . '/../../config/config.php';
 
