@@ -24,10 +24,23 @@ if (is_dir($sitesDir)) {
                  || file_exists($fullPath . '/index.php')
                  || file_exists($fullPath . '/index.htm');
 
+        $siteUrl = $baseUrl . '/' . rawurlencode($item) . '/';
+
+        // Check common build/distribution subdirectories if not in root
+        if (!$hasIndex) {
+            foreach (['dist', 'build', 'public', 'out'] as $sub) {
+                if (file_exists($fullPath . '/' . $sub . '/index.html') || file_exists($fullPath . '/' . $sub . '/index.php') || file_exists($fullPath . '/' . $sub . '/index.htm')) {
+                    $hasIndex = true;
+                    $siteUrl .= $sub . '/';
+                    break;
+                }
+            }
+        }
+
         $modified = filemtime($fullPath);
 
         $title = null;
-        foreach (['index.html', 'index.htm', 'index.php'] as $idx) {
+        foreach (['index.html', 'index.htm', 'index.php', 'dist/index.html', 'public/index.html', 'build/index.html'] as $idx) {
             $idxPath = $fullPath . '/' . $idx;
             if (file_exists($idxPath)) {
                 $content = @file_get_contents($idxPath, false, null, 0, 2000);
@@ -43,7 +56,7 @@ if (is_dir($sitesDir)) {
             'title'    => $title,
             'hasIndex' => $hasIndex,
             'modified' => $modified,
-            'url'      => $baseUrl . '/' . rawurlencode($item) . '/',
+            'url'      => $siteUrl,
             'relPath'  => '/sites/' . $item . '/',
         ];
     }
@@ -62,7 +75,7 @@ if (is_dir($sitesDir)) {
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hosted Sites — ServerFlow</title>
+    <title>Live Websites — ServerFlow</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -122,7 +135,7 @@ if (is_dir($sitesDir)) {
                     <div>
                         <div class="px-3 mb-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Apps & Tools</div>
                         <ul class="space-y-1.5">
-                            <li><a href="sites.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>My Live Websites</a></li>
+                            <li><a href="sites.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition-all"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>Live Websites</a></li>
                             <li><a href="media.html" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>Media Portal</a></li>
                             <li class="auth-required-nav auth-admin-nav hidden"><a href="host.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>Server Specs &amp; IP</a></li>
                             <li><a href="help.html" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Beginner Guides &amp; Docs</a></li>
@@ -202,8 +215,8 @@ if (is_dir($sitesDir)) {
             <div class="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1 pb-28">
                 <div class="flex items-end justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                     <div>
-                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Live Websites</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">View and open all live websites hosted on your local server.</p>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Live Websites</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Browse and open all live websites deployed and running on this server.</p>
                     </div>
                     <a href="index.html#servers" id="sites-deploy-btn" class="auth-required-btn px-3.5 py-2 rounded-xl bg-cyan-600 text-white text-xs font-bold shadow-md hover:bg-cyan-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-cyan-400">Deploy New Site</a>
                 </div>
@@ -212,7 +225,7 @@ if (is_dir($sitesDir)) {
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php if (empty($sites)): ?>
                         <div class="col-span-full p-8 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-center text-slate-400 text-sm">
-                            No hosted sites found in <code>/sites/</code>. Click "Deploy New Site" to deploy a repository.
+                            No live websites deployed on this server yet.
                         </div>
                     <?php else: ?>
                         <?php foreach ($sites as $site): ?>

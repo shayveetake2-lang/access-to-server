@@ -117,7 +117,7 @@
                     <div>
                         <div class="px-3 mb-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Apps &amp; Tools</div>
                         <ul class="space-y-1.5">
-                            <li><a href="sites.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>My Live Websites</a></li>
+                            <li><a href="sites.php" onclick="closeMobileSidebar();" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"><svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>Live Websites</a></li>
 
                             <!-- Media Portal — active state -->
                             <li>
@@ -236,7 +236,7 @@
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Send a request to the server admin and we'll add it to the library for you.</p>
                         </div>
                     </div>
-                    <button onclick="if(typeof toggleServerFlowChat === 'function') { toggleServerFlowChat(); setTimeout(() => { const i = document.getElementById('sf-chat-input'); if(i) { i.value = 'Admin Request: Please add the following media: '; i.focus(); } }, 100); } else { window.location.href='mailto:admin@home-server.local?subject=New%20Media%20Request'; }" class="relative z-10 shrink-0 px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-cyan-400 dark:hover:border-cyan-400 text-slate-900 dark:text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 group">
+                    <button onclick="if(typeof toggleServerFlowChat === 'function') { toggleServerFlowChat(); setTimeout(() => { const i = document.getElementById('sf-chat-input'); if(i) { i.value = 'Admin Request: Please add the following media: '; i.focus(); } }, 100); } else { window.location.href='mailto:admin@home-server.local?subject=New%20Media%20Request'; }" class="relative z-10 shrink-0 px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-cyan-400 dark:hover:border-cyan-400 text-slate-900 dark:text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 group cursor-pointer">
                         <svg class="w-4 h-4 text-cyan-500 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         Send Request
                     </button>
@@ -449,7 +449,7 @@
                                         <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</div>
                                         <div>
                                             <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Open Ampache Login</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Click the <span class="font-semibold text-emerald-400">Open Ampache</span> button above to open the login portal in a new tab.</p>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Click the <span class="font-semibold text-emerald-400">Open Ampache</span> button above, or go directly to <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">/ampache/public/login.php</code>.</p>
                                         </div>
                                     </div>
 
@@ -458,7 +458,7 @@
                                         <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</div>
                                         <div>
                                             <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Sign in to Ampache</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Enter your Ampache username and password provided by the admin.</p>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Enter your Ampache username and password on the login page. If you don't have an account, contact the server admin to create one for you.</p>
                                         </div>
                                     </div>
 
@@ -476,7 +476,7 @@
                                         <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">5</div>
                                         <div>
                                             <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Use a Mobile Client (Optional)</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Ampache is compatible with many third-party apps via its API. Apps like <span class="font-semibold text-white">Symfonium</span>, <span class="font-semibold text-white">Ultrasonic</span>, or <span class="font-semibold text-white">DSub</span> (Android/iOS) support the Subsonic API that Ampache also exposes.</p>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Ampache is compatible with many third-party apps via its API. Apps like <span class="font-semibold text-white">Symfonium</span>, <span class="font-semibold text-white">Ultrasonic</span>, or <span class="font-semibold text-white">DSub</span> (Android/iOS) support the Subsonic API that Ampache also exposes. Point them to the server URL above.</p>
                                         </div>
                                     </div>
 
@@ -488,7 +488,7 @@
                                         </div>
                                         <ul class="space-y-1.5 text-xs text-slate-400 leading-relaxed">
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span>Ampache REST API endpoint: <code class="font-mono text-cyan-400 text-[11px]">/ampache/public/server/xml.server.php</code></span></li>
-                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span>Subsonic-compatible API is enabled.</span></li>
+                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span>Subsonic-compatible API is enabled — use the same server URL in compatible clients.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">DAAP (iTunes sharing)</strong> is configured at <code class="font-mono text-cyan-400 text-[11px]">/ampache/public/daap</code>.</span></li>
                                         </ul>
                                     </div>
@@ -502,7 +502,7 @@
                                         <ul class="space-y-1.5 text-xs text-slate-400 leading-relaxed">
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Login fails?</strong> Double-check your Ampache username/password. Accounts are separate from ServerFlow admin accounts.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Page not loading?</strong> Confirm MAMP/Apache is running on the server via the Dashboard.</span></li>
-                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Missing songs?</strong> Ask an admin to trigger a catalog update inside Ampache.</span></li>
+                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Missing songs?</strong> Ask an admin to trigger a catalog update inside Ampache → Admin → Catalog → Update all.</span></li>
                                         </ul>
                                     </div>
                                 </div>
