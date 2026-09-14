@@ -631,31 +631,31 @@
                 <div id="tab-servers" class="sf-tab-content hidden space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Websites & Deployer</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Deploy web applications directly from Git repositories onto your MAMP web node.</p>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Websites &amp; Deployer</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Deploy and manage your personal web applications. Only you can view your deployed websites here.</p>
                         </div>
                     </div>
 
-                    <!-- Live Hosted Websites Grid (Always Visible to Everyone, Logged In or Out) -->
+                    <!-- My Deployed Websites Grid (Filtered to current user only) -->
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <span>🌐 Live Hosted Websites</span>
-                                    <span id="live-sites-count-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-mono font-semibold">Live Sites</span>
+                                    <span>🚀 My Deployed Websites</span>
+                                    <span id="live-sites-count-badge" class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 text-[11px] font-mono font-semibold">0 Sites</span>
                                 </h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Live web applications running on this server. Click any app to launch.</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Your personal web applications running on this server.</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="loadHostedSites()" class="text-xs text-cyan-400 hover:underline flex items-center gap-1" title="Refresh Live Sites">
+                                <button onclick="loadHostedSites()" class="text-xs text-cyan-400 hover:underline flex items-center gap-1" title="Refresh My Sites">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    <span>Refresh Sites</span>
+                                    <span>Refresh</span>
                                 </button>
-                                <a href="sites.php" class="text-xs text-slate-400 hover:text-slate-200">Full Directory ↗</a>
+                                <a href="sites.php" class="text-xs text-slate-400 hover:text-slate-200">Public Live Directory ↗</a>
                             </div>
                         </div>
                         <div id="hosted-sites-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <!-- Populated dynamically by loadHostedSites() -->
+                            <!-- Populated dynamically by loadHostedSites() with only current user's sites -->
                         </div>
                     </div>
 
@@ -965,33 +965,44 @@
                         <div id="service-action-banner" class="hidden p-3 rounded-xl text-xs font-mono font-medium"></div>
                     </div>
 
-                    <!-- Administrator Accounts & Access Management -->
+                    <!-- User Accounts & Access Management -->
                     <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
-                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
                             <div>
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Admin Account & Credentials</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Manage administrative credentials authorized to control this server node.</p>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <span>👥 User Accounts &amp; Access Management</span>
+                                    <span id="settings-users-count" class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-mono font-semibold">2 Accounts</span>
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Manage existing accounts, assign admin roles, change passwords, and allocate storage quotas.</p>
                             </div>
-                            <button type="button" onclick="openAdminModal(event)" class="admin-login-trigger px-4 py-2 rounded-xl bg-cyan-600 text-white font-bold hover:bg-cyan-500 transition-all text-xs">
-                                Account Manager Modal
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="openAddUserModal()" class="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+                                    <span>+ Add New User</span>
+                                </button>
+                                <button type="button" onclick="loadSettingsTelemetry()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs transition-all" title="Refresh Users">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Embedded Admin List Table -->
+                        <!-- Feedback Notification Banner -->
+                        <div id="user-mgmt-alert" class="hidden p-3 rounded-xl text-xs font-mono font-medium"></div>
+
+                        <!-- Embedded User Accounts List Table -->
                         <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
                                     <tr>
-                                        <th class="py-2.5 px-4">ID</th>
-                                        <th class="py-2.5 px-4">Username</th>
+                                        <th class="py-2.5 px-4">User</th>
                                         <th class="py-2.5 px-4">Role</th>
-                                        <th class="py-2.5 px-4">Date Created</th>
-                                        <th class="py-2.5 px-4 text-right">Status</th>
+                                        <th class="py-2.5 px-4">Storage Allocation</th>
+                                        <th class="py-2.5 px-4">Security</th>
+                                        <th class="py-2.5 px-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="settings-admins-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                                <tbody id="settings-admins-body" class="divide-y divide-slate-100 dark:divide-slate-800/60">
                                     <tr>
-                                        <td colspan="5" class="py-6 text-center text-slate-400 font-sans">Loading administrator accounts...</td>
+                                        <td colspan="5" class="py-6 text-center text-slate-400 font-sans">Loading user accounts...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1072,6 +1083,110 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- MODALS & POPUPS                                             -->
     <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- 1. Allocate Storage Modal -->
+    <div id="modal-allocate-storage" class="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="w-full max-w-md p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 relative">
+            <button onclick="closeStorageModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>⚙️ Allocate Storage Quota</span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">Adjust SSD storage limit for <span id="storage-modal-username" class="font-bold text-cyan-400"></span></p>
+            </div>
+            <form onsubmit="submitStorageAllocation(event);" class="space-y-4">
+                <input type="hidden" id="storage-modal-user-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-2">Quick Allocation Presets</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="setStoragePreset(100)" class="py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-cyan-500/20 hover:text-cyan-400 text-xs font-mono font-medium transition-all">100 MB</button>
+                        <button type="button" onclick="setStoragePreset(250)" class="py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-cyan-500/20 hover:text-cyan-400 text-xs font-mono font-medium transition-all">250 MB</button>
+                        <button type="button" onclick="setStoragePreset(500)" class="py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-cyan-500/20 hover:text-cyan-400 text-xs font-mono font-medium transition-all">500 MB</button>
+                        <button type="button" onclick="setStoragePreset(1000)" class="py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-cyan-500/20 hover:text-cyan-400 text-xs font-mono font-medium transition-all">1 GB</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Storage Quota (in Megabytes)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="storage-modal-input" min="10" max="50000" step="10" required class="flex-1 px-3.5 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        <span class="text-xs text-slate-400 font-bold">MB</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeStorageModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md transition-all">Save Allocation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Change Password Modal -->
+    <div id="modal-change-password" class="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="w-full max-w-md p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 relative">
+            <button onclick="closePasswordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>🔑 Change User Password</span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">Set a new password for account: <span id="pwd-modal-username" class="font-bold text-amber-400"></span></p>
+            </div>
+            <form onsubmit="submitPasswordChange(event);" class="space-y-4">
+                <input type="hidden" id="pwd-modal-user-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">New Password</label>
+                    <input type="password" id="pwd-modal-input" minlength="4" required placeholder="Enter new secure password" class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <p class="text-[11px] text-slate-500 mt-1">Minimum 4 characters.</p>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closePasswordModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md transition-all">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Add New User Modal -->
+    <div id="modal-add-user" class="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="w-full max-w-md p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 relative">
+            <button onclick="closeAddUserModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>👤 Create New User Account</span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">Provision a new account on this server node with credentials and quota.</p>
+            </div>
+            <form onsubmit="submitAddUser(event);" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
+                    <input type="text" id="new-username-input" required placeholder="e.g. sam" class="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+                    <input type="password" id="new-password-input" minlength="4" required placeholder="Choose a secure password" class="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Role</label>
+                        <select id="new-role-input" class="w-full px-3 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none">
+                            <option value="user">User (Standard)</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Storage Quota</label>
+                        <div class="flex items-center gap-1.5">
+                            <input type="number" id="new-storage-input" value="100" min="10" step="10" class="w-full px-3 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-mono focus:outline-none">
+                            <span class="text-xs text-slate-400">MB</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAddUserModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md transition-all">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Admin Auth Modal (Login / Register / Panel) -->
     <div id="admin-auth-modal" class="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
         <div class="w-full max-w-md p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 relative">
@@ -1224,15 +1339,44 @@
             const badge = document.getElementById('live-sites-count-badge');
             if (!grid) return;
 
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            const isLoggedIn = currentAdminState.logged_in || !!token;
+
+            if (!isLoggedIn) {
+                if (badge) badge.textContent = '0 Sites';
+                grid.innerHTML = `
+                    <div class="col-span-full p-8 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-center space-y-3">
+                        <div class="text-slate-400 text-xs">🔒 Please sign in to view your deployed websites.</div>
+                        <button type="button" onclick="openAdminModal(event)" class="px-4 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-sm transition-all">Sign In</button>
+                    </div>
+                `;
+                return;
+            }
+
             try {
-                const res = await fetch('api/system/get_hosted_sites.php');
+                const res = await fetch(`api/system/get_hosted_sites.php?token=${encodeURIComponent(token)}`, {
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
+                if (res.status === 401) {
+                    if (badge) badge.textContent = '0 Sites';
+                    grid.innerHTML = `
+                        <div class="col-span-full p-8 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-center space-y-3">
+                            <div class="text-slate-400 text-xs">🔒 Please sign in to view your personal deployed websites.</div>
+                            <button type="button" onclick="openAdminModal(event)" class="px-4 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-sm transition-all">Sign In</button>
+                        </div>
+                    `;
+                    return;
+                }
                 const data = await res.json();
                 if (data && data.status === 'success' && Array.isArray(data.sites)) {
-                    if (badge) badge.textContent = `${data.sites.length} Live`;
+                    if (badge) badge.textContent = `${data.sites.length} ${data.sites.length === 1 ? 'Site' : 'Sites'}`;
                     if (data.sites.length === 0) {
                         grid.innerHTML = `
-                            <div class="col-span-full p-8 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-center text-slate-400 text-xs">
-                                No websites deployed to user.
+                            <div class="col-span-full p-8 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-center space-y-2">
+                                <div class="text-slate-300 text-xs font-semibold">You haven't deployed any websites yet.</div>
+                                <div class="text-slate-500 text-[11px]">Use the Git deployer below to launch your first website onto the server!</div>
                             </div>
                         `;
                         return;
@@ -1262,7 +1406,7 @@
             } catch(e) {
                 grid.innerHTML = `
                     <div class="col-span-full p-4 rounded-xl bg-rose-500/10 text-rose-400 text-xs text-center">
-                        Failed to load hosted websites.
+                        Failed to load your personal websites.
                     </div>
                 `;
             }
@@ -1699,35 +1843,277 @@
             }
         }
 
-        // ─── SETTINGS & SERVICE ACTIONS ───
+        // ─── USER MANAGEMENT (SETTINGS TAB) ───
+        function showUserMgmtAlert(msg, isError = false) {
+            const el = document.getElementById('user-mgmt-alert');
+            if (!el) return;
+            el.className = isError 
+                ? 'p-3 rounded-xl text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                : 'p-3 rounded-xl text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => { el.classList.add('hidden'); }, 6000);
+        }
+
         async function loadSettingsTelemetry() {
             const tbody = document.getElementById('settings-admins-body');
+            const countBadge = document.getElementById('settings-users-count');
             if (!tbody) return;
 
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            const currentUsername = currentAdminState.user || localStorage.getItem('admin_user') || 'admin';
+
             try {
-                const res = await fetch('api/system/admin_accounts.php?action=list', {
+                const res = await fetch(`api/system/admin_accounts.php?action=list&token=${encodeURIComponent(token)}`, {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
                 if (!res.ok) throw new Error(`HTTP status ${res.status}`);
                 const data = await res.json();
-                if (data && data.status === 'success' && Array.isArray(data.admins)) {
-                    tbody.innerHTML = data.admins.map(a => `
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                            <td class="py-2.5 px-4 text-slate-400">#${a.id}</td>
-                            <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-white">${escapeHtml(a.username)}</td>
-                            <td class="py-2.5 px-4 text-indigo-400">Administrator</td>
-                            <td class="py-2.5 px-4 text-slate-400 text-[11px]">${escapeHtml(a.created_at || 'Active')}</td>
-                            <td class="py-2.5 px-4 text-right">
-                                <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Authorized</span>
+                if (data && data.status === 'success' && Array.isArray(data.users)) {
+                    if (countBadge) countBadge.textContent = `${data.users.length} ${data.users.length === 1 ? 'Account' : 'Accounts'}`;
+
+                    tbody.innerHTML = data.users.map(u => {
+                        const isSelf = (u.username.toLowerCase() === currentUsername.toLowerCase());
+                        const isAdmin = (u.role === 'admin');
+
+                        return `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-7 h-7 rounded-lg ${isAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'} flex items-center justify-center font-bold text-xs">
+                                        ${escapeHtml(u.username.charAt(0).toUpperCase())}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span>${escapeHtml(u.username)}</span>
+                                            ${isSelf ? '<span class="px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-400 text-[10px] font-mono font-semibold">You</span>' : ''}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 font-mono">ID #${u.id}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded-full ${isAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold">
+                                        ${isAdmin ? '👑 Admin' : '👤 User'}
+                                    </span>
+                                    <button onclick="toggleUserRole(${u.id}, '${isAdmin ? 'user' : 'admin'}', '${escapeHtml(u.username)}')" class="px-2 py-1 rounded-lg text-[11px] font-semibold ${isAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'} transition-all" title="${isAdmin ? 'Demote to regular user' : 'Promote to administrator'}">
+                                        ${isAdmin ? 'Demote to User' : 'Make Admin 👑'}
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-cyan-400 font-bold text-xs">${u.storage_limit_mb} MB</span>
+                                    <button onclick="openStorageModal(${u.id}, '${escapeHtml(u.username)}', ${u.storage_limit_mb})" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-slate-700/60 transition-all">
+                                        Allocate ⚙️
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <button onclick="openPasswordModal(${u.id}, '${escapeHtml(u.username)}')" class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-semibold transition-all">
+                                    Change Password 🔑
+                                </button>
+                            </td>
+                            <td class="py-3 px-4 text-right">
+                                ${isSelf || u.username === 'admin' ? `
+                                    <span class="text-slate-400 text-[11px] italic font-mono">Protected</span>
+                                ` : `
+                                    <button onclick="deleteUserAccount(${u.id}, '${escapeHtml(u.username)}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-[11px] font-semibold transition-all">
+                                        Delete
+                                    </button>
+                                `}
                             </td>
                         </tr>
-                    `).join('');
+                        `;
+                    }).join('');
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-slate-400 font-sans">No admin accounts returned.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 font-sans">No user accounts returned from database.</td></tr>';
                 }
             } catch(e) {
-                tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-amber-400/90 font-sans text-xs">Admin authorization required to view administrator directory.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-amber-400/90 font-sans text-xs">Admin authorization required to view user directory.</td></tr>';
+            }
+        }
+
+        async function toggleUserRole(userId, newRole, username) {
+            if (!confirm(`Are you sure you want to change '${username}' role to ${newRole.toUpperCase()}?`)) return;
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            try {
+                const res = await fetch('api/system/admin_accounts.php?action=update_role', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id: userId, role: newRole, token })
+                });
+                const data = await res.json();
+                if (data && data.status === 'success') {
+                    showUserMgmtAlert(data.message || `Updated role for ${username}`);
+                    loadSettingsTelemetry();
+                } else {
+                    alert(data.message || 'Failed to update role.');
+                }
+            } catch(e) {
+                alert('Request failed: ' + e.message);
+            }
+        }
+
+        // Storage modal functions
+        function openStorageModal(userId, username, currentQuota) {
+            document.getElementById('storage-modal-user-id').value = userId;
+            document.getElementById('storage-modal-username').textContent = username;
+            document.getElementById('storage-modal-input').value = currentQuota;
+            const modal = document.getElementById('modal-allocate-storage');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+        function closeStorageModal() {
+            const modal = document.getElementById('modal-allocate-storage');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+        function setStoragePreset(mb) {
+            document.getElementById('storage-modal-input').value = mb;
+        }
+        async function submitStorageAllocation(event) {
+            if (event) event.preventDefault();
+            const userId = parseInt(document.getElementById('storage-modal-user-id').value, 10);
+            const storageLimit = parseInt(document.getElementById('storage-modal-input').value, 10);
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+
+            try {
+                const res = await fetch('api/system/admin_accounts.php?action=update_storage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id: userId, storage_limit_mb: storageLimit, token })
+                });
+                const data = await res.json();
+                if (data && data.status === 'success') {
+                    closeStorageModal();
+                    showUserMgmtAlert(data.message || 'Storage allocation updated.');
+                    loadSettingsTelemetry();
+                } else {
+                    alert(data.message || 'Failed to allocate storage.');
+                }
+            } catch(e) {
+                alert('Request failed: ' + e.message);
+            }
+        }
+
+        // Password modal functions
+        function openPasswordModal(userId, username) {
+            document.getElementById('pwd-modal-user-id').value = userId;
+            document.getElementById('pwd-modal-username').textContent = username;
+            document.getElementById('pwd-modal-input').value = '';
+            const modal = document.getElementById('modal-change-password');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+        function closePasswordModal() {
+            const modal = document.getElementById('modal-change-password');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+        async function submitPasswordChange(event) {
+            if (event) event.preventDefault();
+            const userId = parseInt(document.getElementById('pwd-modal-user-id').value, 10);
+            const newPassword = document.getElementById('pwd-modal-input').value;
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+
+            if (!newPassword || newPassword.length < 4) {
+                return alert('Password must be at least 4 characters.');
+            }
+
+            try {
+                const res = await fetch('api/system/admin_accounts.php?action=change_password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id: userId, password: newPassword, token })
+                });
+                const data = await res.json();
+                if (data && data.status === 'success') {
+                    closePasswordModal();
+                    showUserMgmtAlert(data.message || 'Password updated successfully.');
+                    loadSettingsTelemetry();
+                } else {
+                    alert(data.message || 'Failed to update password.');
+                }
+            } catch(e) {
+                alert('Request failed: ' + e.message);
+            }
+        }
+
+        // Add user modal functions
+        function openAddUserModal() {
+            document.getElementById('new-username-input').value = '';
+            document.getElementById('new-password-input').value = '';
+            document.getElementById('new-role-input').value = 'user';
+            document.getElementById('new-storage-input').value = 100;
+            const modal = document.getElementById('modal-add-user');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+        function closeAddUserModal() {
+            const modal = document.getElementById('modal-add-user');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+        async function submitAddUser(event) {
+            if (event) event.preventDefault();
+            const username = document.getElementById('new-username-input').value.trim();
+            const password = document.getElementById('new-password-input').value;
+            const role = document.getElementById('new-role-input').value;
+            const storageLimit = parseInt(document.getElementById('new-storage-input').value, 10) || 100;
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+
+            if (!username || !password) {
+                return alert('Please enter both username and password.');
+            }
+
+            try {
+                const res = await fetch('api/system/admin_accounts.php?action=add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ username, password, role, storage_limit_mb: storageLimit, token })
+                });
+                const data = await res.json();
+                if (data && data.status === 'success') {
+                    closeAddUserModal();
+                    showUserMgmtAlert(data.message || 'User created successfully.');
+                    loadSettingsTelemetry();
+                } else {
+                    alert(data.message || 'Failed to create user.');
+                }
+            } catch(e) {
+                alert('Request failed: ' + e.message);
+            }
+        }
+
+        async function deleteUserAccount(userId, username) {
+            if (!confirm(`Are you sure you want to permanently delete the account '${username}'?`)) return;
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            try {
+                const res = await fetch('api/system/admin_accounts.php?action=delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id: userId, token })
+                });
+                const data = await res.json();
+                if (data && data.status === 'success') {
+                    showUserMgmtAlert(data.message || `Deleted user ${username}`);
+                    loadSettingsTelemetry();
+                } else {
+                    alert(data.message || 'Failed to delete user.');
+                }
+            } catch(e) {
+                alert('Request failed: ' + e.message);
             }
         }
 

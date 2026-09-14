@@ -14,10 +14,10 @@ function sendMsg($msg) {
 }
 
 // ==========================================
-// 1. Token Verification Check (Admin Auth)
+// 1. Token Verification Check (User Auth)
 // ==========================================
-require_once __DIR__ . '/../auth/require_admin.php';
-requireAdmin();
+require_once __DIR__ . '/../auth/require_auth.php';
+requireAuth();
 
 // ==========================================
 // 2. Set SSE Headers for Streaming Output
@@ -123,6 +123,16 @@ if (is_resource($handle)) {
     $returnCode = pclose($handle);
     
     if ($returnCode === 0) {
+        // Tag site ownership to current authenticated user
+        @file_put_contents($targetDir . '/.serverflow_owner', $username);
+        $metaFile = $sitesBase . '/.site_owners.json';
+        $owners = [];
+        if (file_exists($metaFile)) {
+            $owners = json_decode(@file_get_contents($metaFile), true) ?: [];
+        }
+        $owners[$repoName] = $username;
+        @file_put_contents($metaFile, json_encode($owners, JSON_PRETTY_PRINT));
+
         sendMsg("");
         sendMsg("====== Deployment Complete ======");
     } else {
