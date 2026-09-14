@@ -7,5 +7,6 @@
     "files.watcherExclude": {
         "**/.git/**": true,
         "**/sites/**": true
-    }
+    },
+    "git.ignoreLimitWarning": true
 }

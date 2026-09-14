@@ -8,3 +8,6 @@ __pycache__/
 !.vscode/settings.json
 sites/*
 !sites/.gitkeep
+ampache/
+.DS_Store
+*/.DS_Store
