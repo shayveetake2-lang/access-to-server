@@ -1855,6 +1855,8 @@
             setTimeout(() => { el.classList.add('hidden'); }, 6000);
         }
 
+        let settingsUsersList = [];
+
         async function loadSettingsTelemetry() {
             const tbody = document.getElementById('settings-admins-body');
             const countBadge = document.getElementById('settings-users-count');
@@ -1870,6 +1872,7 @@
                 if (!res.ok) throw new Error(`HTTP status ${res.status}`);
                 const data = await res.json();
                 if (data && data.status === 'success' && Array.isArray(data.users)) {
+                    settingsUsersList = data.users;
                     if (countBadge) countBadge.textContent = `${data.users.length} ${data.users.length === 1 ? 'Account' : 'Accounts'}`;
 
                     tbody.innerHTML = data.users.map(u => {
@@ -1897,7 +1900,7 @@
                                     <span class="px-2 py-0.5 rounded-full ${isAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold">
                                         ${isAdmin ? '👑 Admin' : '👤 User'}
                                     </span>
-                                    <button onclick="toggleUserRole(${u.id}, '${isAdmin ? 'user' : 'admin'}', '${escapeHtml(u.username)}')" class="px-2 py-1 rounded-lg text-[11px] font-semibold ${isAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'} transition-all" title="${isAdmin ? 'Demote to regular user' : 'Promote to administrator'}">
+                                    <button onclick="toggleUserRole(${u.id})" class="px-2 py-1 rounded-lg text-[11px] font-semibold ${isAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'} transition-all" title="${isAdmin ? 'Demote to regular user' : 'Promote to administrator'}">
                                         ${isAdmin ? 'Demote to User' : 'Make Admin 👑'}
                                     </button>
                                 </div>
@@ -1905,13 +1908,13 @@
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2">
                                     <span class="font-mono text-cyan-400 font-bold text-xs">${u.storage_limit_mb} MB</span>
-                                    <button onclick="openStorageModal(${u.id}, '${escapeHtml(u.username)}', ${u.storage_limit_mb})" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-slate-700/60 transition-all">
+                                    <button onclick="openStorageModal(${u.id})" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-slate-700/60 transition-all">
                                         Allocate ⚙️
                                     </button>
                                 </div>
                             </td>
                             <td class="py-3 px-4">
-                                <button onclick="openPasswordModal(${u.id}, '${escapeHtml(u.username)}')" class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-semibold transition-all">
+                                <button onclick="openPasswordModal(${u.id})" class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-semibold transition-all">
                                     Change Password 🔑
                                 </button>
                             </td>
@@ -1919,7 +1922,7 @@
                                 ${isSelf || u.username === 'admin' ? `
                                     <span class="text-slate-400 text-[11px] italic font-mono">Protected</span>
                                 ` : `
-                                    <button onclick="deleteUserAccount(${u.id}, '${escapeHtml(u.username)}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-[11px] font-semibold transition-all">
+                                    <button onclick="deleteUserAccount(${u.id})" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-[11px] font-semibold transition-all">
                                         Delete
                                     </button>
                                 `}
@@ -1928,6 +1931,7 @@
                         `;
                     }).join('');
                 } else {
+                    settingsUsersList = [];
                     tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 font-sans">No user accounts returned from database.</td></tr>';
                 }
             } catch(e) {
@@ -1935,8 +1939,11 @@
             }
         }
 
-        async function toggleUserRole(userId, newRole, username) {
-            if (!confirm(`Are you sure you want to change '${username}' role to ${newRole.toUpperCase()}?`)) return;
+        async function toggleUserRole(userId) {
+            const user = settingsUsersList.find(x => x.id === userId);
+            if (!user) return;
+            const newRole = (user.role === 'admin') ? 'user' : 'admin';
+            if (!confirm(`Are you sure you want to change '${user.username}' role to ${newRole.toUpperCase()}?`)) return;
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
                 const res = await fetch('api/system/admin_accounts.php?action=update_role', {
@@ -1949,7 +1956,7 @@
                 });
                 const data = await res.json();
                 if (data && data.status === 'success') {
-                    showUserMgmtAlert(data.message || `Updated role for ${username}`);
+                    showUserMgmtAlert(data.message || `Updated role for ${user.username}`);
                     loadSettingsTelemetry();
                 } else {
                     alert(data.message || 'Failed to update role.');
@@ -1960,10 +1967,12 @@
         }
 
         // Storage modal functions
-        function openStorageModal(userId, username, currentQuota) {
+        function openStorageModal(userId) {
+            const user = settingsUsersList.find(x => x.id === userId);
+            if (!user) return;
             document.getElementById('storage-modal-user-id').value = userId;
-            document.getElementById('storage-modal-username').textContent = username;
-            document.getElementById('storage-modal-input').value = currentQuota;
+            document.getElementById('storage-modal-username').textContent = user.username;
+            document.getElementById('storage-modal-input').value = user.storage_limit_mb || 100;
             const modal = document.getElementById('modal-allocate-storage');
             if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
         }
@@ -2003,9 +2012,11 @@
         }
 
         // Password modal functions
-        function openPasswordModal(userId, username) {
+        function openPasswordModal(userId) {
+            const user = settingsUsersList.find(x => x.id === userId);
+            if (!user) return;
             document.getElementById('pwd-modal-user-id').value = userId;
-            document.getElementById('pwd-modal-username').textContent = username;
+            document.getElementById('pwd-modal-username').textContent = user.username;
             document.getElementById('pwd-modal-input').value = '';
             const modal = document.getElementById('modal-change-password');
             if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
@@ -2093,7 +2104,9 @@
             }
         }
 
-        async function deleteUserAccount(userId, username) {
+        async function deleteUserAccount(userId) {
+            const user = settingsUsersList.find(x => x.id === userId);
+            const username = user ? user.username : `ID #${userId}`;
             if (!confirm(`Are you sure you want to permanently delete the account '${username}'?`)) return;
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
