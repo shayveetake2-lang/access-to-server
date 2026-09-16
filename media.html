@@ -213,7 +213,7 @@
                     </div>
                     <!-- Quick Launch Buttons -->
                     <div class="flex items-center gap-2 shrink-0">
-                        <a href="#" onclick="event.preventDefault(); window.open('http://' + window.location.hostname + ':32400/web', '_blank');" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-purple-400 transition-all">
+                        <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-purple-400 transition-all">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
                             Launch Plex ↗
                         </a>
@@ -221,11 +221,32 @@
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
                             Launch Ampache ↗
                         </a>
+                        <button onclick="switchMediaTab('zerotier')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold border border-slate-700 hover:border-slate-600 min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-slate-500 transition-all">
+                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            ZeroTier Guide
+                        </button>
                     </div>
                 </div>
 
+                <!-- ── ZeroTier Quick Access Bar ── -->
+                <div class="mt-4 mb-4 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-purple-500/5 border border-emerald-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md relative overflow-hidden">
+                    <div class="flex items-center gap-3">
+                        <span class="relative flex h-2.5 w-2.5 shrink-0">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <div class="text-xs text-slate-300">
+                            <strong class="text-white">ZeroTier Required for Remote Access:</strong> To watch Plex or stream Ampache music outside local Wi-Fi, join our private <span class="font-semibold text-emerald-400">ZeroTier Virtual LAN</span> (IP: <code class="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono font-semibold">10.247.192.231</code>).
+                        </div>
+                    </div>
+                    <button onclick="switchMediaTab('zerotier')" class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Download &amp; Connect Guide →
+                    </button>
+                </div>
+
                 <!-- ── Media Request Banner ── -->
-                <div class="mt-6 mb-6 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-cyan-500/20 shadow-lg p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
+                <div class="mb-6 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-cyan-500/20 shadow-lg p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
                     <div class="absolute inset-0 bg-white/40 dark:bg-[#0f172a]/40 pointer-events-none"></div>
                     <div class="relative z-10 flex items-center gap-4">
                         <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/20">
@@ -243,12 +264,17 @@
                 </div>
 
                 <!-- ── Tab Navigation ── -->
-                <div class="border-b border-slate-200 dark:border-slate-800/80 flex gap-0">
+                <div class="border-b border-slate-200 dark:border-slate-800/80 flex flex-wrap gap-0">
                     <button id="tab-btn-movies" onclick="switchMediaTab('movies')" class="media-tab-btn active px-5 py-3 text-sm font-semibold text-cyan-400 transition-colors">
                         🎬 Movie Portal (Plex)
                     </button>
                     <button id="tab-btn-music" onclick="switchMediaTab('music')" class="media-tab-btn px-5 py-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors">
                         🎵 Music Portal (Ampache)
+                    </button>
+                    <button id="tab-btn-zerotier" onclick="switchMediaTab('zerotier')" class="media-tab-btn px-5 py-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        🔒 ZeroTier Setup &amp; Downloads
+                        <span class="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">Required</span>
                     </button>
                 </div>
 
@@ -269,7 +295,7 @@
                             </div>
                             <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold font-mono border border-emerald-500/20 self-start sm:self-auto">● Online (Port 32400)</span>
                         </div>
-                        <p class="text-sm text-slate-400 leading-relaxed">Plex Media Server is actively running. Your full movie and TV show library is accessible from any device — no VPN needed. Just create a free Plex account and ask an admin to send you an invite.</p>
+                        <p class="text-sm text-slate-400 leading-relaxed">Plex Media Server is actively running. <strong class="text-amber-300 dark:text-amber-400 font-semibold">ZeroTier required for remote access:</strong> When streaming movies and TV shows away from home, your device must be connected to our private ZeroTier virtual LAN. Create a free Plex account, install ZeroTier, and ask the admin to authorize your node.</p>
 
                         <!-- Quick stats row -->
                         <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800/60 grid grid-cols-3 gap-4">
@@ -278,7 +304,7 @@
                                 <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Port</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-lg font-bold font-mono text-cyan-400">Invite</div>
+                                <div class="text-lg font-bold font-mono text-cyan-400">ZeroTier + Invite</div>
                                 <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Access</div>
                             </div>
                             <div class="text-center">
@@ -287,11 +313,15 @@
                             </div>
                         </div>
 
-                        <div class="mt-4">
-                            <a href="#" onclick="event.preventDefault(); window.open('http://' + window.location.hostname + ':32400/web', '_blank');" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-purple-400 transition-all">
+                        <div class="mt-4 flex flex-wrap items-center gap-2.5">
+                            <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-purple-400 transition-all">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                 Open Plex Web App
                             </a>
+                            <button onclick="switchMediaTab('zerotier')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-300 dark:border-slate-700 min-h-[44px] inline-flex items-center justify-center gap-2 transition-all">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                ZeroTier Setup Guide →
+                            </button>
                         </div>
                     </div>
 
@@ -305,7 +335,7 @@
                                 </div>
                                 <div class="text-left">
                                     <div class="text-sm font-bold text-slate-900 dark:text-white">Movie Portal — Help &amp; Instructions</div>
-                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">How to connect, stream, and manage Plex</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">How to connect, stream, and manage Plex (ZeroTier Required)</div>
                                 </div>
                             </div>
                             <svg id="chevron-help-movies" class="chevron-icon w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -316,12 +346,32 @@
                             <div class="accordion-inner">
                                 <div class="px-6 pb-6 pt-1 space-y-5">
 
+                                    <!-- ZeroTier Prerequisite Notice Box -->
+                                    <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="text-xs font-bold text-amber-300 dark:text-amber-400 mb-1 flex items-center gap-2">
+                                                Important Requirement: ZeroTier Network Connection Needed
+                                                <span class="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-mono font-bold">REQUIRED</span>
+                                            </h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed mb-2.5">
+                                                This media server operates inside an encrypted, private ZeroTier virtual LAN. To connect and stream movies &amp; TV shows from any device outside local Wi-Fi, you must install ZeroTier and have your node authorized by the admin.
+                                            </p>
+                                            <button onclick="switchMediaTab('zerotier')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-sm">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                                Open ZeroTier Downloads &amp; Setup Guide →
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <!-- Step 1 -->
                                     <div class="flex gap-4">
-                                        <div class="w-7 h-7 rounded-full bg-purple-500/15 text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
+                                        <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Create a Free Plex Account</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Go to <a href="https://www.plex.tv/sign-up" target="_blank" class="text-purple-400 hover:text-purple-300 underline underline-offset-2">plex.tv/sign-up</a> and create a free Plex account using your email. No subscription is needed — a free account is all you require to access this server.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Install &amp; Connect to ZeroTier (Required)</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Download and install the <a href="javascript:void(0)" onclick="switchMediaTab('zerotier')" class="text-cyan-400 hover:text-cyan-300 underline font-semibold">ZeroTier One app</a> on your phone, laptop, or desktop. Join the server's 16-digit network and ask the administrator to approve your Node ID.</p>
                                         </div>
                                     </div>
 
@@ -329,8 +379,8 @@
                                     <div class="flex gap-4">
                                         <div class="w-7 h-7 rounded-full bg-purple-500/15 text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Ask an Admin for an Invite</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Contact the server admin via the <span class="font-semibold text-white">ServerFlow dashboard</span> or directly, and provide your Plex account email. The admin will send you a library share invite from within Plex.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Create a Free Plex Account</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Go to <a href="https://www.plex.tv/sign-up" target="_blank" class="text-purple-400 hover:text-purple-300 underline underline-offset-2">plex.tv/sign-up</a> and create a free Plex account using your email. No subscription is needed — a free account is all you require to access this server.</p>
                                         </div>
                                     </div>
 
@@ -338,8 +388,8 @@
                                     <div class="flex gap-4">
                                         <div class="w-7 h-7 rounded-full bg-purple-500/15 text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Accept the Invite &amp; Open Plex</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Check your email for the Plex share invitation and accept it. Then click the <span class="font-semibold text-purple-400">Open Plex Web App</span> button above, sign in with your Plex account, and the shared library will appear automatically.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Ask an Admin for an Invite</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Contact the server admin via the <span class="font-semibold text-white">ServerFlow dashboard</span> or directly, and provide your Plex account email and your ZeroTier Node ID. The admin will authorize your ZeroTier connection and send you a library share invite from within Plex.</p>
                                         </div>
                                     </div>
 
@@ -347,8 +397,17 @@
                                     <div class="flex gap-4">
                                         <div class="w-7 h-7 rounded-full bg-purple-500/15 text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">4</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Browse &amp; Stream</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Navigate to <span class="font-semibold text-white">Movies</span> or <span class="font-semibold text-white">TV Shows</span> in the Plex sidebar. Click any title to begin streaming immediately. Subtitles and audio tracks can be toggled from the player controls.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Accept the Invite &amp; Open Plex</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Check your email for the Plex share invitation and accept it. Ensure ZeroTier is connected, then click the <span class="font-semibold text-purple-400">Open Plex Web App</span> button above (or direct IP: <code class="font-mono text-cyan-400 text-[11px]">http://10.247.192.231:32400/web</code>) to browse and stream movies!</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 5 -->
+                                    <div class="flex gap-4">
+                                        <div class="w-7 h-7 rounded-full bg-purple-500/15 text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">5</div>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Browse &amp; Stream Anywhere</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Navigate to <span class="font-semibold text-white">Movies</span> or <span class="font-semibold text-white">TV Shows</span> in Plex. You can also install the official Plex app on iOS, Android, Apple TV, or smart TVs and stream over ZeroTier.</p>
                                         </div>
                                     </div>
 
@@ -359,6 +418,7 @@
                                             <span class="text-xs font-bold text-amber-400">Troubleshooting</span>
                                         </div>
                                         <ul class="space-y-1.5 text-xs text-slate-400 leading-relaxed list-none">
+                                            <li class="flex gap-2"><span class="text-amber-400 shrink-0">›</span> <span><strong class="text-amber-300">Server offline or unreachable in Plex?</strong> Verify that ZeroTier is connected on your device (status should say <code class="font-mono text-emerald-400 text-[11px]">OK</code> with a green dot). Without ZeroTier active, the server IP <code class="font-mono text-cyan-400 text-[11px]">10.247.192.231</code> cannot be reached outside home Wi-Fi.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">No library showing?</strong> Make sure you've accepted the admin's share invite via your Plex email before opening the app.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Playback buffering?</strong> Switch the Plex streaming quality to a lower setting (720p or 1080p original) under Settings → Quality.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Server not appearing?</strong> Confirm the server is online via the Dashboard. If it just went down, check back shortly or contact an admin.</span></li>
@@ -388,16 +448,16 @@
                             </div>
                             <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold font-mono border border-emerald-500/20 self-start sm:self-auto">● Online (Port 8888)</span>
                         </div>
-                        <p class="text-sm text-slate-400 leading-relaxed">Ampache Music Server is actively running. Your full audio library is ready for streaming from any browser or compatible client app. Just ask an admin for an account.</p>
+                        <p class="text-sm text-slate-400 leading-relaxed">Ampache Music Server is actively running on Apache (port 8888). <strong class="text-amber-300 dark:text-amber-400 font-semibold">ZeroTier required for remote streaming:</strong> To stream music from your browser or mobile apps outside home Wi-Fi, connect your device to our private ZeroTier virtual LAN. Ask an admin for an Ampache account and ZeroTier access.</p>
 
                         <!-- Quick stats row -->
                         <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800/60 grid grid-cols-3 gap-4">
                             <div class="text-center">
                                 <div class="text-lg font-bold font-mono text-emerald-400">8888</div>
-                                <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Port</div>
+                                <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Port (Apache)</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-lg font-bold font-mono text-cyan-400">Invite</div>
+                                <div class="text-lg font-bold font-mono text-cyan-400">ZeroTier + User</div>
                                 <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Access</div>
                             </div>
                             <div class="text-center">
@@ -406,11 +466,15 @@
                             </div>
                         </div>
 
-                        <div class="mt-4">
+                        <div class="mt-4 flex flex-wrap items-center gap-2.5">
                             <a href="/ampache/public/login.php" target="_blank" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-emerald-400 transition-all">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                Open Ampache
+                                Open Ampache Frontend
                             </a>
+                            <button onclick="switchMediaTab('zerotier')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-300 dark:border-slate-700 min-h-[44px] inline-flex items-center justify-center gap-2 transition-all">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                ZeroTier Setup Guide →
+                            </button>
                         </div>
                     </div>
 
@@ -424,7 +488,7 @@
                                 </div>
                                 <div class="text-left">
                                     <div class="text-sm font-bold text-slate-900 dark:text-white">Music Portal — Help &amp; Instructions</div>
-                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">How to connect, stream, and use Ampache</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">How to connect, stream, and use Ampache on Apache (ZeroTier Required)</div>
                                 </div>
                             </div>
                             <svg id="chevron-help-music" class="chevron-icon w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -435,12 +499,32 @@
                             <div class="accordion-inner">
                                 <div class="px-6 pb-6 pt-1 space-y-5">
 
+                                    <!-- ZeroTier Prerequisite Notice Box -->
+                                    <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="text-xs font-bold text-amber-300 dark:text-amber-400 mb-1 flex items-center gap-2">
+                                                Remote Access Notice: ZeroTier Connection Needed
+                                                <span class="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-mono font-bold">REQUIRED</span>
+                                            </h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed mb-2.5">
+                                                The Apache web server hosting Ampache listens on internal port 8888. When connecting away from the local Wi-Fi, your device must be connected to our <strong class="text-white">ZeroTier Virtual LAN</strong> to load the music frontend at <code class="font-mono text-cyan-400 text-[11px]">http://10.247.192.231:8888/ampache/public/</code>.
+                                            </p>
+                                            <button onclick="switchMediaTab('zerotier')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-sm">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                                Open ZeroTier Setup &amp; Downloads →
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <!-- Step 1 -->
                                     <div class="flex gap-4">
-                                        <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
+                                        <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Ask an Admin for an Account</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Contact the server admin via the <span class="font-semibold text-white">ServerFlow dashboard</span> or directly to request a free Ampache music account.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Connect to ZeroTier (For Remote Streaming)</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">If you are not on the local home Wi-Fi network, launch ZeroTier on your device and make sure it shows <code class="font-mono text-emerald-400 text-[11px]">OK</code>. This connects you to the server's private <code class="font-mono text-cyan-400 text-[11px]">10.247.192.x</code> network.</p>
                                         </div>
                                     </div>
 
@@ -448,8 +532,8 @@
                                     <div class="flex gap-4">
                                         <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Open Ampache Login</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Click the <span class="font-semibold text-emerald-400">Open Ampache</span> button above, or go directly to <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">/ampache/public/login.php</code>.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Ask an Admin for an Ampache Account</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Contact the server admin via the <span class="font-semibold text-white">ServerFlow dashboard</span> or directly to request an Ampache streaming account.</p>
                                         </div>
                                     </div>
 
@@ -457,8 +541,8 @@
                                     <div class="flex gap-4">
                                         <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Sign in to Ampache</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Enter your Ampache username and password on the login page. If you don't have an account, contact the server admin to create one for you.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Open Ampache Login</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Click <span class="font-semibold text-emerald-400">Open Ampache Frontend</span> above, or open <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">http://10.247.192.231:8888/ampache/public/login.php</code> (or <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">https://serverflow.icu/ampache/public/login.php</code>).</p>
                                         </div>
                                     </div>
 
@@ -466,17 +550,26 @@
                                     <div class="flex gap-4">
                                         <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">4</div>
                                         <div>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Sign in to Ampache</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Enter your Ampache username and password on the login page. Note that Ampache passwords are managed separately from ServerFlow admin accounts.</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 5 -->
+                                    <div class="flex gap-4">
+                                        <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">5</div>
+                                        <div>
                                             <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Browse &amp; Stream Music</h4>
                                             <p class="text-xs text-slate-400 leading-relaxed">Use the <span class="font-semibold text-white">Browse</span> menu to explore artists, albums, and songs. Click any track to stream instantly. Create playlists from the <span class="font-semibold text-white">Playlist</span> section.</p>
                                         </div>
                                     </div>
 
-                                    <!-- Step 5 — External clients -->
+                                    <!-- Step 6 — External clients -->
                                     <div class="flex gap-4">
-                                        <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">5</div>
+                                        <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">6</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Use a Mobile Client (Optional)</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Ampache is compatible with many third-party apps via its API. Apps like <span class="font-semibold text-white">Symfonium</span>, <span class="font-semibold text-white">Ultrasonic</span>, or <span class="font-semibold text-white">DSub</span> (Android/iOS) support the Subsonic API that Ampache also exposes. Point them to the server URL above.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Use a Mobile Client App (Subsonic API)</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Keep ZeroTier connected on your phone and install <span class="font-semibold text-white">Symfonium</span>, <span class="font-semibold text-white">Ultrasonic</span>, or <span class="font-semibold text-white">DSub</span>. Add a Subsonic server pointing to <code class="font-mono text-cyan-400 text-[11px]">http://10.247.192.231:8888/ampache/public/</code> with your Ampache credentials to stream in the car or on the go!</p>
                                         </div>
                                     </div>
 
@@ -488,7 +581,7 @@
                                         </div>
                                         <ul class="space-y-1.5 text-xs text-slate-400 leading-relaxed">
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span>Ampache REST API endpoint: <code class="font-mono text-cyan-400 text-[11px]">/ampache/public/server/xml.server.php</code></span></li>
-                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span>Subsonic-compatible API is enabled — use the same server URL in compatible clients.</span></li>
+                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span>Subsonic-compatible API is enabled at <code class="font-mono text-cyan-400 text-[11px]">http://10.247.192.231:8888/ampache/public/rest/</code></span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">DAAP (iTunes sharing)</strong> is configured at <code class="font-mono text-cyan-400 text-[11px]">/ampache/public/daap</code>.</span></li>
                                         </ul>
                                     </div>
@@ -500,8 +593,9 @@
                                             <span class="text-xs font-bold text-amber-400">Troubleshooting</span>
                                         </div>
                                         <ul class="space-y-1.5 text-xs text-slate-400 leading-relaxed">
+                                            <li class="flex gap-2"><span class="text-amber-400 shrink-0">›</span> <span><strong class="text-amber-300">Apache page won't load from remote network?</strong> Ensure ZeroTier is running on your device and shows <code class="font-mono text-emerald-400 text-[11px]">OK</code>. Without ZeroTier, Apache port 8888 is not accessible from external networks.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Login fails?</strong> Double-check your Ampache username/password. Accounts are separate from ServerFlow admin accounts.</span></li>
-                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Page not loading?</strong> Confirm MAMP/Apache is running on the server via the Dashboard.</span></li>
+                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Page not loading locally?</strong> Confirm Apache/MAMP is running on the server via the Dashboard.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Missing songs?</strong> Ask an admin to trigger a catalog update inside Ampache → Admin → Catalog → Update all.</span></li>
                                         </ul>
                                     </div>
@@ -512,6 +606,368 @@
 
                 </div>
                 <!-- /tab-music -->
+
+                <!-- ══════════════════════════════ ZEROTIER TAB ════════════════════ -->
+                <div id="tab-zerotier" class="space-y-6 hidden">
+
+                    <!-- Network Status Hero Card -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        ZeroTier Private Virtual LAN
+                                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-semibold border border-emerald-500/20">Active Mesh</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">Secure end-to-end encrypted remote access for Plex &amp; Ampache</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold font-mono border border-emerald-500/20 self-start sm:self-auto">● Server IP: 10.247.192.231</span>
+                        </div>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            ZeroTier creates a private, encrypted peer-to-peer network between your phone, tablet, or laptop and this home server. Connecting through ZeroTier lets you stream <strong class="text-purple-400">Plex movies &amp; TV shows</strong> and access the <strong class="text-emerald-400">Ampache music portal</strong> from anywhere in the world on mobile data or guest Wi-Fi — just like being connected to your home router, with no vulnerable open router ports.
+                        </p>
+
+                        <!-- Quick connection summary stats -->
+                        <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800/60 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80">
+                                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Server IP</div>
+                                <div class="text-sm font-bold font-mono text-cyan-400 mt-0.5 flex items-center justify-between">
+                                    <span>10.247.192.231</span>
+                                    <button onclick="copyToClipboard('10.247.192.231', this, 'Copied!')" title="Copy Server IP" class="text-slate-400 hover:text-cyan-300 transition-colors cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80">
+                                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Plex Port</div>
+                                <div class="text-sm font-bold font-mono text-purple-400 mt-0.5">32400 (TCP)</div>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80">
+                                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Apache Music Port</div>
+                                <div class="text-sm font-bold font-mono text-emerald-400 mt-0.5">8888 (TCP)</div>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80">
+                                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Access Control</div>
+                                <div class="text-sm font-bold text-amber-400 mt-0.5">Admin Authorized</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── ZeroTier Downloads Grid ── -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Download ZeroTier One Client
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Install the free ZeroTier app on every device you want to stream from.</p>
+                            </div>
+                            <a href="https://www.zerotier.com/download/" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors">
+                                Official Download Page ↗
+                            </a>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+                            <!-- Windows -->
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition-all flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-lg">🪟</span>
+                                            <span class="text-xs font-bold text-slate-900 dark:text-white">Windows</span>
+                                        </div>
+                                        <span class="text-[10px] font-mono text-slate-400">10 / 11 (64-bit)</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mb-3">Install MSI package. Runs seamlessly in the system tray.</p>
+                                </div>
+                                <a href="https://download.zerotier.com/dist/ZeroTier%20One.msi" target="_blank" rel="noopener noreferrer" class="w-full py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-sm inline-flex items-center justify-center gap-1.5 transition-all">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Download .MSI Installer
+                                </a>
+                            </div>
+
+                            <!-- macOS -->
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition-all flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-lg">🍎</span>
+                                            <span class="text-xs font-bold text-slate-900 dark:text-white">macOS</span>
+                                        </div>
+                                        <span class="text-[10px] font-mono text-slate-400">Universal PKG</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mb-3">Supports Apple Silicon (M1/M2/M3/M4) &amp; Intel Macs.</p>
+                                </div>
+                                <a href="https://download.zerotier.com/dist/ZeroTier%20One.pkg" target="_blank" rel="noopener noreferrer" class="w-full py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-sm inline-flex items-center justify-center gap-1.5 transition-all">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Download .PKG Installer
+                                </a>
+                            </div>
+
+                            <!-- iOS / iPadOS -->
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition-all flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-lg">📱</span>
+                                            <span class="text-xs font-bold text-slate-900 dark:text-white">iPhone &amp; iPad</span>
+                                        </div>
+                                        <span class="text-[10px] font-mono text-slate-400">App Store</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mb-3">Stream Plex &amp; music over cellular data without router port forwarding.</p>
+                                </div>
+                                <a href="https://apps.apple.com/app/zerotier-one/id1084101492" target="_blank" rel="noopener noreferrer" class="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-sm inline-flex items-center justify-center gap-1.5 transition-all">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                    Open Apple App Store ↗
+                                </a>
+                            </div>
+
+                            <!-- Android -->
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition-all flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-lg">🤖</span>
+                                            <span class="text-xs font-bold text-slate-900 dark:text-white">Android</span>
+                                        </div>
+                                        <span class="text-[10px] font-mono text-slate-400">Google Play / APK</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mb-3">Compatible with phones, tablets, Android TV, and Google TV.</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <a href="https://play.google.com/store/apps/details?id=com.zerotier.one" target="_blank" rel="noopener noreferrer" class="flex-1 py-2 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm inline-flex items-center justify-center gap-1 transition-all">
+                                        Google Play ↗
+                                    </a>
+                                    <a href="https://download.zerotier.com/dist/ZeroTierOne.apk" target="_blank" rel="noopener noreferrer" class="py-2 px-2.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-sm inline-flex items-center justify-center gap-1 transition-all" title="Direct APK download">
+                                        APK
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Linux -->
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 transition-all flex flex-col justify-between sm:col-span-2 lg:col-span-2">
+                                <div>
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-lg">🐧</span>
+                                            <span class="text-xs font-bold text-slate-900 dark:text-white">Linux / Raspberry Pi</span>
+                                        </div>
+                                        <span class="text-[10px] font-mono text-slate-400">Debian, Ubuntu, Fedora, Arch</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mb-2">Run the official one-liner script in your terminal to install and start the service:</p>
+                                </div>
+                                <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-cyan-400">
+                                    <span class="truncate">curl -s https://install.zerotier.com | sudo bash</span>
+                                    <button onclick="copyToClipboard('curl -s https://install.zerotier.com | sudo bash', this, 'Copied!')" class="ml-2 shrink-0 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-sans font-semibold transition-all">
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Step-by-Step Setup Guide ── -->
+                    <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                Step-by-Step Guide: Connect &amp; Stream Media
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Follow these 5 simple steps to get connected and start enjoying your movies and music.</p>
+                        </div>
+
+                        <div class="space-y-5">
+                            <!-- Step 1 -->
+                            <div class="flex gap-4">
+                                <div class="w-8 h-8 rounded-full bg-cyan-500/15 text-cyan-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">1</div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Download &amp; Install ZeroTier</h4>
+                                    <p class="text-xs text-slate-400 leading-relaxed">
+                                        Choose your device platform from the download grid above and install the app. Launch ZeroTier One.
+                                    </p>
+                                    <div class="mt-2 p-2.5 rounded-lg bg-slate-100 dark:bg-slate-900/80 text-[11px] text-slate-400 border border-slate-200 dark:border-slate-800">
+                                        💡 <strong>Mobile Note:</strong> On iPhones or Android devices, system prompts will ask permission to add a VPN configuration. Tap <strong>Allow</strong> so ZeroTier can route traffic to the server.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 2 -->
+                            <div class="flex gap-4">
+                                <div class="w-8 h-8 rounded-full bg-cyan-500/15 text-cyan-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">2</div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Join the Server's ZeroTier Network</h4>
+                                    <p class="text-xs text-slate-400 leading-relaxed mb-2">
+                                        In the ZeroTier One app, select <strong>"Join New Network"</strong> (on mobile, tap the <strong>+</strong> button). Enter the 16-digit Network ID provided by the server administrator.
+                                    </p>
+                                    <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                                        <div>
+                                            <div class="text-[10px] text-slate-400 uppercase tracking-wider font-mono">16-Digit ZeroTier Network ID</div>
+                                            <div class="text-xs text-slate-300 font-medium">Ask the ServerFlow Admin for your unique Network ID</div>
+                                        </div>
+                                        <button onclick="if(typeof toggleServerFlowChat === 'function') { toggleServerFlowChat(); setTimeout(() => { const i = document.getElementById('sf-chat-input'); if(i) { i.value = 'Hi! Please provide the ZeroTier Network ID so I can join the media server network.'; i.focus(); } }, 100); }" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 shadow-sm">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                            Request Network ID
+                                        </button>
+                                    </div>
+                                    <div class="mt-2 text-[11px] text-slate-400">
+                                        Ensure <strong>"Allow Managed IP"</strong> and <strong>"Allow Global"</strong> checkboxes are enabled when joining.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3 -->
+                            <div class="flex gap-4">
+                                <div class="w-8 h-8 rounded-full bg-cyan-500/15 text-cyan-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">3</div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Get Authorized by the Admin</h4>
+                                    <p class="text-xs text-slate-400 leading-relaxed mb-2">
+                                        Because our server network is private and secured against unauthorized outsiders, all newly joined devices initially display <span class="font-mono text-amber-400 text-[11px] font-bold">ACCESS_DENIED</span>.
+                                    </p>
+                                    <p class="text-xs text-slate-400 leading-relaxed">
+                                        Find your 10-digit <strong>Node ID / Address</strong> in the ZeroTier app (displayed at the bottom or top of your screen, e.g. <code class="font-mono text-cyan-400 text-[11px]">a1b2c3d4e5</code>). Send this 10-digit ID to the admin. Once the admin clicks "Authorize", your connection is live!
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Step 4 -->
+                            <div class="flex gap-4">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">4</div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Confirm Connection Status</h4>
+                                    <p class="text-xs text-slate-400 leading-relaxed">
+                                        Within 10 seconds of admin approval, your ZeroTier status indicator turns <strong class="text-emerald-400">OK (Green)</strong>, and your device receives an IP address in the <code class="font-mono text-cyan-400 text-[11px]">10.247.192.x</code> subnet. You are now securely bridged to the home server.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Step 5 -->
+                            <div class="flex gap-4">
+                                <div class="w-8 h-8 rounded-full bg-purple-500/15 text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">5</div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Launch Plex &amp; Ampache Music Frontend</h4>
+                                    <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                                        You are ready to stream! Open the services directly:
+                                    </p>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <!-- Plex Card -->
+                                        <div class="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/25 space-y-2">
+                                            <div class="flex items-center gap-2">
+                                                <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                                                <span class="text-xs font-bold text-white">Movie Portal (Plex)</span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                                Open Plex Web App or direct internal port. Also works on the official Plex app on iOS &amp; Android.
+                                            </p>
+                                            <div class="pt-1 flex flex-wrap gap-2">
+                                                <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold inline-flex items-center gap-1 transition-all">
+                                                    Open Plex Web App ↗
+                                                </a>
+                                                <button onclick="copyToClipboard('http://10.247.192.231:32400/web', this, 'Copied Link!')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-all">
+                                                    Direct IP Link
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Ampache Card -->
+                                        <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 space-y-2">
+                                            <div class="flex items-center gap-2">
+                                                <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                                                <span class="text-xs font-bold text-white">Music Portal (Ampache on Apache)</span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                                Stream high-res audio from Apache port 8888 in your browser or with Subsonic mobile apps (Symfonium/DSub).
+                                            </p>
+                                            <div class="pt-1 flex flex-wrap gap-2">
+                                                <a href="/ampache/public/login.php" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center gap-1 transition-all">
+                                                    Open Ampache Login ↗
+                                                </a>
+                                                <button onclick="copyToClipboard('http://10.247.192.231:8888/ampache/public/', this, 'Copied Server URL!')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-all">
+                                                    Subsonic App URL
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── ZeroTier FAQ & Details (Things Clearly Missed) ── -->
+                    <div class="rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+                        <button onclick="toggleAccordion('help-zerotier-faq')" class="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <div class="text-left">
+                                    <div class="text-sm font-bold text-slate-900 dark:text-white">ZeroTier Tips, Mobile Streaming &amp; FAQ</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Common questions, mobile VPN toggles, and streaming settings</div>
+                                </div>
+                            </div>
+                            <svg id="chevron-help-zerotier-faq" class="chevron-icon w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+
+                        <div id="help-zerotier-faq" class="accordion-body">
+                            <div class="accordion-inner">
+                                <div class="px-6 pb-6 pt-2 space-y-4 text-xs text-slate-400 leading-relaxed">
+                                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <h5 class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span>❓</span> Why is ZeroTier required instead of regular port forwarding?
+                                        </h5>
+                                        <p>
+                                            Residential internet providers frequently change IP addresses or use CGNAT (Carrier-Grade NAT) which prevents direct external connections. ZeroTier establishes an encrypted, peer-to-peer virtual tunnel directly into the server without opening risky ports to web crawlers and malicious bots on the public internet.
+                                        </p>
+                                    </div>
+
+                                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <h5 class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span>📱</span> How do I stream on my phone or tablet when away from home?
+                                        </h5>
+                                        <p>
+                                            Whenever you leave your home Wi-Fi and want to watch Plex or listen to music, simply open the <strong>ZeroTier One app</strong> and flip the toggle switch to <strong>ON</strong>. Once the VPN key icon appears in your device status bar, open the Plex app or Ampache in Safari/Chrome.
+                                        </p>
+                                    </div>
+
+                                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <h5 class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span>⚡</span> Does ZeroTier slow down my general internet browsing?
+                                        </h5>
+                                        <p>
+                                            No! ZeroTier operates in <strong>split-tunnel mode</strong>. Only packets destined for your server's private network (<code class="font-mono text-cyan-400">10.247.192.x</code>) pass through ZeroTier. All your standard internet traffic (Google, YouTube, Netflix, social media) continues directly over your regular Wi-Fi or cellular connection at full speed.
+                                        </p>
+                                    </div>
+
+                                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <h5 class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span>⚠️</span> What does ACCESS_DENIED or NOT_FOUND mean?
+                                        </h5>
+                                        <p>
+                                            <strong class="text-amber-300">ACCESS_DENIED</strong>: You have successfully reached the server's network, but the administrator hasn't checked the "Authorize" box yet. Send your 10-digit Node ID to the admin.<br>
+                                            <strong class="text-rose-300">NOT_FOUND</strong>: Check the 16-digit Network ID for typing errors.
+                                        </p>
+                                    </div>
+
+                                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <h5 class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <span>🎶</span> Can I use dedicated third-party music streaming apps?
+                                        </h5>
+                                        <p>
+                                            Yes! Ampache includes built-in Subsonic API compatibility. With ZeroTier active on your device, download apps like <strong class="text-white">Symfonium</strong> (Android), <strong class="text-white">Ultrasonic</strong>, or <strong class="text-white">DSub</strong> and enter server URL <code class="font-mono text-cyan-400">http://10.247.192.231:8888/ampache/public/</code> with your Ampache username and password.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /tab-zerotier -->
 
             </div>
             <!-- /content -->
@@ -609,10 +1065,11 @@
     <script>
         // ── Media tab switcher ──────────────────────────────────────────────
         function switchMediaTab(tab) {
-            const tabs = ['movies', 'music'];
+            const tabs = ['movies', 'music', 'zerotier'];
             tabs.forEach(t => {
                 const panel = document.getElementById('tab-' + t);
                 const btn   = document.getElementById('tab-btn-' + t);
+                if (!panel || !btn) return;
                 if (t === tab) {
                     panel.classList.remove('hidden');
                     btn.classList.add('active', 'text-cyan-400');
@@ -627,10 +1084,49 @@
             try { sessionStorage.setItem('mediaTab', tab); } catch(e) {}
         }
 
+        // ── Clipboard copy helper with visual feedback ──────────────────────
+        function copyToClipboard(text, btnElement, feedbackText = 'Copied!') {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text)
+                    .then(() => showCopyFeedback(btnElement, feedbackText))
+                    .catch(() => fallbackCopy(text, btnElement, feedbackText));
+            } else {
+                fallbackCopy(text, btnElement, feedbackText);
+            }
+        }
+
+        function fallbackCopy(text, btnElement, feedbackText) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showCopyFeedback(btnElement, feedbackText);
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showCopyFeedback(btnElement, feedbackText) {
+            if (!btnElement) return;
+            const originalHTML = btnElement.innerHTML;
+            btnElement.innerHTML = `<span class="text-emerald-400 font-bold text-[11px] inline-flex items-center gap-1">✓ ${feedbackText}</span>`;
+            setTimeout(() => {
+                btnElement.innerHTML = originalHTML;
+            }, 1800);
+        }
+
         // ── Accordion toggle ────────────────────────────────────────────────
         function toggleAccordion(id) {
             const body    = document.getElementById(id);
             const chevron = document.getElementById('chevron-' + id);
+            if (!body) return;
             const isOpen  = body.classList.contains('open');
             body.classList.toggle('open', !isOpen);
             if (chevron) chevron.classList.toggle('rotated', !isOpen);
@@ -638,11 +1134,16 @@
 
         // ── Restore tab on load ─────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
-            // Check URL hash for direct deep-link  (?tab=music)
+            // Check URL query or hash for direct deep-link (?tab=zerotier, ?tab=music, ?tab=movies)
             const params = new URLSearchParams(window.location.search);
-            const hashTab = params.get('tab');
+            const hashTab = params.get('tab') || window.location.hash.replace('#', '');
             const stored  = (() => { try { return sessionStorage.getItem('mediaTab'); } catch(e) { return null; } })();
-            const initial = (hashTab === 'music' || stored === 'music') ? 'music' : 'movies';
+            let initial = 'movies';
+            if (hashTab === 'music' || hashTab === 'zerotier' || hashTab === 'movies') {
+                initial = hashTab;
+            } else if (stored === 'music' || stored === 'zerotier') {
+                initial = stored;
+            }
             switchMediaTab(initial);
 
             // Live clock

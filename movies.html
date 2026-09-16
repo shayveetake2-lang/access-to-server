@@ -155,7 +155,7 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Stream movies, TV shows, and video libraries hosted on your server.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <a href="#" onclick="event.preventDefault(); window.open('http://' + window.location.hostname + ':32400/web', '_blank');" target="_blank" class="px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md hover:bg-purple-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-purple-400 transition-all">Launch Plex Web ↗</a>
+                        <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md hover:bg-purple-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-purple-400 transition-all">Launch Plex Web ↗</a>
                     </div>
                 </div>
 
@@ -164,7 +164,17 @@
                         <h3 class="text-sm font-bold text-slate-900 dark:text-white">Plex Media Status</h3>
                         <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold font-mono border border-emerald-500/20">● Online (Port 32400)</span>
                     </div>
-                    <p class="text-sm text-slate-400 leading-relaxed">Plex Media Server is actively streaming tunneled through ZeroTier local host. Media library scan completed.</p>
+                    <p class="text-sm text-slate-400 leading-relaxed">Plex Media Server is actively streaming tunneled through ZeroTier local host. <strong class="text-amber-300 dark:text-amber-400 font-semibold">ZeroTier required:</strong> To stream movies away from home Wi-Fi, your device must be connected to our ZeroTier network.</p>
+
+                    <div class="pt-2 flex flex-wrap items-center gap-3">
+                        <a href="media.html?tab=zerotier" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md inline-flex items-center gap-2 transition-all">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            ZeroTier Download &amp; Setup Guide →
+                        </a>
+                        <a href="media.html" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 inline-flex items-center gap-2 transition-all">
+                            Open Unified Media Portal ↗
+                        </a>
+                    </div>
                 </div>
             </div>
 
