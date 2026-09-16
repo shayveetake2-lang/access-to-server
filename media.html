@@ -217,7 +217,7 @@
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
                             Launch Plex ↗
                         </a>
-                        <a href="/ampache/public/login.php" onclick="openAmpacheLogin(event)" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-emerald-400 transition-all">
+                        <a href="ampache/public/login.php" target="_blank" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-emerald-400 transition-all">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
                             Launch Ampache ↗
                         </a>
@@ -467,7 +467,7 @@
                         </div>
 
                         <div class="mt-4 flex flex-wrap items-center gap-2.5">
-                            <a href="/ampache/public/login.php" onclick="openAmpacheLogin(event)" target="_blank" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-emerald-400 transition-all">
+                            <a href="ampache/public/login.php" target="_blank" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-emerald-400 transition-all">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                 Open Ampache Frontend
                             </a>
@@ -542,7 +542,7 @@
                                         <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</div>
                                         <div>
                                             <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Open Ampache Login</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Click <span class="font-semibold text-emerald-400">Open Ampache Frontend</span> above, or open <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">http://10.247.192.231:8888/ampache/public/login.php</code> (or <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">https://serverflow.icu/ampache/public/login.php</code>).</p>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Click <span class="font-semibold text-emerald-400">Open Ampache Frontend</span> above, or open <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">http://10.247.192.231:8888/access-to-server/ampache/public/login.php</code> (or <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">https://serverflow.icu/ampache/public/login.php</code>).</p>
                                         </div>
                                     </div>
 
@@ -884,7 +884,7 @@
                                                 Stream high-res audio from Apache port 8888 in your browser or with Subsonic mobile apps (Symfonium/DSub).
                                             </p>
                                             <div class="pt-1 flex flex-wrap gap-2">
-                                                <a href="/ampache/public/login.php" onclick="openAmpacheLogin(event)" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center gap-1 transition-all">
+                                                <a href="ampache/public/login.php" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center gap-1 transition-all">
                                                     Open Ampache Login ↗
                                                 </a>
                                                 <button onclick="copyToClipboard('http://10.247.192.231:8888/ampache/public/', this, 'Copied Server URL!')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-all">
@@ -1160,13 +1160,13 @@
             if (e && typeof e.preventDefault === 'function') e.preventDefault();
             let target = '/ampache/public/login.php';
             if (window.location.protocol === 'file:') {
-                target = 'http://10.247.192.231:8888/ampache/public/login.php';
+                target = 'http://10.247.192.231:8888/access-to-server/ampache/public/login.php';
             } else if (window.location.hostname === 'serverflow.icu') {
                 target = 'https://serverflow.icu/ampache/public/login.php';
             } else if (window.location.hostname.includes('serveousercontent.com')) {
                 target = 'https://' + window.location.hostname + '/ampache/public/login.php';
             } else if (window.location.hostname === '10.247.192.231' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                target = window.location.protocol + '//' + window.location.hostname + ':8888/ampache/public/login.php';
+                target = window.location.protocol + '//' + window.location.hostname + ':8888/access-to-server/ampache/public/login.php';
             }
             window.open(target, '_blank');
         }
