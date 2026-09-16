@@ -3,7 +3,7 @@
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 
-$usbMountPath = '/Volumes/USBDrive';
+$usbMountPath = '/Volumes/Music';
 
 if (!function_exists('formatBytes')) {
     /**

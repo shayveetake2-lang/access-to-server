@@ -237,7 +237,7 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (!isLoggedIn) {
             pill.textContent = 'No User Logged In';
             pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400 border border-slate-700/60 truncate';
-        } else if (role === 'admin') {
+        } else if (role.toLowerCase() === 'admin') {
             pill.textContent = 'Admin Mode';
             pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 truncate';
         } else {
@@ -264,7 +264,7 @@ function updateAdminUI(isLoggedIn, user, role) {
         standardUserPortal.forEach(el => el.classList.remove('hidden'));
         if (standardUserBanner) standardUserBanner.classList.add('hidden');
 
-        if (role === 'admin') {
+        if (role.toLowerCase() === 'admin') {
             if (adminPortal) adminPortal.classList.remove('hidden');
             if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
             if (manageAdminsBtn) manageAdminsBtn.classList.remove('hidden');
@@ -300,7 +300,7 @@ function updateAdminUI(isLoggedIn, user, role) {
         document.querySelectorAll('.auth-required-btn, .auth-required-action, .auth-required-nav').forEach(el => el.classList.remove('hidden'));
         document.querySelectorAll('.logged-out-prompt').forEach(el => el.classList.add('hidden'));
 
-        if (role === 'admin') {
+        if (role.toLowerCase() === 'admin') {
             document.querySelectorAll('.auth-admin-nav').forEach(el => el.classList.remove('hidden'));
         } else {
             document.querySelectorAll('.auth-admin-nav').forEach(el => el.classList.add('hidden'));
