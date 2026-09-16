@@ -155,7 +155,7 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Stream your music library hosted on your server.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <a href="/ampache/public/login.php" target="_blank" class="px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-bold shadow-md hover:bg-green-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-green-400 transition-all">Launch Ampache ↗</a>
+                        <a href="/ampache/public/login.php" onclick="openAmpacheLogin(event)" target="_blank" class="px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-bold shadow-md hover:bg-green-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-green-400 transition-all">Launch Ampache ↗</a>
                     </div>
                 </div>
 
@@ -278,5 +278,21 @@
 
     <script src="js/serverflow_core.js?v=20260910_v3"></script>
     <script src="js/admin_auth.js?v=20260910_v3"></script>
+    <script>
+        function openAmpacheLogin(e) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            let target = '/ampache/public/login.php';
+            if (window.location.protocol === 'file:') {
+                target = 'http://10.247.192.231:8888/ampache/public/login.php';
+            } else if (window.location.hostname === 'serverflow.icu') {
+                target = 'https://serverflow.icu/ampache/public/login.php';
+            } else if (window.location.hostname.includes('serveousercontent.com')) {
+                target = 'https://' + window.location.hostname + '/ampache/public/login.php';
+            } else if (window.location.hostname === '10.247.192.231' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                target = window.location.protocol + '//' + window.location.hostname + ':8888/ampache/public/login.php';
+            }
+            window.open(target, '_blank');
+        }
+    </script>
 </body>
 </html>

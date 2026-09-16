@@ -11,3 +11,4 @@ sites/*
 ampache/
 .DS_Store
 */.DS_Store
+ampache_debug.log/
