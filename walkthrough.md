@@ -1,33 +1,21 @@
-# Phase 9: Server Dashboard Storage and Quota Fixes
+# Phase 10: Media Request System
 
 ## Goal
-Fix three storage and quota bugs on the local ServerFlow dashboard (PHP/MySQL) requested by the user:
-1. Live Storage Refresh Buttons for SSD and USB with dynamic DOM updates via unified endpoint.
-2. Fix Website Deployment Quota Bug ensuring 100MB strict limit check during `deploy.php`.
-3. Admin-Only Quota Refresh feature with RBAC token protection and hidden UI.
+Implement a media request system for users to request Movies, TV Shows, and Music, and for admins to view and manage these requests within the ServerFlow dashboard.
 
 ## Changes Made
 
-### 1. Live Storage Refresh (Unified endpoint)
-- **`api/system/storage_stats.php` [NEW]**: Created a new PHP script that accurately calculates storage metrics for the Primary SSD (`/Volumes/htdocs`) and USB Storage (`/Volumes/USBDrive`) using `disk_free_space()` and `disk_total_space()`. Returns consolidated JSON.
-- **`index.html`**:
-  - Replaced inline `onclick` attributes for SSD and USB refresh buttons with explicit IDs (`btn-refresh-ssd`, `btn-refresh-usb`).
-  - Injected `fetchUnifiedStorage()` into the `DOMContentLoaded` block. This function fetches metrics from the new unified PHP endpoint and dynamically updates the respective DOM elements (texts, SVG donuts, pill statuses) without reloading the page.
-  - Attached standard `addEventListener('click', ...)` on both refresh buttons.
+### 1. Database Setup
+- Created the `media_requests` table in the database with columns for `id`, `user_id`, `media_title`, `media_type`, `status`, and `request_date`. Ensure fallback compatibility across MySQL and SQLite.
 
-### 2. Website Deployment Quota Bug Fix
-- **`api/system/deploy.php`**:
-  - Injected a new `getDirectorySizeMB` helper function at the top of the file to recursively calculate folder sizes.
-  - Inside the successful clone execution block (`if ($returnCode === 0)`), calculated the new total size of all sites owned by the deploying user.
-  - Added strict limit enforcement: If `totalUserMB` exceeds `limitMB` (100MB), the script now immediately executes `rm -rf` on the cloned directory, aborts the deployment, and returns a 403 HTTP status.
-  - If successful, it accurately updates `storage_used_mb` for the given username in the `sys_users` database table.
+### 2. Standard User View
+- **Frontend (`index.html`)**: Injected the Tailwind CSS HTML for the "Request Media" form (containing Title input, Type dropdown, and Submit button) into the Overview tab for standard users. Included the JavaScript handler `submitMediaRequest()` to process submissions.
+- **Backend (`api/media/submit_request.php`)**: Created the endpoint to parse JSON form submissions, verify the user's JWT token, and securely insert the request into the `media_requests` table using PDO prepared statements.
 
-### 3. Admin-Only Quota Refresh
-- **`api/system/refresh_quotas.php` [NEW]**: Created a secure endpoint that recalculates all users' exact used storage by looping through their respective sites directories. Secured at the very top using `requireAdmin()` (which strictly validates the JWT auth token and returns 403 Forbidden for non-admins).
-- **`index.html`**: Set the default state of the "Refresh Quota" button to hidden using the Tailwind `hidden` class and assigned it the ID `btn-refresh-quotas`. Updated its inline action to execute `refreshServerQuotas()`.
-- **`js/admin_auth.js`**:
-  - Added `refreshServerQuotas()` which sends the authenticated POST request.
-  - Updated `updateAdminUI()` to dynamically remove the `hidden` class from the `btn-refresh-quotas` element ONLY when `currentAdminState.role === 'admin'`, enforcing UI-level RBAC.
+### 3. Admin Dashboard View
+- **Frontend (`index.html` & `js/admin_auth.js`)**: Injected the Tailwind CSS HTML for the "Media Requests Tracker" table inside the protected Admin Portal (Settings tab). Added the JavaScript function `fetchMediaRequests()` which automatically populates the table when an admin logs in.
+- **Backend (`api/media/get_requests.php`)**: Created the endpoint to fetch all requests across all users, sorted by date. Strictly protected this endpoint using `requireAdmin()` to ensure only authenticated admins can view the requests.
 
 ## Validation
-- Changes verified via backend log tracking. File additions confirmed. Diff looks exact and matches expected outputs.
+- Form HTML successfully injected into the correct protected/unprotected DOM zones.
+- Endpoints created and wired together with fetch calls.

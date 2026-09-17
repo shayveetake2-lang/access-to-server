@@ -345,7 +345,28 @@
                             </div>
                         </div>
                     </details>
-                    
+
+                    <!-- Request Media Form -->
+                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-sm mt-6">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Request Media</h3>
+                        <form id="media-request-form" class="space-y-4" onsubmit="submitMediaRequest(event)">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Title</label>
+                                <input type="text" id="media-request-title" required placeholder="Movie or TV Show name..." class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Type</label>
+                                <select id="media-request-type" required class="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                                    <option value="Movie">Movie</option>
+                                    <option value="TV Show">TV Show</option>
+                                    <option value="Music">Music</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-lg shadow transition-colors">Submit Request</button>
+                            <p id="media-request-msg" class="text-xs mt-2 hidden"></p>
+                        </form>
+                    </div>
+
                     <!-- Overview Header Subbar -->
                     <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4">
                         <div>
@@ -1609,6 +1630,94 @@
                 }
             } catch(e){}
         }
+        
+        async function submitMediaRequest(event) {
+            event.preventDefault();
+            const title = document.getElementById('media-request-title').value;
+            const type = document.getElementById('media-request-type').value;
+            const msgEl = document.getElementById('media-request-msg');
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token');
+
+            if (!token) {
+                msgEl.textContent = 'Please log in to request media.';
+                msgEl.className = 'text-xs mt-2 text-rose-500';
+                msgEl.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const res = await fetch('api/media/submit_request.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ title, type })
+                });
+                const data = await res.json();
+                msgEl.classList.remove('hidden');
+                if (data && data.status === 'success') {
+                    msgEl.textContent = data.message;
+                    msgEl.className = 'text-xs mt-2 text-emerald-400';
+                    document.getElementById('media-request-form').reset();
+                } else {
+                    msgEl.textContent = data.message || 'Error submitting request.';
+                    msgEl.className = 'text-xs mt-2 text-rose-500';
+                }
+            } catch (e) {
+                msgEl.textContent = 'Network error.';
+                msgEl.className = 'text-xs mt-2 text-rose-500';
+                msgEl.classList.remove('hidden');
+            }
+        }
+
+        
+        async function fetchMediaRequests() {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('api/media/get_requests.php', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('media-requests-body');
+                
+                if (data && data.status === 'success') {
+                    if (data.requests.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 font-sans">No media requests found.</td></tr>';
+                        return;
+                    }
+
+                    let pendingCount = 0;
+                    tbody.innerHTML = data.requests.map(req => {
+                        if (req.status === 'Pending') pendingCount++;
+                        let statusColor = 'text-slate-400';
+                        if (req.status === 'Pending') statusColor = 'text-amber-400';
+                        if (req.status === 'Downloading') statusColor = 'text-blue-400';
+                        if (req.status === 'Fulfilled') statusColor = 'text-emerald-400';
+
+                        return `
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td class="py-3 px-4 font-medium text-slate-900 dark:text-slate-200">${req.media_title}</td>
+                                <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${req.media_type}</td>
+                                <td class="py-3 px-4 font-mono text-[10px] text-cyan-400">${req.username}</td>
+                                <td class="py-3 px-4 font-semibold ${statusColor}">${req.status}</td>
+                                <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${new Date(req.request_date).toLocaleString()}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    const countEl = document.getElementById('pending-requests-count');
+                    if (countEl) countEl.textContent = `${pendingCount} Pending`;
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-rose-500 font-sans">${data.message || 'Error loading requests'}</td></tr>`;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
         function handleUsbFileSelect(input) {
             const nameEl = document.getElementById('usb-file-name');
             if (nameEl && input.files[0]) nameEl.textContent = input.files[0].name;

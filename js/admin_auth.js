@@ -278,6 +278,7 @@ function updateAdminUI(isLoggedIn, user, role) {
             if (adminPortal) adminPortal.classList.remove('hidden');
             if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
             if (manageAdminsBtn) manageAdminsBtn.classList.remove('hidden');
+            if (typeof fetchMediaRequests === 'function') fetchMediaRequests();
         } else {
             if (adminPortal) adminPortal.classList.add('hidden');
             if (navDropdownWrapper) navDropdownWrapper.classList.add('hidden');
