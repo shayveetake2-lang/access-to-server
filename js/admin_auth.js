@@ -221,6 +221,16 @@ function updateAdminUI(isLoggedIn, user, role) {
     const panelView = document.getElementById('admin-modal-panel-view');
     const userDisplay = document.getElementById('admin-username-display');
 
+    
+    const refreshQuotasBtn = document.getElementById('btn-refresh-quotas');
+    if (refreshQuotasBtn) {
+        if (currentAdminState.role === 'admin') {
+            refreshQuotasBtn.classList.remove('hidden');
+        } else {
+            refreshQuotasBtn.classList.add('hidden');
+        }
+    }
+
     const standardUserPortal = document.querySelectorAll('.standard-user-portal');
     const standardUserBanner = document.getElementById('standard-user-banner');
     const adminPortal = document.getElementById('admin-portal');
@@ -844,5 +854,33 @@ async function submitRegister(event) {
         }
         submitBtn.innerText = 'Create Account';
         submitBtn.disabled = false;
+    }
+}
+async function refreshServerQuotas() {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+    if (!token) return alert('No active session.');
+
+    try {
+        const res = await fetch('api/system/refresh_quotas.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (res.status === 403) {
+            return alert('Error 403: Admin privileges required to refresh quotas.');
+        }
+        
+        const data = await res.json();
+        if (data && data.status === 'success') {
+            alert(data.message);
+            checkAuthOnLoad(); // Refresh UI
+        } else {
+            alert('Failed to refresh quotas: ' + (data.message || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Network error while refreshing quotas.');
     }
 }

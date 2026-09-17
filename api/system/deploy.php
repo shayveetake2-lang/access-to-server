@@ -71,6 +71,20 @@ sendMsg("[INFO] Target Directory: " . $targetDir);
 // ==========================================
 require_once __DIR__ . '/../../config/db_connect.php';
 
+if (!function_exists('getDirectorySizeMB')) {
+    function getDirectorySizeMB($dir) {
+        if (!is_dir($dir)) return 0.0;
+        $size = 0;
+        foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir)) as $file){
+            if ($file->isFile()) {
+                $size += $file->getSize();
+            }
+        }
+        return round($size / 1048576, 2);
+    }
+}
+
+
 $username = $_SESSION['username'] ?? 'admin';
 $limitMB = 100.0;
 try {
@@ -132,6 +146,32 @@ if (is_resource($handle)) {
         }
         $owners[$repoName] = $username;
         @file_put_contents($metaFile, json_encode($owners, JSON_PRETTY_PRINT));
+        
+        $totalUserMB = 0;
+        foreach ($owners as $repo => $owner) {
+            if ($owner === $username) {
+                $dirPath = $sitesBase . '/' . $repo;
+                if (is_dir($dirPath)) {
+                    $totalUserMB += getDirectorySizeMB($dirPath);
+                }
+            }
+        }
+        
+        if ($totalUserMB > $limitMB) {
+            sendMsg("[ERROR] Post-deploy quota check failed. Total used: {$totalUserMB}MB / Limit: {$limitMB}MB");
+            sendMsg("[INFO] Rolling back deployment (deleting cloned files)...");
+            shell_exec("rm -rf " . escapeshellarg($targetDir));
+            
+            unset($owners[$repoName]);
+            @file_put_contents($metaFile, json_encode($owners, JSON_PRETTY_PRINT));
+            
+            http_response_code(403);
+            sendMsg("Deployment Failed: Storage Quota Exceeded.");
+            exit;
+        } else {
+            $upd = $pdo->prepare("UPDATE sys_users SET storage_used_mb = :used WHERE username = :u");
+            $upd->execute([':used' => $totalUserMB, ':u' => $username]);
+        }
 
         sendMsg("");
         sendMsg("====== Deployment Complete ======");

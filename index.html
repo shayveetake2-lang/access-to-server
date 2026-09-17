@@ -513,7 +513,7 @@
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <span id="srv-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">Checking...</span>
-                                        <button onclick="loadServerStorage()" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0" title="Refresh Storage">
+                                        <button id="btn-refresh-ssd" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0" title="Refresh Storage">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                         </button>
                                     </div>
@@ -546,7 +546,7 @@
                                     <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate min-w-0">USB Drive Storage</h3>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <span id="usb-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">--</span>
-                                        <button onclick="loadUsbStatus()" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0" title="Refresh USB Status">
+                                        <button id="btn-refresh-usb" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0" title="Refresh USB Status">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                         </button>
                                     </div>
@@ -618,7 +618,7 @@
                             </div>
                             <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
                                 <span>Default Quota: <strong class="text-slate-300 font-mono">100 MB</strong></span>
-                                <button onclick="checkAuthOnLoad()" class="text-cyan-400 hover:underline">Refresh Quota</button>
+                                <button id="btn-refresh-quotas" onclick="refreshServerQuotas()" class="text-cyan-400 hover:underline hidden">Refresh Quota</button>
                             </div>
                         </div>
 
@@ -2161,9 +2161,86 @@
             }
         }
 
+                async function fetchUnifiedStorage() {
+            try {
+                const res = await fetch('api/system/storage_stats.php');
+                const data = await res.json();
+                
+                if (data && data.status === 'success') {
+                    // Update SSD
+                    const ssd = data.ssd;
+                    const percent = Math.round(ssd.percent_used || 0);
+                    const text = document.getElementById('srv-percent-text');
+                    if (text) text.textContent = percent + '%';
+                    const donut = document.getElementById('srv-donut-segment');
+                    if (donut) donut.setAttribute('stroke-dasharray', `${percent}, 100`);
+                    const used = document.getElementById('srv-used-text');
+                    if (used) used.textContent = ssd.used_formatted;
+                    const free = document.getElementById('srv-free-text');
+                    if (free) free.textContent = ssd.free_formatted;
+                    const total = document.getElementById('srv-total-text');
+                    if (total) total.textContent = ssd.total_formatted;
+                    const path = document.getElementById('srv-disk-path');
+                    if (path) path.textContent = ssd.path || '/';
+                    const pill = document.getElementById('srv-status-pill');
+                    if (pill) {
+                        pill.textContent = '● Online';
+                        pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                    }
+                    
+                    // Update USB
+                    const usb = data.usb;
+                    const isConnected = usb.connected;
+                    const usbUsedText = document.getElementById('usb-used-text');
+                    if (usbUsedText) usbUsedText.textContent = isConnected ? usb.used_formatted : '0 B (Offline)';
+                    const usbFreeText = document.getElementById('usb-free-text');
+                    if (usbFreeText) usbFreeText.textContent = isConnected ? usb.free_formatted : '0 B (Offline)';
+                    const usbTotalText = document.getElementById('usb-total-text');
+                    if (usbTotalText) usbTotalText.textContent = isConnected ? usb.total_formatted : '0 B (Offline)';
+                    
+                    const usbPill = document.getElementById('usb-status-pill');
+                    if (usbPill) {
+                        usbPill.textContent = isConnected ? '● Connected' : '○ Offline';
+                        usbPill.className = isConnected 
+                            ? 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                    }
+                    
+                    const usbBanner = document.getElementById('usb-warning-banner');
+                    if (usbBanner) {
+                        if (isConnected) {
+                            usbBanner.classList.add('hidden');
+                        } else {
+                            usbBanner.classList.remove('hidden');
+                            usbBanner.textContent = '⚠️ USB storage is currently offline or unplugged. Uploads are disabled until a drive is mounted at /Volumes/USBDrive.';
+                        }
+                    }
+                    
+                    const dropzone = document.getElementById('usb-drop-zone');
+                    const uploadBtn = document.getElementById('usb-upload-btn');
+                    if (dropzone && uploadBtn) {
+                        if (isConnected) {
+                            dropzone.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                            uploadBtn.disabled = false;
+                            uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            dropzone.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                            uploadBtn.disabled = true;
+                            uploadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error('Failed to fetch unified storage stats', e);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            loadServerStorage();
-            loadUsbStatus();
+            fetchUnifiedStorage();
+            const btnSsd = document.getElementById('btn-refresh-ssd');
+            if (btnSsd) btnSsd.addEventListener('click', fetchUnifiedStorage);
+            const btnUsb = document.getElementById('btn-refresh-usb');
+            if (btnUsb) btnUsb.addEventListener('click', fetchUnifiedStorage);
             loadHostedSites();
             const hash = window.location.hash.replace('#', '');
             if (hash) {
