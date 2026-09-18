@@ -1,10 +1,14 @@
 <?php
-// api/system/storage_stats.php - Unified Storage Stats
-require_once __DIR__ . '/../auth/require_admin.php';
-// Let's not require admin since the frontend tries to load it on page load for guests too, or maybe guests can see it?
-// In the original, server_storage.php has requireAdmin(), but checkAuthOnLoad handles if it's admin or not. Let's just make it public like usb_manager.php's GET request (which is public).
+// api/system/storage_stats.php — Unified Storage Stats (Authenticated)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json; charset=UTF-8');
+header('X-Content-Type-Options: nosniff');
+
+require_once __DIR__ . '/../auth/require_auth.php';
+requireAuth();
 
 function formatBytes($bytes, $precision = 2) {
     if ($bytes <= 0) return '0 B';
@@ -16,21 +20,24 @@ function formatBytes($bytes, $precision = 2) {
     return round($bytes, $precision) . ' ' . $units[$pow];
 }
 
-$htdocsPath = realpath(__DIR__ . '/../../../'); // /Volumes/htdocs
-$htdocsTotal = @disk_total_space($htdocsPath) ?: @disk_total_space(__DIR__);
-$htdocsFree  = @disk_free_space($htdocsPath) ?: @disk_free_space(__DIR__);
-$htdocsUsed  = $htdocsTotal - $htdocsFree;
+$htdocsPath = realpath(__DIR__ . '/../../../') ?: __DIR__;
+$htdocsTotal = @disk_total_space($htdocsPath) ?: 0;
+$htdocsFree  = @disk_free_space($htdocsPath) ?: 0;
+$htdocsUsed  = max(0, $htdocsTotal - $htdocsFree);
 $htdocsPct   = $htdocsTotal > 0 ? round(($htdocsUsed / $htdocsTotal) * 100, 1) : 0;
 
-$usbPath = '/Volumes/USBDrive';
-$usbTotal = @disk_total_space($usbPath) ?: 0;
-$usbFree  = @disk_free_space($usbPath) ?: 0;
-$usbUsed  = $usbTotal - $usbFree;
+$usbPath = '/Volumes/Music';
+if (!is_dir($usbPath)) {
+    $usbPath = '/Volumes/USBDrive';
+}
+$usbTotal = is_dir($usbPath) ? (@disk_total_space($usbPath) ?: 0) : 0;
+$usbFree  = is_dir($usbPath) ? (@disk_free_space($usbPath) ?: 0) : 0;
+$usbUsed  = max(0, $usbTotal - $usbFree);
+$usbPct   = $usbTotal > 0 ? round(($usbUsed / $usbTotal) * 100, 1) : 0;
 
 echo json_encode([
     'status' => 'success',
     'ssd' => [
-        'path' => $htdocsPath,
         'total' => $htdocsTotal,
         'free' => $htdocsFree,
         'used' => $htdocsUsed,
@@ -44,6 +51,7 @@ echo json_encode([
         'total' => $usbTotal,
         'free' => $usbFree,
         'used' => $usbUsed,
+        'percent_used' => $usbPct,
         'total_formatted' => formatBytes($usbTotal),
         'free_formatted' => formatBytes($usbFree),
         'used_formatted' => formatBytes($usbUsed)

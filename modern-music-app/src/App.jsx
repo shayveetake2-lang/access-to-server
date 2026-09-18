@@ -17,11 +17,13 @@ import Register from './pages/Register';
 import Settings from './pages/Settings';
 import AdminSettings from './pages/AdminSettings';
 
+import MobileNav from './components/MobileNav';
+
 function ProtectedLayout() {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>;
+    return <div className="min-h-[100dvh] bg-slate-950 flex items-center justify-center"><div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>;
   }
   
   if (!user) {
@@ -29,11 +31,11 @@ function ProtectedLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden text-slate-200">
+    <div className="flex h-[100dvh] min-h-[100dvh] max-h-[100dvh] overflow-hidden text-slate-200 bg-slate-950">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+        <main className="flex-1 overflow-y-auto touch-scroll px-3.5 py-4 sm:px-6 sm:py-6 md:p-8 relative pb-52 md:pb-32">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/albums/:id" element={<AlbumDetails />} />
@@ -51,6 +53,7 @@ function ProtectedLayout() {
         </main>
       </div>
       <StickyPlayer />
+      <MobileNav />
     </div>
   );
 }

@@ -23,13 +23,17 @@ if (!empty($token) && empty($_SESSION['username'])) {
         require_once __DIR__ . '/../../config/config.php';
         $dbConn = function_exists('getDBConnection') ? getDBConnection() : null;
         if ($dbConn) {
-            $stmt = $dbConn->prepare("SELECT id, username, role FROM sys_users WHERE auth_token = :t LIMIT 1");
-            $stmt->execute([':t' => $token]);
+            $tokenHash = hash('sha256', $token);
+            $stmt = $dbConn->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE auth_token = :h OR auth_token = :t LIMIT 1");
+            $stmt->execute([':h' => $tokenHash, ':t' => $token]);
             if ($u = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $_SESSION['auth_token'] = $token;
-                $_SESSION['username'] = $u['username'];
-                $_SESSION['role'] = $u['role'];
-                $_SESSION['admin_logged_in'] = ($u['role'] === 'admin');
+                $isExpired = !empty($u['token_expires_at']) && (strtotime($u['token_expires_at']) < time());
+                if (!$isExpired) {
+                    $_SESSION['auth_token'] = $token;
+                    $_SESSION['username'] = $u['username'];
+                    $_SESSION['role'] = $u['role'];
+                    $_SESSION['admin_logged_in'] = ($u['role'] === 'admin');
+                }
             }
         }
     } catch (\Exception $e) {}
@@ -93,17 +97,35 @@ if ($sitesDir && is_dir($sitesDir)) {
                  || file_exists($fullPath . '/index.php')
                  || file_exists($fullPath . '/index.htm');
 
-        $siteUrl = 'sites/' . rawurlencode($item) . '/';
-
+        $subPath = '';
         // Check common build/distribution subdirectories if not in root
         if (!$hasIndex) {
             foreach (['dist', 'build', 'public', 'out'] as $sub) {
                 if (file_exists($fullPath . '/' . $sub . '/index.html') || file_exists($fullPath . '/' . $sub . '/index.php')) {
                     $hasIndex = true;
-                    $siteUrl .= $sub . '/';
+                    $subPath = $sub . '/';
                     break;
                 }
             }
+        }
+
+        // Port 8880 SOP Isolation: Check if isolated sites server is listening
+        static $port8880Active = null;
+        if ($port8880Active === null) {
+            $fp = @fsockopen('127.0.0.1', 8880, $errno, $errstr, 0.05);
+            if ($fp) {
+                $port8880Active = true;
+                fclose($fp);
+            } else {
+                $port8880Active = false;
+            }
+        }
+
+        if ($port8880Active) {
+            $host = preg_replace('/:[0-9]+$/', '', $_SERVER['HTTP_HOST'] ?? 'localhost');
+            $siteUrl = '//' . $host . ':8880/' . rawurlencode($item) . '/' . $subPath;
+        } else {
+            $siteUrl = 'sites/' . rawurlencode($item) . '/' . $subPath;
         }
 
         $title = null;

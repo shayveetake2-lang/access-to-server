@@ -14,7 +14,14 @@ Options -Indexes
     Require valid-user
 </FilesMatch>
 
-# Protect Sensitive Configuration Files
-<FilesMatch "^(\.env|\.git|config\.php|db_connect\.php|\.htpasswd)$">
+# Block all access to .git metadata directory and contents
+RedirectMatch 404 (^|/)\.git
+
+# Protect Sensitive Configuration, Database, Backup, and Script Files
+<FilesMatch "\.(sqlite|sqlite3|db|sql|env|htpasswd|log|sh|ini|bak|conf)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^(config\.php|db_connect\.php|ampache\.cfg\.php)$">
     Require all denied
 </FilesMatch>

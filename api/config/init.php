@@ -1,8 +1,61 @@
 <?php
 // /api/config/init.php
-// Enforce strict JSON output for all API endpoints to prevent iOS JSON parsing crashes
-header("Access-Control-Allow-Origin: *");
+// Strict Enterprise Security Headers, CORS, and Session Configuration
+
+if (session_status() === PHP_SESSION_NONE) {
+    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    session_set_cookie_params([
+        'lifetime' => 86400 * 7,
+        'path'     => '/',
+        'domain'   => '',
+        'secure'   => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    session_start();
+}
+
+// Global Security Response Headers
 header("Content-Type: application/json; charset=UTF-8");
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: SAMEORIGIN");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+
+// Dynamic Restricted CORS Policy Whitelist
+$allowedOriginsList = [
+    'serverflow.icu',
+    'www.serverflow.icu',
+    '10.247.192.231',
+    'localhost',
+    '127.0.0.1'
+];
+
+$envOrigins = getenv('CORS_ALLOWED_ORIGINS');
+if (!empty($envOrigins)) {
+    $extraOrigins = array_map('trim', explode(',', $envOrigins));
+    $allowedOriginsList = array_merge($allowedOriginsList, $extraOrigins);
+}
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$httpHost = $_SERVER['HTTP_HOST'] ?? '';
+
+if (!empty($origin)) {
+    $parsedOriginHost = parse_url($origin, PHP_URL_HOST);
+    $isAllowed = false;
+    
+    foreach ($allowedOriginsList as $allowed) {
+        if (strcasecmp($parsedOriginHost, $allowed) === 0 || (!empty($httpHost) && strpos($httpHost, $allowed) !== false)) {
+            $isAllowed = true;
+            break;
+        }
+    }
+
+    if ($isAllowed) {
+        header("Access-Control-Allow-Origin: " . $origin);
+        header("Access-Control-Allow-Credentials: true");
+    }
+}
+
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
@@ -12,20 +65,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     exit();
 }
 
-// Global exception handler to output JSON instead of HTML stack traces
+// Global exception handler to output sanitized JSON instead of HTML stack traces
 set_exception_handler(function($exception) {
+    error_log("Unhandled Exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
     http_response_code(500);
     echo json_encode([
         "status" => "error",
-        "message" => "Server Exception: " . $exception->getMessage()
+        "message" => "An internal server error occurred."
     ]);
     exit;
 });
 
-// Global error handler to convert errors to exceptions for JSON output
+// Global error handler to convert errors to exceptions
 set_error_handler(function($severity, $message, $file, $line) {
     if (!(error_reporting() & $severity)) {
         return;
     }
-    throw new ErrorException($message, 0, $severity, $file, $line);
+    throw new \ErrorException($message, 0, $severity, $file, $line);
 });

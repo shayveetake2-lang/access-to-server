@@ -67,9 +67,9 @@ if (is_dir($targetDir)) {
 if ($deployMethod === 'github') {
     $githubUrl = isset($_POST['github_url']) ? trim($_POST['github_url']) : '';
     
-    // Validate basic github URL
-    if (empty($githubUrl) || !filter_var($githubUrl, FILTER_VALIDATE_URL) || strpos($githubUrl, 'github.com') === false) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid GitHub URL.']);
+    // Validate strict github URL format and block CLI flags
+    if (empty($githubUrl) || str_starts_with($githubUrl, '-') || !preg_match('/^https:\/\/(www\.)?github\.com\/[a-zA-Z0-9_\-\.]+\/[a-zA-Z0-9_\-\.]+(\.git)?$/', $githubUrl)) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid GitHub URL. Must be a valid public HTTPS GitHub repository URL.']);
         exit;
     }
 
@@ -77,8 +77,8 @@ if ($deployMethod === 'github') {
     $escapedUrl = escapeshellarg($githubUrl);
     $escapedTarget = escapeshellarg($targetDir);
     
-    // Execute git clone
-    $output = shell_exec("git clone $escapedUrl $escapedTarget 2>&1");
+    // Execute git clone with shallow clone and argument terminator --
+    $output = shell_exec("git clone --depth 1 -- $escapedUrl $escapedTarget 2>&1");
     
     if (is_dir($targetDir)) {
         @file_put_contents($targetDir . '/.serverflow_owner', $username);
@@ -140,10 +140,42 @@ if ($deployMethod === 'github') {
     
     $zip = new ZipArchive;
     if ($zip->open($fileTmpPath) === TRUE) {
-        $forbiddenExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'phar', 'exe', 'sh', 'cgi', 'pl', 'py', 'asp', 'aspx', 'jsp', 'bat', 'cmd', 'htaccess'];
+        if ($zip->numFiles > 1000) {
+            $zip->close();
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Archive contains too many files (max 1000 files allowed).']);
+            exit;
+        }
+
+        $forbiddenExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'pht', 'phps', 'phar', 'exe', 'sh', 'cgi', 'pl', 'py', 'asp', 'aspx', 'jsp', 'bat', 'cmd', 'user.ini', 'htaccess'];
+        $totalUncompressedSize = 0;
         
-        // Validate all zip contents before extracting (prevent RCE and Zip Slip)
+        // Validate all zip contents before extracting (prevent RCE, Zip Slip, and Zip Bombs)
         for ($i = 0; $i < $zip->numFiles; $i++) {
+            $stat = $zip->statIndex($i);
+            if ($stat) {
+                $totalUncompressedSize += ($stat['size'] ?? 0);
+                if ($totalUncompressedSize > 50 * 1024 * 1024) { // 50MB limit
+                    $zip->close();
+                    @rmdir($targetDir);
+                    http_response_code(400);
+                    echo json_encode(['status' => 'error', 'message' => 'Archive uncompressed size exceeds maximum allowed limit (50 MB).']);
+                    exit;
+                }
+            }
+
+            // Check for symlinks and reject
+            $opsys = 0;
+            $attr = 0;
+            if ($zip->getExternalAttributesIndex($i, $opsys, $attr)) {
+                if ($opsys === ZipArchive::OPSYS_UNIX && (($attr >> 16) & 0120000) === 0120000) {
+                    $zip->close();
+                    @rmdir($targetDir);
+                    http_response_code(400);
+                    echo json_encode(['status' => 'error', 'message' => 'Security Error: Symlinks are prohibited in uploaded archives.']);
+                    exit;
+                }
+            }
             $entryName = $zip->getNameIndex($i);
             if ($entryName === false) continue;
             

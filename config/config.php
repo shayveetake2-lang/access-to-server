@@ -7,7 +7,7 @@ define('DB_NAME', getenv('DB_NAME') ?: 'access_db');
 define('DB_USER', getenv('DB_USER') ?: 'server_app');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_CHARSET', 'utf8mb4');
-define('DB_SQLITE_PATH', sys_get_temp_dir() . '/access_db.sqlite');
+define('DB_SQLITE_PATH', getenv('DB_SQLITE_PATH') ?: (dirname(__DIR__) . '/storage/access_db.sqlite'));
 
 /**
  * SQLite PDO extension wrapper to ensure compatibility with MySQL DDL statements
@@ -59,6 +59,12 @@ function initSQLiteSchema(PDO $pdo) {
     static $initialized = false;
     if ($initialized) return;
 
+    // Apply hardware-efficient WAL journal mode and reduced disk sync for 2011 MacBook
+    try {
+        $pdo->exec("PRAGMA journal_mode = WAL;");
+        $pdo->exec("PRAGMA synchronous = NORMAL;");
+    } catch (\Exception $e) {}
+
     $tables = [
         "CREATE TABLE IF NOT EXISTS sys_users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,6 +74,8 @@ function initSQLiteSchema(PDO $pdo) {
             storage_limit_mb INTEGER DEFAULT 100,
             storage_used_mb FLOAT DEFAULT 0.0,
             auth_token VARCHAR(64) DEFAULT NULL,
+            token_hash VARCHAR(64) DEFAULT NULL,
+            token_expires_at DATETIME DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )",
         "CREATE TABLE IF NOT EXISTS admin_users (
@@ -76,6 +84,14 @@ function initSQLiteSchema(PDO $pdo) {
             password_hash VARCHAR(255) NOT NULL,
             last_login DATETIME DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )",
+        "CREATE TABLE IF NOT EXISTS media_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            media_title VARCHAR(255) NOT NULL,
+            media_type VARCHAR(50) NOT NULL,
+            status VARCHAR(50) DEFAULT 'Pending',
+            request_date DATETIME DEFAULT CURRENT_TIMESTAMP
         )",
         "CREATE TABLE IF NOT EXISTS sys_deploy_logs (
             log_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,7 +141,7 @@ function initSQLiteSchema(PDO $pdo) {
         } catch (\Exception $e) {}
     }
 
-    // Auto-migrate storage columns if missing
+    // Auto-migrate storage columns and token expiration if missing
     try {
         @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INTEGER DEFAULT 100");
     } catch (\Exception $e) {}
@@ -135,27 +151,50 @@ function initSQLiteSchema(PDO $pdo) {
     try {
         @$pdo->exec("ALTER TABLE sys_users ADD COLUMN auth_token VARCHAR(64) DEFAULT NULL");
     } catch (\Exception $e) {}
-
     try {
+        @$pdo->exec("ALTER TABLE sys_users ADD COLUMN token_hash VARCHAR(64) DEFAULT NULL");
+    } catch (\Exception $e) {}
+    try {
+        @$pdo->exec("ALTER TABLE sys_users ADD COLUMN token_expires_at DATETIME DEFAULT NULL");
+    } catch (\Exception $e) {}
+
+    // Indexes for fast O(1) lookups on 2011 hardware
+    try {
+        @$pdo->exec("CREATE INDEX IF NOT EXISTS idx_users_token_hash ON sys_users(token_hash)");
+        @$pdo->exec("CREATE INDEX IF NOT EXISTS idx_users_username ON sys_users(username)");
+        @$pdo->exec("CREATE INDEX IF NOT EXISTS idx_media_requests_user ON media_requests(user_id)");
+    } catch (\Exception $e) {}
+
+    // Initial admin user provisioning without hardcoded backdoors
+    try {
+        $initialPass = getenv('ADMIN_INITIAL_PASSWORD');
+        $initialHash = getenv('ADMIN_INITIAL_HASH');
+        if (!empty($initialPass)) {
+            $hash = password_hash($initialPass, PASSWORD_BCRYPT, ['cost' => 10]);
+        } elseif (!empty($initialHash)) {
+            $hash = $initialHash;
+        } else {
+            $secretFile = dirname(__DIR__) . '/storage/.admin_initial_password';
+            if (file_exists($secretFile)) {
+                $genPass = trim(file_get_contents($secretFile));
+            } else {
+                $genPass = bin2hex(random_bytes(8));
+                @file_put_contents($secretFile, $genPass);
+                @chmod($secretFile, 0600);
+            }
+            $hash = password_hash($genPass, PASSWORD_BCRYPT, ['cost' => 10]);
+        }
+
         $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = 'admin'");
         $stmt->execute();
         if (!$stmt->fetch()) {
-            $hash = password_hash('123456789', PASSWORD_BCRYPT);
-            $pdo->exec("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES ('admin', '$hash', 'admin', 100)");
-        }
-
-        $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = 'user'");
-        $stmt->execute();
-        if (!$stmt->fetch()) {
-            $hash = password_hash('password', PASSWORD_BCRYPT);
-            $pdo->exec("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES ('user', '$hash', 'user', 100)");
+            $pdo->exec("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb) VALUES ('admin', " . $pdo->quote($hash) . ", 'admin', 100)");
         }
 
         $stmt = $pdo->prepare("SELECT id FROM admin_users WHERE username = 'admin'");
         $stmt->execute();
         if (!$stmt->fetch()) {
-            $hash = password_hash('123456789', PASSWORD_BCRYPT);
-            $pdo->exec("INSERT INTO admin_users (username, password_hash) VALUES ('admin', '$hash')");
+            $pdo->exec("INSERT INTO admin_users (username, password_hash) VALUES ('admin', " . $pdo->quote($hash) . ")");
         }
     } catch (\Exception $e) {}
 
@@ -252,19 +291,30 @@ function getDBConnection() {
         $pdo = new SQLitePDO("sqlite:" . DB_SQLITE_PATH);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        $pdo->query("PRAGMA user_version");
         initSQLiteSchema($pdo);
         return $pdo;
     } catch (\Exception $sqe) {
+        // Handle SMB network mount file-locking constraint on macOS
         try {
-            $tmpPath = sys_get_temp_dir() . '/access_db.sqlite';
-            $pdo = new SQLitePDO("sqlite:" . $tmpPath);
+            $pdo = new SQLitePDO("sqlite:file:" . DB_SQLITE_PATH . "?vfs=unix-none");
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $pdo->query("PRAGMA user_version");
             initSQLiteSchema($pdo);
             return $pdo;
-        } catch (\Exception $sqe2) {
-            error_log("Database Connection Error: " . $sqe2->getMessage());
-            throw new \RuntimeException("Database Connection Failed: " . $sqe2->getMessage(), 0, $sqe2);
+        } catch (\Exception $smbErr) {
+            try {
+                $tmpPath = sys_get_temp_dir() . '/access_db.sqlite';
+                $pdo = new SQLitePDO("sqlite:" . $tmpPath);
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+                initSQLiteSchema($pdo);
+                return $pdo;
+            } catch (\Exception $sqe2) {
+                error_log("Database Connection Error: " . $sqe2->getMessage());
+                throw new \RuntimeException("Database Connection Failed: " . $sqe2->getMessage(), 0, $sqe2);
+            }
         }
     }
 }

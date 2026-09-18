@@ -1,17 +1,19 @@
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Play, Clock, Heart, Plus, ListPlus } from 'lucide-react';
+import { Play, Clock, Heart, Plus, ListPlus, Volume2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
+import { useToast } from '../context/ToastContext';
 
 export default function AlbumDetails() {
   const { id } = useParams();
   const [album, setAlbum] = useState(null);
   const { user, getAuthParams } = useAuth();
   const [loading, setLoading] = useState(true);
-  const { playQueue, addToQueue } = usePlayer();
+  const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { openAddToPlaylistModal } = usePlaylistModal();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const fetchAlbumDetails = async () => {
@@ -48,17 +50,17 @@ export default function AlbumDetails() {
   };
 
   return (
-    <div className="pb-24">
+    <div className="pb-28 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row gap-8 items-end mb-8 mt-4">
-        <div className="w-48 h-48 md:w-64 md:h-64 rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex-shrink-0">
+      <div className="flex flex-col sm:flex-row gap-5 sm:gap-8 items-center sm:items-end mb-6 sm:mb-8 mt-2 text-center sm:text-left bg-gradient-to-b from-purple-900/20 to-transparent p-4 sm:p-6 rounded-3xl border border-white/5">
+        <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.7)] shrink-0 border border-white/10 bg-slate-800">
           <img src={coverUrl} alt={album.name} className="w-full h-full object-cover" />
         </div>
-        <div className="flex-1">
-          <span className="text-sm font-semibold uppercase tracking-wider text-purple-400">Album</span>
-          <h1 className="text-4xl md:text-6xl font-bold text-white mt-2 mb-4">{album.name}</h1>
-          <div className="flex items-center gap-2 text-slate-300">
-            <span className="font-medium text-white">{album.artist}</span>
+        <div className="flex-1 min-w-0">
+          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-purple-400 block mb-0.5">Album</span>
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-2 leading-tight truncate">{album.name}</h1>
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-slate-300 text-xs sm:text-sm font-medium">
+            <span className="text-white font-semibold">{album.artist}</span>
             <span>•</span>
             <span>{album.year || 'Unknown Year'}</span>
             <span>•</span>
@@ -68,52 +70,135 @@ export default function AlbumDetails() {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={playEntireAlbum} className="w-14 h-14 rounded-full bg-purple-500 flex items-center justify-center text-white hover:bg-purple-400 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-105">
-          <Play fill="currentColor" size={24} className="ml-1" />
+      <div className="flex items-center justify-center sm:justify-start gap-4 mb-6 sm:mb-8 px-1">
+        <button 
+          onClick={playEntireAlbum} 
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500 flex items-center justify-center text-white hover:bg-purple-400 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 hover:scale-105"
+          aria-label="Play Album"
+        >
+          <Play fill="currentColor" size={22} className="ml-0.5" />
         </button>
-        <button className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-slate-300 hover:text-white hover:border-white transition-all">
-          <Heart size={20} />
+        <button 
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/20 flex items-center justify-center text-slate-300 hover:text-white hover:border-white transition-all active:scale-95"
+          aria-label="Favorite Album"
+        >
+          <Heart size={18} />
         </button>
       </div>
 
-      {/* Tracklist */}
-      <div className="bg-slate-900/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5">
+      {/* Tracklist Mobile View */}
+      <div className="sm:hidden space-y-1 bg-slate-900/40 backdrop-blur-sm rounded-2xl p-2 border border-white/5">
+        {(album.song || []).map((song, index) => {
+          const isCurrent = currentTrack?.id === song.id;
+          return (
+            <div 
+              key={song.id} 
+              onClick={() => playFromTrack(index)} 
+              className={`flex items-center justify-between p-2 rounded-xl transition-colors cursor-pointer group ${
+                isCurrent ? 'bg-purple-500/15 border border-purple-500/30' : 'hover:bg-white/5 active:bg-white/10'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                <span className="w-5 text-center text-xs font-mono text-slate-400 shrink-0 flex items-center justify-center">
+                  {isCurrent ? <Volume2 size={14} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} /> : index + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h4 className={`text-xs font-semibold truncate transition-colors leading-snug ${
+                    isCurrent ? 'text-purple-400 font-bold' : 'text-white group-hover:text-purple-400'
+                  }`}>
+                    {song.title}
+                  </h4>
+                  <p className="text-[11px] text-slate-400 truncate mt-0.5">{song.artist || album.artist}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[11px] text-slate-400 font-mono">
+                  {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
+                </span>
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    addToQueue(song); 
+                    showToast(`Added "${song.title}" to queue`, 'success');
+                  }} 
+                  className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-purple-400 active:bg-purple-500/20 transition-colors"
+                  title="Add to Queue"
+                  aria-label="Add to Queue"
+                >
+                  <ListPlus size={15} />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); openAddToPlaylistModal(song.id); }} 
+                  className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-purple-400 active:bg-purple-500/20 transition-colors"
+                  title="Add to Playlist"
+                  aria-label="Add to Playlist"
+                >
+                  <Plus size={15} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tracklist Desktop Table */}
+      <div className="hidden sm:block bg-slate-900/40 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/5">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="text-slate-400 border-b border-white/10 text-sm">
-              <th className="font-medium px-6 py-4 w-12">#</th>
-              <th className="font-medium px-6 py-4">Title</th>
-              <th className="font-medium px-6 py-4 flex justify-end gap-4">
+            <tr className="text-slate-400 border-b border-white/10 text-xs uppercase tracking-wider">
+              <th className="font-semibold px-6 py-4 w-12">#</th>
+              <th className="font-semibold px-6 py-4">Title</th>
+              <th className="font-semibold px-6 py-4 flex justify-end gap-4">
                 <Clock size={16} />
                 <span className="w-8"></span>
               </th>
             </tr>
           </thead>
-          <tbody>
-            {(album.song || []).map((song, index) => (
-              <tr key={song.id} className="text-slate-300 hover:bg-white/5 transition-colors group">
-                <td className="px-6 py-4 cursor-pointer" onClick={() => playFromTrack(index)}>{index + 1}</td>
-                <td className="px-6 py-4 cursor-pointer font-medium text-white group-hover:text-purple-400 transition-colors" onClick={() => playFromTrack(index)}>{song.title}</td>
-                <td className="px-6 py-4 text-right flex justify-end items-center gap-4">
-                  <span className="cursor-pointer" onClick={() => playFromTrack(index)}>{Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}</span>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); addToQueue(song); }} 
-                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 transition-colors"
-                    title="Add to Queue"
-                  >
-                    <ListPlus size={16} />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); openAddToPlaylistModal(song.id); }} 
-                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 transition-colors"
-                    title="Add to Playlist"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
+          <tbody className="divide-y divide-white/5 text-sm">
+            {(album.song || []).map((song, index) => {
+              const isCurrent = currentTrack?.id === song.id;
+              return (
+                <tr 
+                  key={song.id} 
+                  onClick={() => playFromTrack(index)}
+                  className={`transition-colors group cursor-pointer ${
+                    isCurrent ? 'bg-purple-500/10 text-purple-300' : 'text-slate-300 hover:bg-white/5'
+                  }`}
+                >
+                  <td className="px-6 py-3.5 text-xs text-slate-400">
+                    {isCurrent ? <Volume2 size={15} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} /> : index + 1}
+                  </td>
+                  <td className={`px-6 py-3.5 font-medium transition-colors ${
+                    isCurrent ? 'text-purple-300' : 'text-white group-hover:text-purple-400'
+                  }`}>
+                    {song.title}
+                  </td>
+                  <td className="px-6 py-3.5 text-right flex justify-end items-center gap-3 font-mono text-xs">
+                    <span className="cursor-pointer" onClick={() => playFromTrack(index)}>{Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}</span>
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        addToQueue(song); 
+                        showToast(`Added "${song.title}" to queue`, 'success');
+                      }} 
+                      className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 transition-colors"
+                      title="Add to Queue"
+                      aria-label="Add to Queue"
+                    >
+                      <ListPlus size={16} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); openAddToPlaylistModal(song.id); }} 
+                      className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 transition-colors"
+                      title="Add to Playlist"
+                      aria-label="Add to Playlist"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -2,12 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>modern-music-app</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#090d16" />
+    <title>Aether Audio — Modern Streaming</title>
+    <script>
+      window.__SF_BASE__ = window.location.pathname.includes('/access-to-server') ? '/access-to-server' : '';
+      // When accessed directly on Apache, redirect immediately to production dist build
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        if (!path.includes('/dist')) {
+          const base = path.includes('/access-to-server') ? '/access-to-server' : '';
+          window.location.replace(base + '/modern-music-app/dist/' + window.location.search + window.location.hash);
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="color:#e2e8f0;text-align:center;padding:50px;font-family:system-ui,sans-serif;background:#090d16;min-height:100vh;">
+        <h2 style="font-size:24px;font-weight:bold;margin-bottom:12px;">JavaScript Required</h2>
+        <p style="color:#94a3b8;">Please enable JavaScript in your browser to run Aether Audio.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -24,23 +24,29 @@ if (empty($tableName)) {
 try {
     $pdo = getDBConnection();
     
-    // Validate table exists
-    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-    if ($driver === 'sqlite') {
-        $checkStmt = $pdo->prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name = :name");
-        $checkStmt->execute([':name' => $tableName]);
-        if (!$checkStmt->fetch()) {
-            throw new Exception("Table does not exist.");
-        }
+    $allowedTables = ['sys_users', 'admin_users', 'sys_deploy_logs', 'web_contact_forms', 'ios_app_users', 'ios_app_sessions', 'user_inputs', 'media_requests'];
+    if (!in_array($tableName, $allowedTables, true)) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Inspection not permitted for this table.']);
+        exit;
     }
 
     $stmt = $pdo->query("SELECT * FROM `{$tableName}` ORDER BY 1 DESC LIMIT 25");
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Redact sensitive password hashes
+    // Redact sensitive password hashes and active session tokens
     foreach ($rows as &$row) {
         if (isset($row['password_hash'])) {
             $row['password_hash'] = '•••••••••••••••• (Encrypted Hash)';
+        }
+        if (isset($row['auth_token'])) {
+            $row['auth_token'] = '•••••••••••••••• (Active Session Token)';
+        }
+        if (isset($row['token_hash'])) {
+            $row['token_hash'] = '•••••••••••••••• (Hashed Token)';
+        }
+        if (isset($row['device_token'])) {
+            $row['device_token'] = '•••••••••••••••• (Device Token)';
         }
     }
 

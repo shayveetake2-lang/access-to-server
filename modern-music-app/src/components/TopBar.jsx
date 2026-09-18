@@ -1,8 +1,11 @@
-import { Search, User, LogOut } from 'lucide-react';
+import { Search, User, LogOut, ArrowLeft, Globe, Settings as SettingsIcon, ListPlus, Plus, Volume2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
+import { usePlaylistModal } from '../context/PlaylistModalContext';
+import { useToast } from '../context/ToastContext';
+import { getMediaPortalUrl } from '../utils/api';
 
 export default function TopBar() {
   const [query, setQuery] = useState('');
@@ -15,8 +18,13 @@ export default function TopBar() {
   const profileRef = useRef(null);
   
   const navigate = useNavigate();
-  const { playQueue } = usePlayer();
+  const location = useLocation();
+  const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { user, logout, getAuthParams } = useAuth();
+  const { openAddToPlaylistModal } = usePlaylistModal();
+  const { showToast } = useToast();
+  
+  const canGoBack = location.pathname !== '/';
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -74,30 +82,42 @@ export default function TopBar() {
   };
 
   return (
-    <header className="h-20 flex items-center justify-between px-4 md:px-8 border-b border-white/5 bg-slate-950/50 backdrop-blur-md sticky top-0 z-40">
+    <header className="h-16 md:h-20 flex items-center justify-between px-3 sm:px-4 md:px-8 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-30 pt-safe gap-2">
       
+      {/* Optional Mobile Back Button */}
+      {canGoBack && (
+        <button 
+          onClick={() => navigate(-1)} 
+          className="p-2 -ml-1 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all shrink-0"
+          title="Go Back"
+          aria-label="Go Back"
+        >
+          <ArrowLeft size={19} />
+        </button>
+      )}
+
       {/* Search Bar */}
-      <div className="flex-1 max-w-xl relative" ref={dropdownRef}>
+      <div className="flex-1 max-w-xl relative min-w-0" ref={dropdownRef}>
         <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-400 transition-colors" size={20} />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-400 transition-colors" size={17} />
           <input 
             type="text" 
-            placeholder="Search for songs, artists, or albums..." 
+            placeholder="Search music, artists..." 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => { if(results) setShowDropdown(true); }}
-            className="w-full bg-slate-900/50 border border-white/10 rounded-full py-2.5 pl-12 pr-4 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all placeholder:text-slate-500"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-full py-2 pl-10 pr-4 text-xs sm:text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all placeholder:text-slate-500"
           />
           {loading && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+              <div className="w-3.5 h-3.5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
           )}
         </div>
 
         {/* Dropdown Results */}
         {showDropdown && results && (
-          <div className="absolute top-full mt-2 w-full bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto">
+          <div className="absolute top-full mt-2 w-full bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto z-50">
             {!results.song && !results.album && !results.artist ? (
               <div className="p-4 text-center text-slate-400 text-sm">No results found for "{query}"</div>
             ) : (
@@ -106,15 +126,62 @@ export default function TopBar() {
                   {results.song && results.song.length > 0 && (
                     <div className="mb-2">
                       <div className="px-4 py-1 text-xs font-semibold text-purple-400 uppercase tracking-wider bg-white/5">Songs</div>
-                      {results.song.map(song => (
-                        <div key={song.id} onClick={() => { playTrack(song); handleResultClick(); }} className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition-colors group">
-                           <img src={`/ampache/public/rest/index.php?action=getCoverArt&id=${song.coverArt}&${getAuthParams(user)}`} className="w-10 h-10 rounded bg-slate-800 object-cover" alt="" />
-                           <div className="min-w-0">
-                             <div className="text-sm font-medium text-slate-200 truncate group-hover:text-purple-400 transition-colors">{song.title}</div>
-                             <div className="text-xs text-slate-400 truncate">{song.artist}</div>
-                           </div>
-                        </div>
-                      ))}
+                      {results.song.map(song => {
+                        const isCurrent = currentTrack?.id === song.id;
+                        return (
+                          <div 
+                            key={song.id} 
+                            onClick={() => { playTrack(song); handleResultClick(); }} 
+                            className={`flex items-center justify-between gap-3 px-4 py-2 cursor-pointer transition-colors group ${
+                              isCurrent ? 'bg-purple-500/15' : 'hover:bg-white/10'
+                            }`}
+                          >
+                             <div className="flex items-center gap-3 min-w-0 flex-1">
+                               <div className="relative w-10 h-10 rounded-lg bg-slate-800 shrink-0 overflow-hidden border border-white/5 flex items-center justify-center">
+                                 <img src={`/ampache/public/rest/index.php?action=getCoverArt&id=${song.coverArt}&${getAuthParams(user)}`} className="w-full h-full object-cover" alt="" />
+                                 {isCurrent && (
+                                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                     <Volume2 size={14} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} />
+                                   </div>
+                                 )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className={`text-sm font-medium truncate transition-colors ${
+                                    isCurrent ? 'text-purple-300 font-semibold' : 'text-slate-200 group-hover:text-purple-400'
+                                  }`}>
+                                    {song.title}
+                                  </div>
+                                  <div className="text-xs text-slate-400 truncate">{song.artist}</div>
+                                </div>
+                             </div>
+
+                             <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                               <button 
+                                 onClick={() => { 
+                                   addToQueue(song); 
+                                   showToast(`Added "${song.title}" to queue`, 'success'); 
+                                 }}
+                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-purple-400 hover:bg-white/10 transition-colors"
+                                 title="Add to Queue"
+                                 aria-label="Add to Queue"
+                               >
+                                 <ListPlus size={15} />
+                               </button>
+                               <button 
+                                 onClick={() => { 
+                                   openAddToPlaylistModal(song.id); 
+                                   handleResultClick(); 
+                                 }}
+                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-purple-400 hover:bg-white/10 transition-colors"
+                                 title="Add to Playlist"
+                                 aria-label="Add to Playlist"
+                               >
+                                 <Plus size={15} />
+                               </button>
+                             </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -124,8 +191,8 @@ export default function TopBar() {
                       <div className="px-4 py-1 text-xs font-semibold text-purple-400 uppercase tracking-wider bg-white/5">Albums</div>
                       {results.album.map(album => (
                         <Link to={`/albums/${album.id}`} key={album.id} onClick={handleResultClick} className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition-colors group">
-                           <img src={`/ampache/public/rest/index.php?action=getCoverArt&id=${album.coverArt}&${getAuthParams(user)}`} className="w-10 h-10 rounded bg-slate-800 object-cover" alt="" />
-                           <div className="min-w-0">
+                           <img src={`/ampache/public/rest/index.php?action=getCoverArt&id=${album.coverArt}&${getAuthParams(user)}`} className="w-10 h-10 rounded bg-slate-800 object-cover shrink-0" alt="" />
+                           <div className="min-w-0 flex-1">
                              <div className="text-sm font-medium text-slate-200 truncate group-hover:text-purple-400 transition-colors">{album.name}</div>
                              <div className="text-xs text-slate-400 truncate">{album.artist}</div>
                            </div>
@@ -140,7 +207,7 @@ export default function TopBar() {
                       <div className="px-4 py-1 text-xs font-semibold text-purple-400 uppercase tracking-wider bg-white/5">Artists</div>
                       {results.artist.map(artist => (
                         <Link to={`/artists/${artist.id}`} key={artist.id} onClick={handleResultClick} className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition-colors group">
-                           <div className="min-w-0">
+                           <div className="min-w-0 flex-1">
                              <div className="text-sm font-medium text-slate-200 truncate group-hover:text-purple-400 transition-colors">{artist.name}</div>
                            </div>
                         </Link>
@@ -153,15 +220,16 @@ export default function TopBar() {
         )}
       </div>
 
-      {/* User Actions */}
-      <div className="flex items-center gap-4 ml-4" ref={profileRef}>
+      {/* User Profile Actions */}
+      <div className="flex items-center gap-2 shrink-0 ml-1" ref={profileRef}>
         <div className="relative">
           <button 
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-3 hover:bg-white/5 p-2 rounded-xl transition-colors"
+            className="flex items-center gap-2 hover:bg-white/5 p-1.5 rounded-xl transition-colors active:scale-95"
+            aria-label="User profile menu"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <User size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-md">
+              <User size={15} className="text-white" />
             </div>
             <div className="hidden md:flex flex-col items-start text-left">
               <span className="text-sm font-medium text-slate-200">{user?.username}</span>
@@ -172,17 +240,40 @@ export default function TopBar() {
           </button>
           
           {showProfileMenu && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden z-50">
-              <div className="px-4 py-3 border-b border-white/10 md:hidden">
-                <p className="text-sm font-medium text-white">{user?.username}</p>
-                <p className="text-xs text-purple-400 mt-1">[{user?.username?.toLowerCase() === 'admin' ? 'Admin' : 'Standard'}]</p>
+            <div className="absolute right-0 top-full mt-2 w-52 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-1.5 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-4 py-2.5 border-b border-white/10">
+                <p className="text-sm font-semibold text-white truncate">{user?.username}</p>
+                <p className="text-[11px] text-purple-400 uppercase tracking-wider mt-0.5">
+                  {user?.username?.toLowerCase() === 'admin' ? 'Administrator' : 'Standard User'}
+                </p>
               </div>
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors text-left"
+              
+              <Link 
+                to="/settings" 
+                onClick={() => setShowProfileMenu(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
               >
-                <LogOut size={16} /> Log Out
-              </button>
+                <SettingsIcon size={15} className="text-slate-400" /> Settings
+              </Link>
+              
+              <a 
+                href={getMediaPortalUrl()} 
+                className="flex items-center justify-between px-4 py-2.5 text-xs font-medium text-purple-300 hover:text-purple-200 hover:bg-white/5 transition-colors border-t border-white/5"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Globe size={15} className="text-purple-400" /> Media Portal
+                </span>
+                <span className="text-slate-500 text-[10px]">↗</span>
+              </a>
+
+              <div className="border-t border-white/10 pt-1">
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
+                >
+                  <LogOut size={15} /> Log Out
+                </button>
+              </div>
             </div>
           )}
         </div>

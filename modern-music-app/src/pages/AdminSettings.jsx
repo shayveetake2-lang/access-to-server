@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getAmpacheUrl } from '../utils/api';
 
 export default function AdminSettings() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, getAuthParams } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`/ampache/public/rest/index.php?action=getUsers&u=${currentUser.username}&p=${currentUser.password}&v=1.16.1&c=test&f=json`);
+      const res = await fetch(getAmpacheUrl(`action=getUsers&${getAuthParams(currentUser)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         const u = data['subsonic-response'].users?.user || [];
@@ -35,8 +36,7 @@ export default function AdminSettings() {
     if (!newPass) return;
 
     try {
-      // Subsonic updateUser API requires repeating all fields ideally, but we'll try just username and password
-      const res = await fetch(`/ampache/public/rest/index.php?action=updateUser&username=${username}&password=${encodeURIComponent(newPass)}&u=${currentUser.username}&p=${currentUser.password}&v=1.16.1&c=test&f=json`);
+      const res = await fetch(getAmpacheUrl(`action=updateUser&username=${encodeURIComponent(username)}&password=${encodeURIComponent(newPass)}&${getAuthParams(currentUser)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         alert(`Password for ${username} has been reset successfully!`);
@@ -55,7 +55,7 @@ export default function AdminSettings() {
 
     try {
       const newRole = !isAdmin ? 'true' : 'false';
-      const res = await fetch(`/ampache/public/rest/index.php?action=updateUser&username=${u.username}&adminRole=${newRole}&u=${currentUser.username}&p=${currentUser.password}&v=1.16.1&c=test&f=json`);
+      const res = await fetch(getAmpacheUrl(`action=updateUser&username=${encodeURIComponent(u.username)}&adminRole=${newRole}&${getAuthParams(currentUser)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         alert(`${u.username} role updated!`);
@@ -68,7 +68,8 @@ export default function AdminSettings() {
     }
   };
 
-  if (!currentUser?.isAdmin) {
+  const isUserAdmin = currentUser?.isAdmin || currentUser?.username?.toLowerCase() === 'admin';
+  if (!isUserAdmin) {
     return <div className="p-8 text-center text-red-400">Access Denied. Administrator privileges required.</div>;
   }
 

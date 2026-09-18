@@ -253,6 +253,12 @@
                         </div>
                     </div>
 
+                    <!-- Admin Quick Action: Music Catalog Update -->
+                    <button id="sf-catalog-update-btn" onclick="triggerCatalogUpdate()" class="auth-admin-nav hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-semibold shadow-sm transition-all min-h-[36px]" title="Scan mounted music folder and update Ampache catalog index">
+                        <span id="sf-catalog-icon">🎵</span>
+                        <span id="sf-catalog-text">Update Music Catalog</span>
+                    </button>
+
                     <!-- Role Badge -->
                     <div id="admin-logged-in-indicator" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-semibold shadow-sm cursor-default">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
@@ -982,6 +988,12 @@
                                 </div>
                                 <span class="text-[10px] text-slate-400 mt-1 block">Flush and verify SMB Git state</span>
                             </button>
+                            <button onclick="triggerCatalogUpdate()" class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:border-purple-500/50 border border-slate-200 dark:border-slate-800 text-left transition-all group">
+                                <div class="font-bold text-slate-900 dark:text-white text-xs group-hover:text-purple-400 flex items-center gap-1.5">
+                                    <span>🎵 Update Music Catalog</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Scan mounted music folder in background</span>
+                            </button>
                         </div>
                         <div id="service-action-banner" class="hidden p-3 rounded-xl text-xs font-mono font-medium"></div>
                     </div>
@@ -1699,10 +1711,10 @@
 
                         return `
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                <td class="py-3 px-4 font-medium text-slate-900 dark:text-slate-200">${req.media_title}</td>
-                                <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${req.media_type}</td>
-                                <td class="py-3 px-4 font-mono text-[10px] text-cyan-400">${req.username}</td>
-                                <td class="py-3 px-4 font-semibold ${statusColor}">${req.status}</td>
+                                <td class="py-3 px-4 font-medium text-slate-900 dark:text-slate-200">${escapeHtml(req.media_title)}</td>
+                                <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${escapeHtml(req.media_type)}</td>
+                                <td class="py-3 px-4 font-mono text-[10px] text-cyan-400">${escapeHtml(req.username)}</td>
+                                <td class="py-3 px-4 font-semibold ${statusColor}">${escapeHtml(req.status)}</td>
                                 <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${new Date(req.request_date).toLocaleString()}</td>
                             </tr>
                         `;
@@ -2272,7 +2284,10 @@
 
                 async function fetchUnifiedStorage() {
             try {
-                const res = await fetch('api/system/storage_stats.php');
+                const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+                const res = await fetch('api/system/storage_stats.php', {
+                    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                });
                 const data = await res.json();
                 
                 if (data && data.status === 'success') {

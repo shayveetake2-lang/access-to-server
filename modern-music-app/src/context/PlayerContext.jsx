@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext, useRef } from 'react';
 import { useAuth } from './AuthContext';
+import { getStreamUrl, getCoverArtUrl } from '../utils/api';
 
 const PlayerContext = createContext();
 
@@ -61,10 +62,46 @@ export function PlayerProvider({ children }) {
     };
   }, [currentIndex, queue, repeatMode, isShuffled]);
 
+  // Lock-screen / Media Session integration for iOS Safari and mobile browsers
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'mediaSession' in navigator && currentTrack) {
+      try {
+        const coverUrl = currentTrack.coverArt ? getCoverArtUrl(currentTrack.coverArt, getAuthParams(user)) : '';
+        navigator.mediaSession.metadata = new window.MediaMetadata({
+          title: currentTrack.title || 'Unknown Track',
+          artist: currentTrack.artist || 'Unknown Artist',
+          album: currentTrack.album || 'Aether Audio',
+          artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: 'image/jpeg' }] : []
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => {
+          if (audioRef.current) {
+            audioRef.current.play().catch(() => {});
+            setIsPlaying(true);
+          }
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          if (audioRef.current) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+          }
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+          playPrevious();
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+          playNext();
+        });
+      } catch (err) {
+        console.debug('MediaSession error:', err);
+      }
+    }
+  }, [currentTrack, user]);
+
   const loadTrack = (track) => {
     if (!track || !user) return;
     setCurrentTrack(track);
-    audioRef.current.src = `/ampache/public/rest/index.php?action=stream&id=${track.id}&${getAuthParams(user)}`;
+    audioRef.current.src = getStreamUrl(track.id, getAuthParams(user));
     audioRef.current.play().catch(e => console.log("Autoplay blocked or error"));
     setIsPlaying(true);
   };
@@ -186,6 +223,71 @@ export function PlayerProvider({ children }) {
     setQueue(result);
   };
 
+  const clearQueue = () => {
+    if (currentTrack) {
+      setQueue([currentTrack]);
+      setCurrentIndex(0);
+    } else {
+      setQueue([]);
+      setCurrentIndex(-1);
+    }
+  };
+
+  const setAudioVolume = (val) => {
+    const clamped = Math.max(0, Math.min(1, val));
+    setVolume(clamped);
+    if (audioRef.current) {
+      audioRef.current.volume = clamped;
+    }
+  };
+
+  // Desktop / Laptop Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const target = e.target;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        setAudioVolume(volume === 0 ? 0.8 : 0);
+      } else if (e.key === 'ArrowRight') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          playNext();
+        } else if (audioRef.current) {
+          e.preventDefault();
+          seek(Math.min((duration || 0), (audioRef.current.currentTime || 0) + 5));
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          playPrevious();
+        } else if (audioRef.current) {
+          e.preventDefault();
+          seek(Math.max(0, (audioRef.current.currentTime || 0) - 5));
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setAudioVolume(Math.min(1, volume + 0.05));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setAudioVolume(Math.max(0, volume - 0.05));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, volume, duration, currentIndex, queue, repeatMode]);
+
   return (
     <PlayerContext.Provider 
       value={{ 
@@ -193,6 +295,7 @@ export function PlayerProvider({ children }) {
         isPlaying, 
         progress, 
         volume, 
+        setVolume: setAudioVolume,
         duration, 
         repeatMode,
         isShuffled,
@@ -207,7 +310,8 @@ export function PlayerProvider({ children }) {
         toggleShuffle,
         addToQueue,
         removeFromQueue,
-        reorderQueue
+        reorderQueue,
+        clearQueue
       }}
     >
       {children}

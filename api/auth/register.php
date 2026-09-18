@@ -19,9 +19,25 @@ if (empty($username) || empty($password)) {
     exit;
 }
 
-if (strlen($password) < 6) {
+// Admin-only registration policy for personal server
+$isAdmin = (!empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true)
+        || (!empty($_SESSION['role']) && $_SESSION['role'] === 'admin');
+
+if (!$isAdmin) {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Public registration is disabled on this server. Contact the administrator to create an account.']);
+    exit;
+}
+
+if (!preg_match('/^[a-zA-Z0-9_\-]{3,30}$/', $username)) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Password must be at least 6 characters.']);
+    echo json_encode(['status' => 'error', 'message' => 'Username must be between 3 and 30 alphanumeric characters.']);
+    exit;
+}
+
+if (strlen($password) < 10) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Password must be at least 10 characters.']);
     exit;
 }
 
@@ -53,11 +69,14 @@ try {
 
     // Auto-authenticate newly registered user
     $token = bin2hex(random_bytes(32));
+    $hashedToken = hash('sha256', $token);
+    $ttlDays = (int)(getenv('AUTH_TOKEN_TTL_DAYS') ?: 7);
+    $expiresAt = date('Y-m-d H:i:s', time() + ($ttlDays * 86400));
 
-    // Insert new user with token
-    $hash = password_hash($password, PASSWORD_BCRYPT);
-    $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb, auth_token) VALUES (:username, :hash, 'user', 100, :token)");
-    $insert->execute([':username' => $username, ':hash' => $hash, ':token' => $token]);
+    // Insert new user with token and hashed token
+    $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
+    $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb, auth_token, token_hash, token_expires_at) VALUES (:username, :hash, 'user', 100, :token, :th, :exp)");
+    $insert->execute([':username' => $username, ':hash' => $hash, ':token' => $hashedToken, ':th' => $hashedToken, ':exp' => $expiresAt]);
     $newUserId = $pdo->lastInsertId();
     $_SESSION['auth_token'] = $token;
     $_SESSION['user_id'] = $newUserId;

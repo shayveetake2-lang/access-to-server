@@ -1,9 +1,17 @@
 <?php
-session_start();
-$_SESSION['test'] = 'working';
+// api/system/test.php — System Environment Health Check (Admin Only)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+header('Content-Type: application/json; charset=UTF-8');
+
+require_once __DIR__ . '/../auth/require_admin.php';
+requireAdmin();
+
 echo json_encode([
-    'session_id' => session_id(),
-    'save_path' => session_save_path(),
-    'is_writable' => is_writable(session_save_path()),
-    'ampache_config' => parse_ini_file(__DIR__ . '/../../../ampache/config/ampache.cfg.php')
+    'status' => 'success',
+    'session_active' => !empty(session_id()),
+    'storage_writable' => is_writable(session_save_path()),
+    'timestamp' => time()
 ]);

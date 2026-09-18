@@ -21,24 +21,31 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
-    // Ensure default admin user exists (username: admin, password: 123456789)
+    // Ensure default admin user exists if table is freshly created
     $stmt = $pdo->prepare("SELECT id, password_hash FROM admin_users WHERE username = 'admin'");
     $stmt->execute();
     $admin = $stmt->fetch();
 
-    $defaultPass = '123456789';
     if (!$admin) {
-        // Insert admin user into database
-        $hash = password_hash($defaultPass, PASSWORD_BCRYPT);
+        $initialPass = getenv('ADMIN_INITIAL_PASSWORD');
+        $initialHash = getenv('ADMIN_INITIAL_HASH');
+        if (!empty($initialPass)) {
+            $hash = password_hash($initialPass, PASSWORD_BCRYPT, ['cost' => 10]);
+        } elseif (!empty($initialHash)) {
+            $hash = $initialHash;
+        } else {
+            $secretFile = dirname(__DIR__, 2) . '/storage/.admin_initial_password';
+            if (file_exists($secretFile)) {
+                $genPass = trim(file_get_contents($secretFile));
+            } else {
+                $genPass = bin2hex(random_bytes(8));
+                @file_put_contents($secretFile, $genPass);
+                @chmod($secretFile, 0600);
+            }
+            $hash = password_hash($genPass, PASSWORD_BCRYPT, ['cost' => 10]);
+        }
         $insert = $pdo->prepare("INSERT INTO admin_users (username, password_hash) VALUES ('admin', :hash)");
         $insert->execute([':hash' => $hash]);
-    } else {
-        // Ensure default password '123456789' is valid hash if legacy
-        if (!password_verify($defaultPass, $admin['password_hash']) && $admin['password_hash'] !== $defaultPass) {
-            $hash = password_hash($defaultPass, PASSWORD_BCRYPT);
-            $update = $pdo->prepare("UPDATE admin_users SET password_hash = :hash WHERE id = :id");
-            $update->execute([':hash' => $hash, ':id' => $admin['id']]);
-        }
     }
 } catch (PDOException $e) {
     http_response_code(500);
@@ -53,27 +60,32 @@ try {
 $action = $_REQUEST['action'] ?? 'status';
 
 if ($action === 'status') {
-    $token = trim($_REQUEST['token'] ?? '');
-    if (empty($token)) {
-        $headers = function_exists('getallheaders') ? getallheaders() : [];
-        $authHeader = $headers['Authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-            $token = trim($matches[1]);
-        }
+    // Only accept Authorization header or POST body to prevent query param CSRF / token leakage
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $authHeader = $headers['Authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $token = '';
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $token = trim($matches[1]);
+    } elseif (!empty($_POST['token'])) {
+        $token = trim($_POST['token']);
     }
 
     if (!empty($token) && empty($_SESSION['auth_token'])) {
         try {
-            $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE auth_token = :t LIMIT 1");
-            $stmt->execute([':t' => $token]);
+            $tokenHash = hash('sha256', $token);
+            $stmt = $pdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :h OR auth_token = :h OR auth_token = :t) LIMIT 1");
+            $stmt->execute([':h' => $tokenHash, ':t' => $token]);
             if ($u = $stmt->fetch()) {
-                $_SESSION['auth_token'] = $token;
-                $_SESSION['user_id'] = $u['id'];
-                $_SESSION['username'] = $u['username'];
-                $_SESSION['role'] = $u['role'];
-                $_SESSION['admin_logged_in'] = ($u['role'] === 'admin');
-                if ($u['role'] === 'admin') {
-                    $_SESSION['admin_user'] = $u['username'];
+                $isExpired = !empty($u['token_expires_at']) && (strtotime($u['token_expires_at']) < time());
+                if (!$isExpired) {
+                    $_SESSION['auth_token'] = $token;
+                    $_SESSION['user_id'] = $u['id'];
+                    $_SESSION['username'] = $u['username'];
+                    $_SESSION['role'] = $u['role'];
+                    $_SESSION['admin_logged_in'] = ($u['role'] === 'admin');
+                    if ($u['role'] === 'admin') {
+                        $_SESSION['admin_user'] = $u['username'];
+                    }
                 }
             }
         } catch (\Exception $e) {}
@@ -110,23 +122,16 @@ if ($action === 'login') {
         $userRow = $stmt->fetch();
 
         $authenticated = false;
-        if ($userRow) {
-            if (password_verify($password, $userRow['password_hash'])) {
-                $authenticated = true;
-            } elseif ($userRow['password_hash'] === $password) {
-                // Legacy plaintext fallback & auto-upgrade to BCRYPT
-                $authenticated = true;
-                $newHash = password_hash($password, PASSWORD_BCRYPT);
-                $upStmt = $pdo->prepare("UPDATE admin_users SET password_hash = :h WHERE id = :id");
-                $upStmt->execute([':h' => $newHash, ':id' => $userRow['id']]);
-            }
+        if ($userRow && password_verify($password, $userRow['password_hash'])) {
+            $authenticated = true;
         }
 
         if ($authenticated) {
             // Record login timestamp in database
-            $logStmt = $pdo->prepare("UPDATE admin_users SET last_login = NOW() WHERE id = :id");
+            $logStmt = $pdo->prepare("UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = :id");
             $logStmt->execute([':id' => $userRow['id']]);
 
+            session_regenerate_id(true);
             $token = bin2hex(random_bytes(32));
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_user'] = $userRow['username'];
@@ -134,8 +139,11 @@ if ($action === 'login') {
             $_SESSION['auth_token'] = $token;
 
             try {
-                $uStmt = $pdo->prepare("UPDATE sys_users SET auth_token = :t WHERE username = :u");
-                $uStmt->execute([':t' => $token, ':u' => $userRow['username']]);
+                $tokenHash = hash('sha256', $token);
+                $ttlDays = (int)(getenv('AUTH_TOKEN_TTL_DAYS') ?: 7);
+                $expiresAt = date('Y-m-d H:i:s', time() + ($ttlDays * 86400));
+                $uStmt = $pdo->prepare("UPDATE sys_users SET auth_token = :t, token_hash = :th, token_expires_at = :exp WHERE username = :u");
+                $uStmt->execute([':t' => $tokenHash, ':th' => $tokenHash, ':exp' => $expiresAt, ':u' => $userRow['username']]);
             } catch (\Exception $e) {}
 
             echo json_encode([
@@ -162,14 +170,22 @@ if ($action === 'login') {
 }
 
 if ($action === 'logout') {
-    $token = trim($_REQUEST['token'] ?? '');
+    $token = trim($_POST['token'] ?? '');
+    if (empty($token)) {
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $authHeader = $headers['Authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            $token = trim($matches[1]);
+        }
+    }
     if (empty($token) && !empty($_SESSION['auth_token'])) {
         $token = $_SESSION['auth_token'];
     }
     if (!empty($token)) {
         try {
-            $upd = $pdo->prepare("UPDATE sys_users SET auth_token = NULL WHERE auth_token = :t");
-            $upd->execute([':t' => $token]);
+            $tokenHash = hash('sha256', $token);
+            $upd = $pdo->prepare("UPDATE sys_users SET auth_token = NULL, token_expires_at = NULL WHERE auth_token = :h OR auth_token = :t");
+            $upd->execute([':h' => $tokenHash, ':t' => $token]);
         } catch (\Exception $e) {}
     }
     $_SESSION = [];

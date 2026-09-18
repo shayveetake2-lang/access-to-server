@@ -46,7 +46,11 @@ try {
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['password_hash'])) {
+        session_regenerate_id(true);
         $token = bin2hex(random_bytes(32));
+        $hashedToken = hash('sha256', $token);
+        $ttlDays = (int)(getenv('AUTH_TOKEN_TTL_DAYS') ?: 7);
+        $expiresAt = date('Y-m-d H:i:s', time() + ($ttlDays * 86400));
         
         $_SESSION['auth_token'] = $token;
         $_SESSION['user_id'] = $user['id'];
@@ -65,10 +69,10 @@ try {
         $userSitesDir = realpath(__DIR__ . '/../../sites') . '/' . preg_replace('/[^a-zA-Z0-9_-]/', '', $user['username']);
         $actualUsedMB = function_exists('getDirectorySizeMB') ? getDirectorySizeMB($userSitesDir) : 0.0;
         
-        // Update database with latest usage and persist auth_token
+        // Update database with latest usage and persist hashed auth_token and expiration
         try {
-            $upd = $pdo->prepare("UPDATE sys_users SET storage_used_mb = :used, auth_token = :token WHERE id = :id");
-            $upd->execute([':used' => $actualUsedMB, ':token' => $token, ':id' => $user['id']]);
+            $upd = $pdo->prepare("UPDATE sys_users SET storage_used_mb = :used, auth_token = :token, token_hash = :th, token_expires_at = :exp WHERE id = :id");
+            $upd->execute([':used' => $actualUsedMB, ':token' => $hashedToken, ':th' => $hashedToken, ':exp' => $expiresAt, ':id' => $user['id']]);
         } catch (\Exception $ue) {}
 
         $limitMB = (float)$user['storage_limit_mb'];

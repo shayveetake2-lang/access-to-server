@@ -84,11 +84,20 @@ async def on_message(message):
                 }
                 
                 executed_action = False
+                authorized_admin_ids = [x.strip() for x in os.getenv('DISCORD_ADMIN_USER_IDS', '').split(',') if x.strip()]
+
                 for tag, config in action_tags.items():
                     if tag in response:
                         executed_action = True
                         clean_response = response.replace(tag, "").strip()
                         
+                        # Verify user authorization before executing server scripts
+                        if authorized_admin_ids and str(message.author.id) not in authorized_admin_ids:
+                            if clean_response:
+                                await message.channel.send(clean_response)
+                            await message.channel.send("🔒 *Administrative action blocked: Your Discord user ID is not authorized to restart server services.*")
+                            break
+
                         # Send AI's conversational reply if any
                         if clean_response:
                             await message.channel.send(clean_response)

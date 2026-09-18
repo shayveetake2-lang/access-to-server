@@ -63,51 +63,60 @@ export default function Playlists() {
   };
 
   return (
-    <div className="pb-24">
-      <div className="flex items-center justify-between mb-8 mt-4">
-        <h1 className="text-3xl font-bold text-white">My Playlists</h1>
-        {playlists.length < 9 ? (
-          <button onClick={handleCreatePlaylist} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-medium transition-colors border border-white/5">
-            + New Playlist
+    <div className="pb-28 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-5 sm:mb-8 mt-1 px-1">
+        <div>
+          <h1 className="text-xl sm:text-3xl font-bold text-white mb-0.5">My Playlists</h1>
+          <p className="text-xs text-slate-400">{playlists.length} / 9 playlists used</p>
+        </div>
+        {playlists.length < 9 && (
+          <button 
+            onClick={handleCreatePlaylist} 
+            className="bg-purple-500 hover:bg-purple-400 text-white px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 flex items-center gap-1.5"
+          >
+            <span>+</span> New Playlist
           </button>
-        ) : (
-          <span className="text-slate-400 text-sm">Playlist Limit Reached (9/9)</span>
         )}
       </div>
       
       {loading ? (
-        <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>
+        <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>
       ) : playlists.length === 0 ? (
-        <div className="text-center py-20 bg-slate-900/40 rounded-xl border border-white/5">
-          <ListMusic size={48} className="mx-auto text-slate-500 mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No Playlists Yet</h3>
-          <p className="text-slate-400 mb-6">Create your first playlist to start collecting your favorite tracks.</p>
-          <button onClick={handleCreatePlaylist} className="bg-purple-500 hover:bg-purple-400 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg">
+        <div className="text-center py-16 sm:py-20 bg-slate-900/40 rounded-3xl border border-white/5 p-6">
+          <ListMusic size={44} className="mx-auto text-slate-500 mb-3" />
+          <h3 className="text-lg font-semibold text-white mb-1.5">No Playlists Yet</h3>
+          <p className="text-xs sm:text-sm text-slate-400 mb-5 max-w-sm mx-auto">Create your first playlist to organize your favorite music.</p>
+          <button onClick={handleCreatePlaylist} className="bg-purple-500 hover:bg-purple-400 text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all shadow-lg active:scale-95">
             Create Playlist
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6">
           {playlists.map((playlist) => (
-            <Link to={`/playlists/${playlist.id}`} key={playlist.id} className="group flex flex-col bg-slate-800/20 hover:bg-slate-800/40 p-5 rounded-xl transition-all border border-transparent hover:border-white/5 backdrop-blur-sm relative">
+            <Link 
+              to={`/playlists/${playlist.id}`} 
+              key={playlist.id} 
+              className="group flex flex-col bg-slate-900/40 hover:bg-slate-800/60 p-3.5 sm:p-4 rounded-2xl transition-all border border-white/5 hover:border-white/10 backdrop-blur-sm relative active:scale-[0.98]"
+            >
               <button 
                 onClick={(e) => handleDeletePlaylist(playlist.id, e)}
-                className="absolute top-2 right-2 p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
+                className="absolute top-2.5 right-2.5 p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-full opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md active:scale-90"
                 title="Delete Playlist"
+                aria-label="Delete Playlist"
               >
-                <Trash2 size={14} />
+                <Trash2 size={13} />
               </button>
 
-              <div className="relative aspect-video rounded-lg overflow-hidden mb-4 shadow-lg bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center">
+              <div className="relative aspect-video rounded-xl overflow-hidden mb-3 shadow-md bg-gradient-to-br from-indigo-950 to-purple-950 flex items-center justify-center border border-white/5">
                 <ListMusic size={32} className="text-white/30" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                    <Play fill="currentColor" size={20} className="ml-1" />
+                <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
+                  <div className="w-11 h-11 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-lg transform translate-y-3 group-hover:translate-y-0 transition-all duration-200">
+                    <Play fill="currentColor" size={18} className="ml-0.5" />
                   </div>
                 </div>
               </div>
-              <h4 className="font-semibold text-slate-200 group-hover:text-purple-400 transition-colors text-lg">{playlist.name}</h4>
-              <p className="text-sm text-slate-400 mt-1">{playlist.songCount || 0} tracks • {playlist.duration ? Math.floor(playlist.duration/60) + ' mins' : 'Empty'}</p>
+              <h4 className="font-semibold text-slate-100 group-hover:text-purple-400 transition-colors text-sm sm:text-base truncate">{playlist.name}</h4>
+              <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">{playlist.songCount || 0} tracks • {playlist.duration ? Math.floor(playlist.duration/60) + ' mins' : 'Empty'}</p>
             </Link>
           ))}
         </div>

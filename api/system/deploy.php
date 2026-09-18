@@ -37,9 +37,9 @@ if (empty($repoUrl)) {
     exit;
 }
 
-// Basic URL validation
-if (!filter_var($repoUrl, FILTER_VALIDATE_URL) && !strpos($repoUrl, 'git@')) {
-    sendMsg("Error: Invalid Repository URL format.");
+// Strict URL validation & Argument Injection Defense
+if (empty($repoUrl) || str_starts_with($repoUrl, '-') || !preg_match('/^https:\/\/[a-zA-Z0-9_\-\.]+\/[a-zA-Z0-9_\-\.\/]+(\.git)?$/', $repoUrl)) {
+    sendMsg("Error: Invalid or disallowed Repository URL. Only standard HTTPS Git URLs are accepted.");
     sendMsg("Deployment Failed.");
     exit;
 }
@@ -119,7 +119,7 @@ if (is_dir($targetDir)) {
     $cmd = "cd {$escapedTargetDir} && git pull 2>&1";
 } else {
     sendMsg("[INFO] Directory does not exist. Initiating 'git clone'...");
-    $cmd = "git clone {$escapedRepoUrl} {$escapedTargetDir} 2>&1";
+    $cmd = "git clone -- {$escapedRepoUrl} {$escapedTargetDir} 2>&1";
 }
 
 sendMsg("[EXEC] " . htmlspecialchars($cmd));

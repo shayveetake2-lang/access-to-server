@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Music, HelpCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getApiProxyUrl } from '../utils/api';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -17,7 +18,7 @@ export default function Register() {
     setIsRegistering(true);
     
     try {
-      const res = await fetch('/modern-music-app/api_proxy.php', {
+      const res = await fetch(getApiProxyUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'register', username, password })

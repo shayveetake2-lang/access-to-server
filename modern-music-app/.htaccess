@@ -1,0 +1,7 @@
+# modern-music-app/.htaccess — Redirect root directory visits to production dist
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^$ dist/ [R=302,L]
+    RewriteRule ^index\.html$ dist/ [R=302,L]
+</IfModule>
+

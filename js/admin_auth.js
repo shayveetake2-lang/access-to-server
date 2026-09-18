@@ -4,6 +4,16 @@ let currentAdminState = { logged_in: false, user: null };
 currentAdminState.logged_in = false;
 currentAdminState.user = null;
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // Intercept window.fetch to prevent native browser Basic Auth popups
 // (attaches X-Requested-With header to suppress WWW-Authenticate browser challenges,
 // and routes any 401 response directly to our custom Tailwind login modal)
@@ -651,16 +661,26 @@ async function loadAdminsList() {
                 listEl.innerHTML += `
                     <div class="flex items-center justify-between p-2 hover:bg-slate-800/40 transition-colors">
                         <div class="flex items-center gap-2 min-w-0">
-                            <span class="text-xs text-slate-200 font-medium truncate">${admin.username}</span>
+                            <span class="text-xs text-slate-200 font-medium truncate">${escapeHtml(admin.username)}</span>
                             ${isSelf ? '<span class="px-1.5 py-0.5 rounded text-[9px] bg-cyan-900/50 text-cyan-400">You</span>' : ''}
                         </div>
-                        <button type="button" onclick="deleteAdmin(${admin.id}, '${admin.username}')" class="text-rose-400 hover:text-rose-300 p-1 cursor-pointer" ${isSelf ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : 'title="Delete Account"'}>
+                        <button type="button" data-admin-id="${parseInt(admin.id, 10)}" data-admin-username="${escapeHtml(admin.username)}" class="btn-delete-admin text-rose-400 hover:text-rose-300 p-1 cursor-pointer" ${isSelf ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : 'title="Delete Account"'}>
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                             </svg>
                         </button>
                     </div>
                 `;
+            });
+
+            listEl.querySelectorAll('.btn-delete-admin').forEach(btn => {
+                if (!btn.disabled) {
+                    btn.addEventListener('click', () => {
+                        const aid = btn.getAttribute('data-admin-id');
+                        const aname = btn.getAttribute('data-admin-username');
+                        deleteAdmin(aid, aname);
+                    });
+                }
             });
         } else {
             listEl.innerHTML = `<div class="p-3 text-center text-xs text-rose-400">Error loading admins.</div>`;
@@ -885,3 +905,90 @@ async function refreshServerQuotas() {
         alert('Network error while refreshing quotas.');
     }
 }
+
+// ═════════════════════════════════════════════════════════════
+// Music Catalog Update Handler (Hardware-Throttled for 2011 Mac)
+// ═════════════════════════════════════════════════════════════
+let catalogUpdatePollTimer = null;
+
+async function triggerCatalogUpdate() {
+    const btn = document.getElementById('sf-catalog-update-btn');
+    const textEl = document.getElementById('sf-catalog-text');
+    const iconEl = document.getElementById('sf-catalog-icon');
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-70');
+    }
+    if (textEl) textEl.textContent = 'Starting scan...';
+    if (iconEl) iconEl.textContent = '⏳';
+
+    try {
+        const res = await fetch('api/system/update_catalog.php', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.status === 'success') {
+            if (textEl) textEl.textContent = 'Scanning in background...';
+            if (typeof showActionNotification === 'function') {
+                showActionNotification('success', data.message || 'Catalog scan started.');
+            }
+            pollCatalogStatus();
+        } else {
+            if (textEl) textEl.textContent = 'Update Music Catalog';
+            if (iconEl) iconEl.textContent = '🎵';
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-70');
+            }
+            alert(data.message || 'Failed to start catalog update.');
+        }
+    } catch (err) {
+        if (textEl) textEl.textContent = 'Update Music Catalog';
+        if (iconEl) iconEl.textContent = '🎵';
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-70');
+        }
+        alert('Network error while requesting catalog update.');
+    }
+}
+
+function pollCatalogStatus() {
+    if (catalogUpdatePollTimer) clearInterval(catalogUpdatePollTimer);
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+    
+    catalogUpdatePollTimer = setInterval(async () => {
+        try {
+            const res = await fetch('api/system/update_catalog.php?status=1', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                if (!data.running) {
+                    clearInterval(catalogUpdatePollTimer);
+                    catalogUpdatePollTimer = null;
+                    const btn = document.getElementById('sf-catalog-update-btn');
+                    const textEl = document.getElementById('sf-catalog-text');
+                    const iconEl = document.getElementById('sf-catalog-icon');
+                    if (textEl) textEl.textContent = 'Update Music Catalog';
+                    if (iconEl) iconEl.textContent = '🎵';
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-70');
+                    }
+                    if (typeof showActionNotification === 'function') {
+                        showActionNotification('success', 'Music catalog update finished successfully!');
+                    }
+                }
+            }
+        } catch (e) {}
+    }, 3000);
+}
+

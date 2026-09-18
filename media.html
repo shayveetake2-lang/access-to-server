@@ -1156,19 +1156,10 @@
         // ── Robust Aether Audio Navigation ────────────────────────────────
         function openAetherAudio(e) {
             if (e && typeof e.preventDefault === 'function') e.preventDefault();
-            let target = 'modern-music-app/dist/';
-            if (window.location.protocol === 'file:') {
-                target = 'http://10.247.192.231:8888/access-to-server/modern-music-app/dist/';
-            } else if (window.location.hostname === 'serverflow.icu') {
-                target = 'https://serverflow.icu/modern-music-app/dist/';
-            } else if (window.location.hostname.includes('serveousercontent.com')) {
-                target = 'https://' + window.location.hostname + '/modern-music-app/dist/';
-            } else if (window.location.hostname === '10.247.192.231' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                const port = window.location.port ? ':' + window.location.port : ':8888';
-                target = window.location.protocol + '//' + window.location.hostname + port + '/access-to-server/modern-music-app/dist/';
-            } else {
-                target = 'modern-music-app/dist/';
-            }
+            const base = window.location.pathname.includes('/access-to-server') ? '/access-to-server' : '';
+            const target = window.location.protocol === 'file:' 
+                ? 'http://10.247.192.231:8888/access-to-server/modern-music-app/dist/'
+                : window.location.origin + base + '/modern-music-app/dist/';
             window.open(target, '_blank');
         }
 

@@ -1,22 +1,46 @@
-import { useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, ListVideo, Music, Repeat1, ChevronUp, ChevronDown, Trash2, X } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, ListVideo, Music, Repeat1, ChevronUp, ChevronDown, Trash2, X, Volume2, Volume1, VolumeX, Plus } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
+import { usePlaylistModal } from '../context/PlaylistModalContext';
+import { getCoverArtUrl } from '../utils/api';
 
 export default function StickyPlayer() {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { user, getAuthParams } = useAuth();
+  const { openAddToPlaylistModal } = usePlaylistModal();
   const { 
     currentTrack, isPlaying, progress: currentTime, duration, 
     isShuffled: isShuffle, repeatMode, 
-    queue, currentIndex, removeFromQueue, reorderQueue,
-    togglePlay, playNext, playPrevious: playPrev, toggleShuffle, toggleRepeat, seek 
+    queue, currentIndex, removeFromQueue, reorderQueue, clearQueue,
+    togglePlay, playNext, playPrevious: playPrev, toggleShuffle, toggleRepeat, seek,
+    volume, setVolume
   } = usePlayer();
+  const prevVolumeRef = useRef(volume || 0.8);
+
+  const handleToggleMute = () => {
+    if (volume > 0) {
+      prevVolumeRef.current = volume;
+      setVolume(0);
+    } else {
+      setVolume(prevVolumeRef.current || 0.8);
+    }
+  };
+
+  const handleVolumeChange = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setVolume(pos);
+    if (pos > 0) prevVolumeRef.current = pos;
+  };
 
   if (!currentTrack) {
     return (
-      <div className="fixed bottom-4 left-4 right-4 md:left-72 md:right-8 h-24 bg-slate-900/70 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-center px-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50">
-        <div className="text-slate-400 font-medium flex items-center gap-2"><Music size={18} /> Select a track to play</div>
+      <div className="hidden md:flex fixed bottom-4 left-72 right-8 h-20 bg-slate-900/70 backdrop-blur-xl border border-white/10 rounded-2xl items-center justify-center px-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-30">
+        <div className="text-slate-400 font-medium flex items-center gap-2 text-sm">
+          <Music size={16} /> Select a track to start listening
+        </div>
       </div>
     );
   }
@@ -38,86 +62,350 @@ export default function StickyPlayer() {
 
   return (
     <>
-    <div className="fixed bottom-4 left-4 right-4 md:left-72 md:right-8 h-24 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between px-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50">
-      
-      {/* Track Info */}
-      <div className="flex items-center gap-4 w-1/3">
-        <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg flex items-center justify-center shrink-0 overflow-hidden">
-           {currentTrack.coverArt ? (
-             <img src={`/ampache/public/rest/index.php?action=getCoverArt&id=${currentTrack.coverArt}&${getAuthParams(user)}`} className="w-full h-full object-cover" alt="Cover" />
-           ) : (
-             <Music size={24} className="text-white/50" />
-           )}
+      {/* ========================================================================= */}
+      {/* MOBILE MINI-PLAYER (Docked above MobileNav)                               */}
+      {/* ========================================================================= */}
+      <div 
+        onClick={() => setIsExpanded(true)}
+        className="md:hidden fixed bottom-[calc(max(env(safe-area-inset-bottom,0px),0.5rem)+4.0rem)] left-2.5 right-2.5 h-14 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl flex items-center justify-between px-3 shadow-[0_8px_30px_rgba(0,0,0,0.7)] z-40 cursor-pointer select-none active:scale-[0.99] transition-transform overflow-hidden"
+      >
+        {/* Top hairline progress bar */}
+        <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-white/10">
+          <div 
+            className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 transition-all duration-150" 
+            style={{ width: `${progressPercent}%` }} 
+          />
         </div>
-        <div className="min-w-0">
-          <h4 className="text-slate-100 font-semibold truncate">{currentTrack.title}</h4>
-          <p className="text-slate-400 text-sm truncate">{currentTrack.artist || 'Unknown Artist'}</p>
-        </div>
-      </div>
 
-      {/* Controls */}
-      <div className="flex flex-col items-center flex-1 max-w-md">
-        <div className="flex items-center gap-6 mb-2">
-          <button onClick={toggleShuffle} className={`transition ${isShuffle ? 'text-purple-400' : 'text-slate-400 hover:text-white'}`}>
-            <Shuffle size={18} />
-          </button>
-          <button onClick={playPrev} className="text-slate-400 hover:text-white transition"><SkipBack size={24} /></button>
-          <button onClick={togglePlay} className="w-10 h-10 rounded-full bg-purple-500 hover:bg-purple-400 flex items-center justify-center text-white shadow-[0_0_15px_rgba(168,85,247,0.5)] transition hover:scale-105">
-            {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-1" />}
-          </button>
-          <button onClick={playNext} className="text-slate-400 hover:text-white transition"><SkipForward size={24} /></button>
-          <button onClick={toggleRepeat} className={`transition ${repeatMode > 0 ? 'text-purple-400' : 'text-slate-400 hover:text-white'}`}>
-            {repeatMode === 2 ? <Repeat1 size={18} /> : <Repeat size={18} />}
-          </button>
-        </div>
-        <div className="w-full flex items-center gap-3 text-xs text-slate-400">
-          <span>{formatTime(currentTime)}</span>
-          <div onClick={handleProgressClick} className="h-1.5 flex-1 bg-slate-700 rounded-full overflow-hidden cursor-pointer">
-            <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full relative" style={{ width: `${progressPercent}%` }}></div>
+        {/* Thumbnail + Titles */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+          <div className="w-10 h-10 rounded-xl bg-slate-800 shrink-0 overflow-hidden shadow-sm flex items-center justify-center border border-white/5">
+            {currentTrack.coverArt ? (
+              <img src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} className="w-full h-full object-cover" alt="" />
+            ) : (
+              <Music size={18} className="text-purple-400" />
+            )}
           </div>
-          <span>{formatTime(duration)}</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-semibold text-white truncate">{currentTrack.title}</div>
+            <div className="text-[11px] text-slate-400 truncate mt-0.5">{currentTrack.artist || 'Unknown Artist'}</div>
+          </div>
         </div>
-      </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-end gap-4 w-1/3 text-slate-400 hidden md:flex">
-        <ListVideo size={18} className="cursor-pointer hover:text-white" title="Queue" onClick={() => setIsQueueOpen(!isQueueOpen)} />
-      </div>
-
-    </div>
-    
-    {/* Queue Panel */}
-    {isQueueOpen && (
-      <div className="fixed bottom-32 right-4 md:right-8 w-80 max-h-96 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h3 className="text-white font-semibold flex items-center gap-2"><ListVideo size={18} className="text-purple-400"/> Playing Next</h3>
-          <button onClick={() => setIsQueueOpen(false)} className="text-slate-400 hover:text-white transition">
-            <X size={18} />
+        {/* Play/Pause & Next Button */}
+        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <button 
+            onClick={togglePlay} 
+            className="w-9 h-9 rounded-full bg-purple-500 active:bg-purple-400 text-white flex items-center justify-center shadow-md active:scale-95 transition-all"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+          >
+            {isPlaying ? <Pause size={17} /> : <Play size={17} className="ml-0.5" />}
+          </button>
+          <button 
+            onClick={playNext} 
+            className="p-2 text-slate-400 hover:text-white active:scale-90 transition-all"
+            aria-label="Next track"
+          >
+            <SkipForward size={19} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-2">
-          {queue.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-8">Queue is empty</p>
-          ) : (
-            queue.map((track, idx) => (
-              <div key={idx} className={`flex items-center justify-between p-2 rounded-lg group ${idx === currentIndex ? 'bg-purple-500/20 border border-purple-500/30' : 'hover:bg-white/5'}`}>
-                <div className="min-w-0 flex-1 pr-2">
-                  <p className={`text-sm font-medium truncate ${idx === currentIndex ? 'text-purple-400' : 'text-white'}`}>{track.title}</p>
-                  <p className="text-xs text-slate-400 truncate">{track.artist}</p>
-                </div>
-                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="flex flex-col mr-2">
-                    <button onClick={() => reorderQueue(idx, idx - 1)} disabled={idx === 0} className="text-slate-400 hover:text-white disabled:opacity-30 p-1"><ChevronUp size={14}/></button>
-                    <button onClick={() => reorderQueue(idx, idx + 1)} disabled={idx === queue.length - 1} className="text-slate-400 hover:text-white disabled:opacity-30 p-1"><ChevronDown size={14}/></button>
-                  </div>
-                  <button onClick={() => removeFromQueue(idx)} className="text-slate-400 hover:text-red-400 p-1"><Trash2 size={16}/></button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MOBILE FULL-SCREEN NOW PLAYING SHEET                                      */}
+      {/* ========================================================================= */}
+      {isExpanded && (
+        <div className="md:hidden fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-3xl flex flex-col justify-between px-6 pt-[max(env(safe-area-inset-top,0px),1rem)] pb-[max(env(safe-area-inset-bottom,0px),1.75rem)] animate-in slide-in-from-bottom-6 duration-200">
+          
+          {/* Top Bar */}
+          <div className="flex items-center justify-between py-2">
+            <button 
+              onClick={() => setIsExpanded(false)}
+              className="p-2 -ml-2 rounded-full text-slate-400 hover:text-white active:scale-90 transition-all"
+              aria-label="Close player view"
+            >
+              <ChevronDown size={28} />
+            </button>
+            <div className="text-center px-4 min-w-0">
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold block">Now Playing</span>
+              <p className="text-xs font-medium text-white truncate max-w-[220px]">{currentTrack.album || 'Aether Audio'}</p>
+            </div>
+            <button 
+              onClick={() => setIsQueueOpen(!isQueueOpen)}
+              className="p-2 -mr-2 rounded-full text-slate-400 hover:text-white active:scale-90 transition-all"
+              aria-label="Toggle Queue"
+            >
+              <ListVideo size={22} className={isQueueOpen ? 'text-purple-400' : ''} />
+            </button>
+          </div>
+
+          {/* Large Album Artwork */}
+          <div className="my-auto py-4 flex items-center justify-center">
+            <div className="w-[74vw] max-w-[320px] aspect-square rounded-3xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.85)] border border-white/10 bg-slate-900 flex items-center justify-center">
+              {currentTrack.coverArt ? (
+                <img src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <Music size={72} className="text-purple-400/50" />
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Track Details, Scrubber & Controls */}
+          <div className="space-y-5 pb-2">
+            {/* Title & Artist */}
+            <div className="min-w-0 pr-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white truncate">{currentTrack.title}</h2>
+              <p className="text-sm sm:text-base text-purple-400 font-medium truncate mt-0.5">{currentTrack.artist || 'Unknown Artist'}</p>
+            </div>
+
+            {/* Scrubber Bar */}
+            <div className="space-y-1.5">
+              <div 
+                onClick={handleProgressClick} 
+                className="h-4 flex items-center cursor-pointer relative"
+              >
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 rounded-full relative" 
+                    style={{ width: `${progressPercent}%` }} 
+                  />
                 </div>
               </div>
-            ))
-          )}
+              <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Playback Controls Row */}
+            <div className="flex items-center justify-between px-2 pt-1">
+              <button 
+                onClick={toggleShuffle} 
+                className={`p-2.5 rounded-full transition-colors active:scale-90 ${isShuffle ? 'text-purple-400' : 'text-slate-400'}`}
+                aria-label="Toggle Shuffle"
+              >
+                <Shuffle size={20} />
+              </button>
+              <button 
+                onClick={playPrev} 
+                className="p-2 text-slate-300 active:scale-90 transition-transform"
+                aria-label="Previous Track"
+              >
+                <SkipBack size={26} fill="currentColor" />
+              </button>
+              <button 
+                onClick={togglePlay} 
+                className="w-16 h-16 rounded-full bg-purple-500 active:bg-purple-400 text-white flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.5)] active:scale-95 transition-all"
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
+              </button>
+              <button 
+                onClick={playNext} 
+                className="p-2 text-slate-300 active:scale-90 transition-transform"
+                aria-label="Next Track"
+              >
+                <SkipForward size={26} fill="currentColor" />
+              </button>
+              <button 
+                onClick={toggleRepeat} 
+                className={`p-2.5 rounded-full transition-colors active:scale-90 ${repeatMode !== 'off' ? 'text-purple-400' : 'text-slate-400'}`}
+                aria-label="Toggle Repeat"
+              >
+                {repeatMode === 'one' ? <Repeat1 size={20} /> : <Repeat size={20} />}
+              </button>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* DESKTOP STICKY PLAYER BAR                                                 */}
+      {/* ========================================================================= */}
+      <div className="hidden md:flex fixed bottom-4 left-72 right-8 h-20 bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-2xl items-center justify-between px-6 shadow-[0_10px_40px_rgba(0,0,0,0.6)] z-30">
+        
+        {/* Track Info */}
+        <div className="flex items-center gap-4 w-1/3 min-w-0">
+          <div 
+            onClick={() => setIsExpanded(true)}
+            className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg flex items-center justify-center shrink-0 overflow-hidden border border-white/10 cursor-pointer group relative"
+            title="Expand Fullscreen View"
+          >
+             {currentTrack.coverArt ? (
+               <img src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="Cover" />
+             ) : (
+               <Music size={20} className="text-white/50" />
+             )}
+             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+               <ChevronUp size={18} className="text-white" />
+             </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 
+              onClick={() => setIsExpanded(true)}
+              className="text-slate-100 font-semibold truncate text-sm hover:text-purple-400 transition-colors cursor-pointer"
+            >
+              {currentTrack.title}
+            </h4>
+            <p className="text-slate-400 text-xs truncate mt-0.5">{currentTrack.artist || 'Unknown Artist'}{currentTrack.album ? ` • ${currentTrack.album}` : ''}</p>
+          </div>
+          <button 
+            onClick={() => openAddToPlaylistModal(currentTrack.id)} 
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-purple-400 hover:bg-white/5 active:bg-purple-500/20 transition-colors shrink-0"
+            title="Add to Playlist"
+            aria-label="Add to Playlist"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-col items-center flex-1 max-w-md px-4">
+          <div className="flex items-center gap-5 mb-1.5">
+            <button 
+              onClick={toggleShuffle} 
+              className={`p-1.5 rounded-lg transition-colors active:scale-90 ${isShuffle ? 'text-purple-400 bg-purple-500/15' : 'text-slate-400 hover:text-white'}`}
+              title={isShuffle ? "Shuffle On" : "Shuffle Off"}
+            >
+              <Shuffle size={16} />
+            </button>
+            <button 
+              onClick={playPrev} 
+              className="p-1.5 text-slate-400 hover:text-white transition-all active:scale-90"
+              title="Previous Track (Shift + ←)"
+            >
+              <SkipBack size={20} fill="currentColor" />
+            </button>
+            <button 
+              onClick={togglePlay} 
+              className="w-10 h-10 rounded-full bg-purple-500 hover:bg-purple-400 flex items-center justify-center text-white shadow-[0_0_20px_rgba(168,85,247,0.5)] transition hover:scale-105 active:scale-95"
+              title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+            >
+              {isPlaying ? <Pause size={19} /> : <Play size={19} className="ml-0.5" />}
+            </button>
+            <button 
+              onClick={playNext} 
+              className="p-1.5 text-slate-400 hover:text-white transition-all active:scale-90"
+              title="Next Track (Shift + →)"
+            >
+              <SkipForward size={20} fill="currentColor" />
+            </button>
+            <button 
+              onClick={toggleRepeat} 
+              className={`p-1.5 rounded-lg transition-colors active:scale-90 ${repeatMode !== 'off' ? 'text-purple-400 bg-purple-500/15' : 'text-slate-400 hover:text-white'}`}
+              title={`Repeat: ${repeatMode}`}
+            >
+              {repeatMode === 'one' ? <Repeat1 size={16} /> : <Repeat size={16} />}
+            </button>
+          </div>
+          <div className="w-full flex items-center gap-2.5 text-[11px] text-slate-400 font-mono">
+            <span>{formatTime(currentTime)}</span>
+            <div onClick={handleProgressClick} className="h-1.5 flex-1 bg-slate-700/60 hover:bg-slate-700 rounded-full overflow-hidden cursor-pointer group relative">
+              <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 rounded-full relative group-hover:from-purple-400 group-hover:to-indigo-300 transition-all" style={{ width: `${progressPercent}%` }}></div>
+            </div>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+
+        {/* Actions (Right): Queue Button + Interactive Volume Control */}
+        <div className="flex items-center justify-end gap-3 w-1/3 min-w-[200px]">
+          {/* Queue Button */}
+          <button 
+            onClick={() => setIsQueueOpen(!isQueueOpen)} 
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all text-xs font-medium ${
+              isQueueOpen 
+                ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40 shadow-sm' 
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+            title="Toggle Queue"
+          >
+            <ListVideo size={17} />
+            <span className="hidden xl:inline">Queue</span>
+            {queue.length > 0 && (
+              <span className="text-[10px] px-1.5 py-0.2 bg-purple-500/30 rounded-full text-purple-300 font-semibold font-mono">
+                {queue.length}
+              </span>
+            )}
+          </button>
+
+          {/* Volume Control */}
+          <div className="flex items-center gap-2 group/vol">
+            <button 
+              onClick={handleToggleMute} 
+              className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5 active:scale-95"
+              title={volume === 0 ? "Unmute (M)" : "Mute (M)"}
+            >
+              {volume === 0 ? <VolumeX size={18} className="text-red-400" /> : volume < 0.5 ? <Volume1 size={18} /> : <Volume2 size={18} />}
+            </button>
+            <div 
+              className="w-20 lg:w-28 h-5 flex items-center cursor-pointer group/bar relative" 
+              onClick={handleVolumeChange}
+              title={`Volume: ${Math.round(volume * 100)}% (↑/↓)`}
+            >
+              <div className="w-full h-1.5 bg-slate-700/60 group-hover/vol:bg-slate-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 group-hover/vol:from-purple-400 group-hover/vol:to-indigo-300 rounded-full transition-all" 
+                  style={{ width: `${volume * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
-    )}
+      
+      {/* ========================================================================= */}
+      {/* QUEUE DRAWER / PANEL (Responsive)                                         */}
+      {/* ========================================================================= */}
+      {isQueueOpen && (
+        <div className="fixed inset-x-3 bottom-[calc(max(env(safe-area-inset-bottom,0px),0.5rem)+4.2rem)] md:inset-x-auto md:bottom-28 md:right-8 md:w-84 max-h-[65vh] md:max-h-96 bg-slate-900/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-[60] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between p-3.5 border-b border-white/10">
+            <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+              <ListVideo size={17} className="text-purple-400"/> Playing Next
+              {queue.length > 0 && <span className="text-[11px] text-slate-400 font-normal">({queue.length})</span>}
+            </h3>
+            <div className="flex items-center gap-2">
+              {queue.length > 1 && (
+                <button 
+                  onClick={clearQueue} 
+                  className="text-xs text-slate-400 hover:text-red-400 active:text-red-300 font-medium px-2 py-1 rounded-lg hover:bg-white/5 transition"
+                  title="Clear upcoming queue"
+                >
+                  Clear
+                </button>
+              )}
+              <button 
+                onClick={() => setIsQueueOpen(false)} 
+                className="p-1 rounded-lg text-slate-400 hover:text-white transition"
+                aria-label="Close Queue"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 touch-scroll">
+            {queue.length === 0 ? (
+              <p className="text-slate-400 text-xs text-center py-8">Queue is empty</p>
+            ) : (
+              queue.map((track, idx) => (
+                <div key={idx} className={`flex items-center justify-between p-2 rounded-xl group ${idx === currentIndex ? 'bg-purple-500/20 border border-purple-500/30' : 'hover:bg-white/5'}`}>
+                  <div className="min-w-0 flex-1 pr-2">
+                    <p className={`text-xs font-medium truncate ${idx === currentIndex ? 'text-purple-400' : 'text-white'}`}>{track.title}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{track.artist}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex flex-col mr-1">
+                      <button onClick={() => reorderQueue(idx, idx - 1)} disabled={idx === 0} className="text-slate-400 hover:text-white disabled:opacity-30 p-1"><ChevronUp size={13}/></button>
+                      <button onClick={() => reorderQueue(idx, idx + 1)} disabled={idx === queue.length - 1} className="text-slate-400 hover:text-white disabled:opacity-30 p-1"><ChevronDown size={13}/></button>
+                    </div>
+                    <button onClick={() => removeFromQueue(idx)} className="text-slate-400 hover:text-red-400 p-1.5"><Trash2 size={14}/></button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
