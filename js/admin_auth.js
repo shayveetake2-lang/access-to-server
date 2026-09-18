@@ -912,17 +912,14 @@ async function refreshServerQuotas() {
 let catalogUpdatePollTimer = null;
 
 async function triggerCatalogUpdate() {
-    const btn = document.getElementById('sf-catalog-update-btn');
-    const textEl = document.getElementById('sf-catalog-text');
-    const iconEl = document.getElementById('sf-catalog-icon');
+    const btns = document.querySelectorAll('#sf-catalog-update-btn, #sf-catalog-update-btn-media');
+    const textEls = document.querySelectorAll('#sf-catalog-text');
+    const iconEls = document.querySelectorAll('#sf-catalog-icon');
     const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
 
-    if (btn) {
-        btn.disabled = true;
-        btn.classList.add('opacity-70');
-    }
-    if (textEl) textEl.textContent = 'Starting scan...';
-    if (iconEl) iconEl.textContent = '⏳';
+    btns.forEach(b => { b.disabled = true; b.classList.add('opacity-70'); });
+    textEls.forEach(t => { t.textContent = 'Starting scan...'; });
+    iconEls.forEach(i => { i.textContent = '⏳'; });
 
     try {
         const res = await fetch('api/system/update_catalog.php', {
@@ -935,27 +932,21 @@ async function triggerCatalogUpdate() {
         const data = await res.json();
         
         if (res.ok && data.status === 'success') {
-            if (textEl) textEl.textContent = 'Scanning in background...';
+            textEls.forEach(t => { t.textContent = 'Scanning in background...'; });
             if (typeof showActionNotification === 'function') {
                 showActionNotification('success', data.message || 'Catalog scan started.');
             }
             pollCatalogStatus();
         } else {
-            if (textEl) textEl.textContent = 'Update Music Catalog';
-            if (iconEl) iconEl.textContent = '🎵';
-            if (btn) {
-                btn.disabled = false;
-                btn.classList.remove('opacity-70');
-            }
+            textEls.forEach(t => { t.textContent = 'Update Music Catalog'; });
+            iconEls.forEach(i => { i.textContent = '🎵'; });
+            btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-70'); });
             alert(data.message || 'Failed to start catalog update.');
         }
     } catch (err) {
-        if (textEl) textEl.textContent = 'Update Music Catalog';
-        if (iconEl) iconEl.textContent = '🎵';
-        if (btn) {
-            btn.disabled = false;
-            btn.classList.remove('opacity-70');
-        }
+        textEls.forEach(t => { t.textContent = 'Update Music Catalog'; });
+        iconEls.forEach(i => { i.textContent = '🎵'; });
+        btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-70'); });
         alert('Network error while requesting catalog update.');
     }
 }
@@ -974,15 +965,12 @@ function pollCatalogStatus() {
                 if (!data.running) {
                     clearInterval(catalogUpdatePollTimer);
                     catalogUpdatePollTimer = null;
-                    const btn = document.getElementById('sf-catalog-update-btn');
-                    const textEl = document.getElementById('sf-catalog-text');
-                    const iconEl = document.getElementById('sf-catalog-icon');
-                    if (textEl) textEl.textContent = 'Update Music Catalog';
-                    if (iconEl) iconEl.textContent = '🎵';
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.classList.remove('opacity-70');
-                    }
+                    const btns = document.querySelectorAll('#sf-catalog-update-btn, #sf-catalog-update-btn-media');
+                    const textEls = document.querySelectorAll('#sf-catalog-text');
+                    const iconEls = document.querySelectorAll('#sf-catalog-icon');
+                    textEls.forEach(t => { t.textContent = 'Update Music Catalog'; });
+                    iconEls.forEach(i => { i.textContent = '🎵'; });
+                    btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-70'); });
                     if (typeof showActionNotification === 'function') {
                         showActionNotification('success', 'Music catalog update finished successfully!');
                     }
@@ -991,4 +979,7 @@ function pollCatalogStatus() {
         } catch (e) {}
     }, 3000);
 }
+
+window.triggerCatalogUpdate = triggerCatalogUpdate;
+window.pollCatalogStatus = pollCatalogStatus;
 

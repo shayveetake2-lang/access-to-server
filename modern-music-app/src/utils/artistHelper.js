@@ -168,3 +168,4 @@ export function mergeArtists(rawArtists = [], rawAlbums = []) {
 
   return mergedList;
 }
+

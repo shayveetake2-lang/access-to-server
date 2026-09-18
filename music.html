@@ -155,6 +155,10 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Stream your music library hosted on your server.</p>
                     </div>
                     <div class="flex items-center gap-2">
+                        <button id="sf-catalog-update-btn" onclick="triggerCatalogUpdate()" class="auth-admin-nav hidden items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-semibold shadow-sm transition-all min-h-[44px]" title="Scan mounted music folder and update Ampache catalog index">
+                            <span id="sf-catalog-icon">🎵</span>
+                            <span id="sf-catalog-text">Update Music Catalog</span>
+                        </button>
                         <a href="modern-music-app/dist/" onclick="openAetherAudio(event)" target="_blank" class="px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-md hover:bg-purple-500 min-h-[44px] inline-flex items-center focus:ring-2 focus:ring-purple-400 transition-all shadow-[0_0_12px_rgba(168,85,247,0.3)]">Launch Aether Audio ↗</a>
                         <a href="ampache/public/login.php" onclick="openAmpacheLogin(event)" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 min-h-[44px] inline-flex items-center border border-slate-700 transition-all">Ampache Web UI ↗</a>
                     </div>
