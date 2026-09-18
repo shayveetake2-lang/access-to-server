@@ -1,4 +1,4 @@
-import { Home, Search, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, Volume2 } from 'lucide-react';
+import { Home, Search, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, Volume2, Globe } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
@@ -12,8 +12,9 @@ export default function Sidebar() {
     { icon: <Home size={19} />, label: 'Home', path: '/' },
     { icon: <Search size={19} />, label: 'Browse', path: '/albums' },
     { icon: <Mic2 size={19} />, label: 'Artists', path: '/artists' },
-    { icon: <Library size={19} />, label: 'All Songs', path: '/songs' },
+    { icon: <Library size={19} />, label: 'Top 100 Songs', path: '/songs' },
     { icon: <ListMusic size={19} />, label: 'My Playlists', path: '/playlists' },
+    { icon: <Globe size={19} />, label: 'Public Playlists', path: '/public-playlists' },
     { icon: <Settings size={19} />, label: 'Settings', path: '/settings' },
   ];
 
@@ -25,13 +26,20 @@ export default function Sidebar() {
     <div className="w-64 bg-slate-950/80 backdrop-blur-xl border-r border-white/5 flex flex-col h-full sticky top-0 hidden md:flex select-none">
       {/* Brand Header */}
       <div className="p-6 pb-4">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)]">
-            <div className="w-3 h-3 bg-white rounded-full"></div>
+        <NavLink to="/" className="flex items-center gap-3 group focus:outline-none" title="Aether Audio Home">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_16px_rgba(168,85,247,0.45)] shrink-0 transition-transform duration-300 group-hover:scale-105">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M4 10v4" />
+              <path d="M8 6v12" />
+              <path d="M12 3v18" />
+              <path d="M16 7v10" />
+              <path d="M20 10v4" />
+            </svg>
           </div>
-          Aether
-        </h1>
-        <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold ml-10.5 -mt-1 block">Audio Streaming</span>
+          <span className="text-2xl font-bold bg-gradient-to-r from-purple-300 via-white to-indigo-200 bg-clip-text text-transparent tracking-tight leading-none group-hover:from-purple-200 group-hover:to-white transition-all">
+            Aether
+          </span>
+        </NavLink>
       </div>
       
       {/* Navigation */}

@@ -11,6 +11,7 @@ import AllAlbums from './pages/AllAlbums';
 import AllArtists from './pages/AllArtists';
 import AllSongs from './pages/AllSongs';
 import Playlists from './pages/Playlists';
+import PublicPlaylists from './pages/PublicPlaylists';
 import Help from './pages/Help';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -45,6 +46,7 @@ function ProtectedLayout() {
             <Route path="/songs" element={<AllSongs />} />
             <Route path="/artists" element={<AllArtists />} />
             <Route path="/playlists" element={<Playlists />} />
+            <Route path="/public-playlists" element={<PublicPlaylists />} />
             <Route path="/help" element={<Help />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin" element={<AdminSettings />} />

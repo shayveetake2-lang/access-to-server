@@ -1,7 +1,8 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
-import { X, Plus, ListMusic } from 'lucide-react';
+import { X, Plus, ListMusic, Globe, Lock } from 'lucide-react';
+import { getApiProxyUrl } from '../utils/api';
 
 const PlaylistModalContext = createContext();
 
@@ -16,6 +17,7 @@ export function PlaylistModalProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createPlaylistName, setCreatePlaylistName] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [onPlaylistCreated, setOnPlaylistCreated] = useState(null);
   const { user, getAuthParams } = useAuth();
@@ -30,6 +32,7 @@ export function PlaylistModalProvider({ children }) {
   const openCreatePlaylistModal = (callback = null) => {
     setOnPlaylistCreated(() => callback);
     setCreatePlaylistName("");
+    setIsPublic(false);
     setIsCreateOpen(true);
   };
   
@@ -42,13 +45,30 @@ export function PlaylistModalProvider({ children }) {
       const res = await fetch(`/ampache/public/rest/index.php?action=createPlaylist&name=${encodeURIComponent(createPlaylistName.trim())}&${getAuthParams(user)}`);
       const data = await res.json();
       if (data?.["subsonic-response"]?.status === "ok") {
+        const createdPlaylist = data["subsonic-response"]?.playlist;
+        const newId = createdPlaylist?.id;
+        if (newId) {
+          // Explicitly set public or private flag based on user selection
+          try {
+            await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${newId}&public=${isPublic ? 'true' : 'false'}`);
+          } catch (pe) {
+            console.debug("Proxy visibility notice:", pe);
+          }
+          try {
+            await fetch(`/ampache/public/rest/index.php?action=updatePlaylist&playlistId=${newId}&public=${isPublic ? 'true' : 'false'}&${getAuthParams(user)}`);
+          } catch (pe) {
+            console.debug("Failed setting playlist visibility via Subsonic:", pe);
+          }
+        }
         setIsCreateOpen(false);
-        showToast("Playlist created successfully!", "success");
+        setCreatePlaylistName("");
+        setIsPublic(false);
+        showToast(isPublic ? "Public playlist created!" : "Private playlist created!", "success");
         if (onPlaylistCreated) {
           onPlaylistCreated();
         }
         if (isOpen) {
-            fetchPlaylists(); // Refresh add-to-playlist list
+          fetchPlaylists(); // Refresh add-to-playlist list
         }
       } else {
         showToast("Failed to create playlist", "error");
@@ -164,9 +184,33 @@ export function PlaylistModalProvider({ children }) {
                 value={createPlaylistName}
                 onChange={(e) => setCreatePlaylistName(e.target.value)}
                 placeholder="Playlist name..."
-                className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors mb-4"
+                className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors mb-3"
                 autoFocus
               />
+
+              <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-800/60 border border-white/5 cursor-pointer hover:bg-slate-800 transition-colors mb-4 select-none group">
+                <input 
+                  type="checkbox" 
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="mt-0.5 rounded border-white/20 bg-slate-900 text-purple-500 focus:ring-purple-500/40 w-4 h-4 cursor-pointer accent-purple-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    {isPublic ? <Globe size={13} className="text-purple-400" /> : <Lock size={13} className="text-slate-400" />}
+                    <span>{isPublic ? "Public Playlist" : "Private Playlist"}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${isPublic ? 'bg-purple-500/20 text-purple-300' : 'bg-slate-700/60 text-slate-400'}`}>
+                      {isPublic ? "Visible to Everyone" : "Only You"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                    {isPublic 
+                      ? "Anyone on this server can discover, listen to, and save this playlist." 
+                      : "Only you can see and play this playlist."}
+                  </p>
+                </div>
+              </label>
+
               <button 
                 type="submit" 
                 disabled={isCreating || !createPlaylistName.trim()}

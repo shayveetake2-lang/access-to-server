@@ -1,23 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Clock, ListMusic, Trash2, ListPlus, Volume2 } from 'lucide-react';
+import { Play, Clock, ListMusic, Trash2, ListPlus, Volume2, Globe, Lock, BookmarkPlus, User } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl } from '../utils/api';
+import { getAmpacheUrl, getCoverArtUrl, getApiProxyUrl } from '../utils/api';
 
 export default function PlaylistDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [playlist, setPlaylist] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { user, getAuthParams } = useAuth();
   const { showToast } = useToast();
 
   const fetchPlaylistDetails = async () => {
     try {
-      const response = await fetch(getAmpacheUrl(`action=getPlaylist&id=${id}&${getAuthParams(user)}`));
+      const response = await fetch(getAmpacheUrl(`action=getPlaylist&id=${id}&_t=${Date.now()}&${getAuthParams(user)}`));
       const data = await response.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         setPlaylist(data['subsonic-response'].playlist);
@@ -43,12 +45,13 @@ export default function PlaylistDetails() {
       const res = await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${id}&songIndexToRemove=${indexToRemove}&${getAuthParams(user)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
+        showToast("Track removed from playlist", "success");
         fetchPlaylistDetails();
       } else {
-        alert("Failed to remove track.");
+        showToast("Failed to remove track", "error");
       }
     } catch (err) {
-      alert("Network error.");
+      showToast("Network error", "error");
     }
   };
 
@@ -59,12 +62,13 @@ export default function PlaylistDetails() {
       const res = await fetch(getAmpacheUrl(`action=deletePlaylist&id=${id}&${getAuthParams(user)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
+        showToast("Playlist deleted", "success");
         navigate('/playlists');
       } else {
-        alert("Failed to delete playlist.");
+        showToast("Failed to delete playlist", "error");
       }
     } catch (err) {
-      alert("Network error.");
+      showToast("Network error", "error");
     }
   };
 
@@ -73,6 +77,73 @@ export default function PlaylistDetails() {
 
   // Convert single object to array if only 1 song is returned by XML to JSON converter
   const tracks = Array.isArray(playlist.entry) ? playlist.entry : (playlist.entry ? [playlist.entry] : []);
+
+  const isOwner = user && (playlist.owner === user.username || !playlist.owner || playlist.owner === '');
+  const isPublic = playlist.public === 'true' || playlist.public === true;
+
+  const handleToggleVisibility = async () => {
+    if (!isOwner || isUpdatingVisibility) return;
+    const nextPublic = !isPublic;
+    setIsUpdatingVisibility(true);
+
+    // 1. Optimistic UI update: flip state immediately for zero-lag user feedback
+    setPlaylist(prev => prev ? { ...prev, public: nextPublic } : prev);
+
+    try {
+      // 2. Direct MySQL database update via proxy (guaranteed persistence)
+      try {
+        await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${id}&public=${nextPublic ? 'true' : 'false'}`);
+      } catch (pe) {
+        console.debug("Proxy toggle notice:", pe);
+      }
+
+      // 3. Also notify Subsonic API for internal cache consistency
+      try {
+        await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${id}&public=${nextPublic ? 'true' : 'false'}&${getAuthParams(user)}`));
+      } catch (se) {
+        console.debug("Subsonic toggle notice:", se);
+      }
+
+      showToast(nextPublic ? "🌐 Playlist is now Public!" : "🔒 Playlist is now Private!", "success");
+
+      // 4. Refresh playlist details with cache-buster
+      await fetchPlaylistDetails();
+    } catch (err) {
+      // Revert on failure
+      setPlaylist(prev => prev ? { ...prev, public: !nextPublic } : prev);
+      showToast("Network error updating visibility.", "error");
+    } finally {
+      setIsUpdatingVisibility(false);
+    }
+  };
+
+  const handleSaveToMyPlaylists = async () => {
+    if (!user || isSaving) return;
+    if (tracks.length === 0) {
+      showToast("This playlist is empty", "warning");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const copyName = `${playlist.name} (Saved)`;
+      const res = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(copyName)}&${getAuthParams(user)}`));
+      const data = await res.json();
+      if (data?.['subsonic-response']?.status === 'ok') {
+        const newId = data['subsonic-response']?.playlist?.id;
+        if (newId) {
+          const songIds = tracks.map(t => t.id).join(',');
+          await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&songIdToAdd=${songIds}&${getAuthParams(user)}`));
+        }
+        showToast(`Saved "${playlist.name}" to My Playlists!`, "success");
+      } else {
+        showToast("Could not save playlist", "error");
+      }
+    } catch (err) {
+      showToast("Network error", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const playEntirePlaylist = () => {
     if (tracks.length > 0) {
@@ -97,29 +168,71 @@ export default function PlaylistDetails() {
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-purple-400 block mb-0.5">Playlist</span>
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-2 leading-tight truncate">{playlist.name}</h1>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-slate-300 text-xs sm:text-sm font-medium">
-            <span>{playlist.songCount} tracks</span>
+            <span>{playlist.songCount || tracks.length} tracks</span>
             <span>•</span>
             <span>{Math.floor((playlist.duration || 0) / 60)} minutes</span>
+            {playlist.owner && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1 text-slate-400">
+                  <User size={13} className="text-purple-400" />
+                  <span>@{playlist.owner}</span>
+                </span>
+              </>
+            )}
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 ${
+              isPublic ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-slate-800 text-slate-400 border border-white/5'
+            }`}>
+              {isPublic ? <Globe size={11} /> : <Lock size={11} />}
+              {isPublic ? 'Public' : 'Private'}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center sm:justify-start gap-4 mb-6 sm:mb-8 px-1">
+      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 mb-6 sm:mb-8 px-1">
         <button 
           onClick={playEntirePlaylist} 
           disabled={tracks.length === 0}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500 disabled:opacity-40 flex items-center justify-center text-white hover:bg-purple-400 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 hover:scale-105"
+          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500 disabled:opacity-40 flex items-center justify-center text-white hover:bg-purple-400 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 hover:scale-105 shrink-0"
           aria-label="Play Playlist"
         >
           <Play fill="currentColor" size={22} className="ml-0.5" />
         </button>
-        <button 
-          onClick={handleDeletePlaylist} 
-          className="px-4 py-2 sm:py-2.5 rounded-full border border-red-500/40 text-red-400 hover:bg-red-500/10 font-medium text-xs sm:text-sm flex items-center gap-2 transition-all active:scale-95"
-        >
-          <Trash2 size={15} /> Delete Playlist
-        </button>
+
+        {isOwner ? (
+          <>
+            <button 
+              onClick={handleToggleVisibility}
+              disabled={isUpdatingVisibility}
+              className={`px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm flex items-center gap-1.5 transition-all border active:scale-95 ${
+                isPublic 
+                  ? 'bg-purple-500/15 border-purple-500/40 text-purple-300 hover:bg-purple-500/25' 
+                  : 'bg-slate-800/80 border-white/10 text-slate-300 hover:bg-slate-700/80'
+              }`}
+              title="Toggle public/private visibility"
+            >
+              {isPublic ? <Globe size={15} className="text-purple-400" /> : <Lock size={15} className="text-slate-400" />}
+              <span>{isPublic ? "Public (Shared)" : "Private (Only You)"}</span>
+            </button>
+            <button 
+              onClick={handleDeletePlaylist} 
+              className="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full border border-red-500/40 text-red-400 hover:bg-red-500/10 font-medium text-xs sm:text-sm flex items-center gap-1.5 transition-all active:scale-95"
+            >
+              <Trash2 size={15} /> Delete Playlist
+            </button>
+          </>
+        ) : (
+          <button 
+            onClick={handleSaveToMyPlaylists}
+            disabled={isSaving}
+            className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-indigo-600/90 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-[0_0_16px_rgba(99,102,241,0.3)] active:scale-95 disabled:opacity-50"
+          >
+            <BookmarkPlus size={16} />
+            <span>{isSaving ? "Saving..." : "Save to My Playlists"}</span>
+          </button>
+        )}
       </div>
 
       {/* Tracklist Mobile View */}
@@ -176,14 +289,16 @@ export default function PlaylistDetails() {
                   >
                     <ListPlus size={16} />
                   </button>
-                  <button 
-                    onClick={(e) => handleRemoveTrack(index, e)} 
-                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/25 text-slate-300 hover:text-red-400 active:scale-95 transition-all shadow-sm"
-                    title="Remove from Playlist"
-                    aria-label="Remove from Playlist"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  {isOwner && (
+                    <button 
+                      onClick={(e) => handleRemoveTrack(index, e)} 
+                      className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/25 text-slate-300 hover:text-red-400 active:scale-95 transition-all shadow-sm"
+                      title="Remove from Playlist"
+                      aria-label="Remove from Playlist"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -254,14 +369,16 @@ export default function PlaylistDetails() {
                       >
                         <ListPlus size={16} />
                       </button>
-                      <button 
-                        onClick={(e) => handleRemoveTrack(index, e)} 
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/25 text-slate-300 hover:text-red-400 active:scale-95 transition-all shadow-sm shrink-0"
-                        title="Remove from Playlist"
-                        aria-label="Remove from Playlist"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {isOwner && (
+                        <button 
+                          onClick={(e) => handleRemoveTrack(index, e)} 
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/25 text-slate-300 hover:text-red-400 active:scale-95 transition-all shadow-sm shrink-0"
+                          title="Remove from Playlist"
+                          aria-label="Remove from Playlist"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

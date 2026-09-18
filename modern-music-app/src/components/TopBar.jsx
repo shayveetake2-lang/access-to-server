@@ -82,8 +82,24 @@ export default function TopBar() {
   };
 
   return (
-    <header className="h-16 md:h-20 flex items-center justify-between px-3 sm:px-4 md:px-8 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-30 pt-safe gap-2">
+    <header className="h-16 md:h-20 flex items-center justify-between px-3 sm:px-4 md:px-8 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-30 pt-safe gap-2 sm:gap-3">
       
+      {/* Mobile Brand Logo */}
+      <Link to="/" className="md:hidden flex items-center gap-2 shrink-0 group focus:outline-none" title="Aether Audio Home">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_12px_rgba(168,85,247,0.4)] shrink-0">
+          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M4 10v4" />
+            <path d="M8 6v12" />
+            <path d="M12 3v18" />
+            <path d="M16 7v10" />
+            <path d="M20 10v4" />
+          </svg>
+        </div>
+        <span className="text-base font-bold bg-gradient-to-r from-purple-300 via-white to-indigo-200 bg-clip-text text-transparent tracking-tight hidden xs:inline">
+          Aether
+        </span>
+      </Link>
+
       {/* Optional Mobile Back Button */}
       {canGoBack && (
         <button 

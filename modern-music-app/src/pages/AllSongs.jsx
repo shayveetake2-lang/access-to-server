@@ -1,9 +1,10 @@
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
-import { Play, Clock, Plus, ListPlus, Volume2 } from 'lucide-react';
+import { Play, Clock, Plus, ListPlus, Volume2, Shuffle } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
+import { getApiProxyUrl } from '../utils/api';
 
 export default function AllSongs() {
   const [songs, setSongs] = useState([]);
@@ -16,22 +17,56 @@ export default function AllSongs() {
   useEffect(() => {
     const fetchSongs = async () => {
       try {
-        const response = await fetch(`/ampache/public/rest/index.php?action=getRandomSongs&size=100&${getAuthParams(user)}`);
-        const data = await response.json();
-        if (data?.['subsonic-response']?.status === 'ok') {
-          setSongs(data['subsonic-response'].randomSongs.song || []);
+        // Fetch top 100 songs from proxy API, fallback to Subsonic randomSongs
+        let loadedSongs = [];
+        try {
+          const proxyRes = await fetch(`${getApiProxyUrl()}?action=getTopSongs&size=100`);
+          const proxyData = await proxyRes.json();
+          if (proxyData?.status === 'ok' && Array.isArray(proxyData.songs) && proxyData.songs.length > 0) {
+            loadedSongs = proxyData.songs;
+          }
+        } catch (pe) {
+          console.debug("Proxy top songs fallback:", pe);
         }
+
+        if (loadedSongs.length === 0) {
+          const response = await fetch(`/ampache/public/rest/index.php?action=getRandomSongs&size=100&${getAuthParams(user)}`);
+          const data = await response.json();
+          if (data?.['subsonic-response']?.status === 'ok') {
+            const raw = data['subsonic-response'].randomSongs?.song || [];
+            loadedSongs = Array.isArray(raw) ? raw : [raw];
+            // Sort by playCount if available
+            loadedSongs.sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
+          }
+        }
+
+        setSongs(loadedSongs);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch songs:", err);
       } finally {
         setLoading(false);
       }
     };
     fetchSongs();
-  }, []);
+  }, [user]);
 
   const playAll = () => {
-    if (songs.length > 0) playQueue(songs, 0);
+    if (songs.length > 0) {
+      playQueue(songs, 0);
+      showToast("▶ Playing Top 100 tracks in order", "success");
+    }
+  };
+
+  const shuffleAll = () => {
+    if (songs.length === 0) return;
+    // Authentic Fisher-Yates array randomization
+    const shuffled = [...songs];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    playQueue(shuffled, 0);
+    showToast("🔀 Shuffled & playing Top 100 tracks!", "success");
   };
   
   const playFromTrack = (index) => {
@@ -40,17 +75,27 @@ export default function AllSongs() {
 
   return (
     <div className="pb-28 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-5 sm:mb-8 mt-1 px-1">
-        <div className="min-w-0 pr-3">
-          <h1 className="text-xl sm:text-3xl font-bold text-white mb-0.5">All Songs</h1>
-          <p className="text-xs sm:text-sm text-slate-400 truncate">100 tracks from your library</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 sm:mb-8 mt-1 px-1 gap-3">
+        <div className="min-w-0 pr-2">
+          <h1 className="text-xl sm:text-3xl font-bold text-white mb-0.5">Top 100 Songs</h1>
+          <p className="text-xs sm:text-sm text-slate-400 truncate">Most played tracks across your library</p>
         </div>
-        <button 
-          onClick={playAll} 
-          className="bg-purple-500 hover:bg-purple-400 text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 shrink-0"
-        >
-          <Play fill="currentColor" size={16} /> Play All
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <button 
+            onClick={playAll} 
+            className="bg-purple-500 hover:bg-purple-400 text-white px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95"
+            title="Play all tracks from #1 down"
+          >
+            <Play fill="currentColor" size={15} /> <span>Play All</span>
+          </button>
+          <button 
+            onClick={shuffleAll} 
+            className="bg-slate-900/80 hover:bg-slate-800 text-purple-300 hover:text-white px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 border border-purple-500/30 transition-all shadow-md active:scale-95"
+            title="Shuffle and play Top 100 tracks"
+          >
+            <Shuffle size={15} /> <span>Shuffle Play</span>
+          </button>
+        </div>
       </div>
 
       {loading ? (

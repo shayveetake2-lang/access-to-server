@@ -25,9 +25,156 @@ function getProxyEnv($key, $default = null) {
     return $default;
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
+function getProxyPdo() {
+    static $pdo = null;
+    if ($pdo !== null) return $pdo;
 
-if (($input['action'] ?? '') === 'register') {
+    $hosts = ['127.0.0.1', '10.247.192.231'];
+    $creds = [
+        ['ampache_user', 'password'],
+        ['root', 'root']
+    ];
+
+    foreach ($hosts as $h) {
+        foreach ($creds as $c) {
+            try {
+                $pdo = new PDO("mysql:host={$h};port=8889;dbname=ampache;charset=utf8mb4", $c[0], $c[1], [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_TIMEOUT => 2
+                ]);
+                return $pdo;
+            } catch (\Exception $e) {}
+        }
+    }
+    return null;
+}
+
+$input = json_decode(file_get_contents('php://input'), true) ?: [];
+$action = $_GET['action'] ?? ($input['action'] ?? '');
+
+// ── Playlist Visibility Toggle Endpoint (Guaranteed DB Persistence) ─────────
+if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibility') {
+    $rawId = $_GET['id'] ?? ($input['id'] ?? ($_GET['playlistId'] ?? ($input['playlistId'] ?? 0)));
+    $cleanId = intval($rawId);
+    if ($cleanId >= 800000000) {
+        $cleanId = $cleanId % 100000000;
+    }
+
+    if ($cleanId <= 0) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Valid playlist ID required.']);
+        exit;
+    }
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $publicVal = $_GET['public'] ?? ($input['public'] ?? null);
+    if ($publicVal === null) {
+        // Auto-toggle current database state
+        $q = $pdo->prepare("SELECT type FROM playlist WHERE id = :id LIMIT 1");
+        $q->execute([':id' => $cleanId]);
+        $row = $q->fetch(PDO::FETCH_ASSOC);
+        $currentType = $row['type'] ?? 'private';
+        $isPublic = ($currentType !== 'public');
+    } else {
+        $isPublic = ($publicVal === true || $publicVal === 1 || $publicVal === '1' || $publicVal === 'true');
+    }
+    $typeStr = $isPublic ? 'public' : 'private';
+
+    try {
+        $stmt = $pdo->prepare("UPDATE playlist SET type = :typ WHERE id = :id");
+        $stmt->execute([':typ' => $typeStr, ':id' => $cleanId]);
+
+        echo json_encode([
+            'status' => 'ok',
+            'id' => $cleanId,
+            'subsonicId' => (string)($cleanId + 800000000),
+            'public' => $isPublic,
+            'type' => $typeStr
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Top 100 Songs Endpoint (Hardware-Optimized Query) ───────────────────────
+if ($action === 'getTopSongs') {
+    $limit = intval($_GET['size'] ?? $_GET['count'] ?? ($input['size'] ?? 100));
+    if ($limit < 1 || $limit > 200) $limit = 100;
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                   s.total_count as playCount,
+                   art.name as artist, art.id as artistId,
+                   alb.name as album, alb.id as albumId
+            FROM song s
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album alb ON s.album = alb.id
+            WHERE s.enabled = 1
+            ORDER BY s.total_count DESC, s.played DESC, s.id DESC
+            LIMIT :lim
+        ");
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $songs = [];
+        foreach ($rows as $r) {
+            $subId = '30000' . str_pad((string)$r['id'], 4, '0', STR_PAD_LEFT);
+            $subAlbId = '20000' . str_pad((string)($r['albumId'] ?? 0), 4, '0', STR_PAD_LEFT);
+            $subArtId = '10000' . str_pad((string)($r['artistId'] ?? 0), 4, '0', STR_PAD_LEFT);
+            $songs[] = [
+                'id' => $subId,
+                'parent' => $subAlbId,
+                'title' => $r['title'] ?: 'Unknown Track',
+                'isDir' => false,
+                'isVideo' => false,
+                'type' => 'music',
+                'albumId' => $subAlbId,
+                'album' => $r['album'] ?: 'Unknown Album',
+                'artistId' => $subArtId,
+                'artist' => $r['artist'] ?: 'Unknown Artist',
+                'coverArt' => 'al-' . $subAlbId,
+                'duration' => (int)$r['duration'],
+                'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
+                'track' => (int)$r['track'],
+                'size' => (int)$r['size'],
+                'playCount' => (int)$r['playCount'],
+                'contentType' => 'audio/mpeg',
+                'suffix' => 'mp3'
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'ok',
+            'count' => count($songs),
+            'songs' => $songs
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+if ($action === 'register') {
     // ── Rate Limiting (Thermal Guard & Anti-Abuse) ───────────────────────────
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     $rateKey = 'reg_attempts_' . md5($ip);
