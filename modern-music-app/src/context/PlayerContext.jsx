@@ -188,10 +188,13 @@ export function PlayerProvider({ children }) {
   };
 
   const addToQueue = (track) => {
-    if (!currentTrack) {
+    if (!currentTrack || queue.length === 0) {
       playQueue([track], 0);
     } else {
-      setQueue([...queue, track]);
+      const newQueue = [...queue];
+      const insertIndex = currentIndex + 1;
+      newQueue.splice(insertIndex, 0, track);
+      setQueue(newQueue);
     }
   };
 
