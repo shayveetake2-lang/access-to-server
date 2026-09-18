@@ -119,21 +119,21 @@ export default function AlbumDetails() {
                   onClick={(e) => { 
                     e.stopPropagation(); 
                     addToQueue(song); 
-                    showToast(`Added "${song.title}" to queue`, 'success');
+                    showToast(`Added "${song.title}" to play next`, 'success');
                   }} 
-                  className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-purple-400 active:bg-purple-500/20 transition-colors"
-                  title="Add to Queue"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-purple-500/25 text-slate-300 hover:text-purple-300 active:scale-95 transition-all shadow-sm"
+                  title="Add to Queue (Play Next)"
                   aria-label="Add to Queue"
                 >
-                  <ListPlus size={15} />
+                  <ListPlus size={16} />
                 </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); openAddToPlaylistModal(song.id); }} 
-                  className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-purple-400 active:bg-purple-500/20 transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-purple-500/25 text-slate-300 hover:text-purple-300 active:scale-95 transition-all shadow-sm"
                   title="Add to Playlist"
                   aria-label="Add to Playlist"
                 >
-                  <Plus size={15} />
+                  <Plus size={16} />
                 </button>
               </div>
             </div>
@@ -142,13 +142,13 @@ export default function AlbumDetails() {
       </div>
 
       {/* Tracklist Desktop Table */}
-      <div className="hidden sm:block bg-slate-900/40 backdrop-blur-sm rounded-2xl overflow-x-auto border border-white/5">
-        <table className="w-full text-left border-collapse min-w-[650px]">
+      <div className="hidden sm:block bg-slate-900/40 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <table className="w-full text-left border-collapse table-fixed">
           <thead>
             <tr className="text-slate-400 border-b border-white/10 text-xs uppercase tracking-wider">
-              <th className="font-semibold px-4 sm:px-6 py-4 w-12 text-center">#</th>
-              <th className="font-semibold px-4 sm:px-6 py-4">Title</th>
-              <th className="font-semibold px-4 sm:px-6 py-4 text-right w-44 min-w-[170px]">
+              <th className="font-semibold px-4 sm:px-5 py-4 w-12 text-center">#</th>
+              <th className="font-semibold px-4 py-4 w-auto">Title</th>
+              <th className="font-semibold px-4 sm:px-6 py-4 text-right w-36 sm:w-44 shrink-0">
                 <div className="flex items-center justify-end gap-2 text-slate-400">
                   <Clock size={16} />
                   <span className="text-[11px] normal-case tracking-normal">Actions</span>
@@ -167,24 +167,26 @@ export default function AlbumDetails() {
                     isCurrent ? 'bg-purple-500/10 text-purple-300' : 'text-slate-300 hover:bg-white/5'
                   }`}
                 >
-                  <td className="px-4 sm:px-6 py-3.5 text-xs text-slate-400 text-center">
+                  <td className="px-4 sm:px-5 py-3 text-xs text-slate-400 text-center w-12">
                     {isCurrent ? <Volume2 size={15} className={`text-purple-400 mx-auto ${isPlaying ? 'animate-pulse' : ''}`} /> : index + 1}
                   </td>
-                  <td className={`px-4 sm:px-6 py-3.5 font-medium transition-colors ${
-                    isCurrent ? 'text-purple-300' : 'text-white group-hover:text-purple-400'
-                  }`}>
-                    {song.title}
+                  <td className="px-4 py-3 min-w-0">
+                    <div className={`font-medium transition-colors truncate ${
+                      isCurrent ? 'text-purple-300 font-semibold' : 'text-white group-hover:text-purple-400'
+                    }`}>
+                      {song.title}
+                    </div>
                   </td>
-                  <td className="px-4 sm:px-6 py-3 text-right w-44 min-w-[170px]">
-                    <div className="flex items-center justify-end gap-2 font-mono text-xs">
-                      <span className="text-slate-400 mr-1.5">{Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}</span>
+                  <td className="px-4 sm:px-6 py-3 text-right w-36 sm:w-44 shrink-0">
+                    <div className="flex items-center justify-end gap-1.5 font-mono text-xs">
+                      <span className="text-slate-400 mr-1 text-[11px] sm:text-xs">{Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}</span>
                       <button 
                         onClick={(e) => { 
                           e.stopPropagation(); 
                           addToQueue(song); 
                           showToast(`Added "${song.title}" to play next`, 'success');
                         }} 
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-purple-500/25 text-slate-300 hover:text-purple-300 active:scale-95 transition-all shadow-sm"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-purple-500/25 text-slate-300 hover:text-purple-300 active:scale-95 transition-all shadow-sm shrink-0"
                         title="Add to Queue (Play Next)"
                         aria-label="Add to Queue"
                       >
@@ -195,7 +197,7 @@ export default function AlbumDetails() {
                           e.stopPropagation(); 
                           openAddToPlaylistModal(song.id); 
                         }} 
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-purple-500/25 text-slate-300 hover:text-purple-300 active:scale-95 transition-all shadow-sm"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-purple-500/25 text-slate-300 hover:text-purple-300 active:scale-95 transition-all shadow-sm shrink-0"
                         title="Add to Playlist"
                         aria-label="Add to Playlist"
                       >

@@ -156,17 +156,17 @@ export default function TopBar() {
                              </div>
 
                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                               <button 
-                                 onClick={() => { 
-                                   addToQueue(song); 
-                                   showToast(`Added "${song.title}" to queue`, 'success'); 
-                                 }}
-                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-purple-400 hover:bg-white/10 transition-colors"
-                                 title="Add to Queue"
-                                 aria-label="Add to Queue"
-                               >
-                                 <ListPlus size={15} />
-                               </button>
+                                <button 
+                                  onClick={() => { 
+                                    addToQueue(song); 
+                                    showToast(`Added "${song.title}" to play next`, 'success'); 
+                                  }}
+                                  className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-purple-400 hover:bg-white/10 transition-colors"
+                                  title="Add to Queue (Play Next)"
+                                  aria-label="Add to Queue"
+                                >
+                                  <ListPlus size={15} />
+                                </button>
                                <button 
                                  onClick={() => { 
                                    openAddToPlaylistModal(song.id); 
