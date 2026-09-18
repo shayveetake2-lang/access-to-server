@@ -14,6 +14,7 @@ export default function StickyPlayer() {
     currentTrack, isPlaying, progress: currentTime, duration, 
     isShuffled: isShuffle, repeatMode, 
     queue, currentIndex, removeFromQueue, reorderQueue, clearQueue,
+    skipToQueueIndex,
     togglePlay, playNext, playPrevious: playPrev, toggleShuffle, toggleRepeat, seek,
     volume, setVolume
   } = usePlayer();
@@ -387,21 +388,88 @@ export default function StickyPlayer() {
             {queue.length === 0 ? (
               <p className="text-slate-400 text-xs text-center py-8">Queue is empty</p>
             ) : (
-              queue.map((track, idx) => (
-                <div key={idx} className={`flex items-center justify-between p-2 rounded-xl group ${idx === currentIndex ? 'bg-purple-500/20 border border-purple-500/30' : 'hover:bg-white/5'}`}>
-                  <div className="min-w-0 flex-1 pr-2">
-                    <p className={`text-xs font-medium truncate ${idx === currentIndex ? 'text-purple-400' : 'text-white'}`}>{track.title}</p>
-                    <p className="text-[11px] text-slate-400 truncate">{track.artist}</p>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="flex flex-col mr-1">
-                      <button onClick={() => reorderQueue(idx, idx - 1)} disabled={idx === 0} className="text-slate-400 hover:text-white disabled:opacity-30 p-1"><ChevronUp size={13}/></button>
-                      <button onClick={() => reorderQueue(idx, idx + 1)} disabled={idx === queue.length - 1} className="text-slate-400 hover:text-white disabled:opacity-30 p-1"><ChevronDown size={13}/></button>
+              queue.map((track, idx) => {
+                const isCurrent = idx === currentIndex;
+                return (
+                  <div 
+                    key={`${track.id || 'track'}-${idx}`} 
+                    onClick={() => skipToQueueIndex(idx)}
+                    className={`flex items-center justify-between p-2 rounded-xl group cursor-pointer transition-all ${
+                      isCurrent 
+                        ? 'bg-purple-500/20 border border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.15)]' 
+                        : 'hover:bg-white/10 active:bg-white/15'
+                    }`}
+                    title={isCurrent ? `Now playing "${track.title}"` : `Skip to "${track.title}"`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                      <div className="relative w-9 h-9 rounded-lg bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center border border-white/5">
+                        {track.coverArt ? (
+                          <img 
+                            src={getCoverArtUrl(track.coverArt, getAuthParams(user))} 
+                            className="w-full h-full object-cover" 
+                            alt="" 
+                            loading="lazy" 
+                          />
+                        ) : (
+                          <Music size={15} className="text-slate-400" />
+                        )}
+                        {isCurrent ? (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Volume2 size={15} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} />
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Play size={14} fill="currentColor" className="text-white ml-0.5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-xs font-medium truncate transition-colors ${
+                          isCurrent ? 'text-purple-300 font-semibold' : 'text-white group-hover:text-purple-300'
+                        }`}>
+                          {track.title}
+                        </p>
+                        <p className="text-[11px] text-slate-400 truncate">{track.artist}</p>
+                      </div>
                     </div>
-                    <button onClick={() => removeFromQueue(idx)} className="text-slate-400 hover:text-red-400 p-1.5"><Trash2 size={14}/></button>
+                    <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {track.duration > 0 && (
+                        <span className="text-[10px] text-slate-400 font-mono mr-1.5 hidden sm:inline-block">
+                          {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
+                        </span>
+                      )}
+                      <div className="flex flex-col mr-1">
+                        <button 
+                          onClick={() => reorderQueue(idx, idx - 1)} 
+                          disabled={idx === 0} 
+                          className="text-slate-400 hover:text-white disabled:opacity-20 p-1 transition-colors"
+                          title="Move up in queue"
+                          aria-label="Move up"
+                        >
+                          <ChevronUp size={13}/>
+                        </button>
+                        <button 
+                          onClick={() => reorderQueue(idx, idx + 1)} 
+                          disabled={idx === queue.length - 1} 
+                          className="text-slate-400 hover:text-white disabled:opacity-20 p-1 transition-colors"
+                          title="Move down in queue"
+                          aria-label="Move down"
+                        >
+                          <ChevronDown size={13}/>
+                        </button>
+                      </div>
+                      <button 
+                        onClick={() => removeFromQueue(idx)} 
+                        className="text-slate-400 hover:text-red-400 active:scale-90 p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                        title="Remove from queue"
+                        aria-label="Remove from queue"
+                      >
+                        <Trash2 size={14}/>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

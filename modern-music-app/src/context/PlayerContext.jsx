@@ -236,6 +236,13 @@ export function PlayerProvider({ children }) {
     }
   };
 
+  const skipToQueueIndex = (index) => {
+    if (index >= 0 && index < queue.length) {
+      setCurrentIndex(index);
+      loadTrack(queue[index]);
+    }
+  };
+
   const setAudioVolume = (val) => {
     const clamped = Math.max(0, Math.min(1, val));
     setVolume(clamped);
@@ -314,7 +321,8 @@ export function PlayerProvider({ children }) {
         addToQueue,
         removeFromQueue,
         reorderQueue,
-        clearQueue
+        clearQueue,
+        skipToQueueIndex
       }}
     >
       {children}
