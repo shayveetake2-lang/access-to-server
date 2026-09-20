@@ -20,10 +20,12 @@ export function AuthProvider({ children }) {
         const parsed = JSON.parse(storedUser);
         verifyToken(parsed).then(isValid => {
           if (isValid) {
-            setUser(parsed);
+            const isAdmin = parsed.isAdmin || ['admin', 'musicadmin', 'serveradmin'].includes((parsed.username || '').toLowerCase());
+            const updated = { ...parsed, isAdmin };
+            setUser(updated);
             // Ensure persisted across all browser sessions/tabs
-            localStorage.setItem('ampache_user', storedUser);
-            sessionStorage.setItem('ampache_user', storedUser);
+            localStorage.setItem('ampache_user', JSON.stringify(updated));
+            sessionStorage.setItem('ampache_user', JSON.stringify(updated));
           } else {
             sessionStorage.removeItem('ampache_user');
             localStorage.removeItem('ampache_user');
@@ -56,13 +58,24 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (username, password) => {
-    const credentials = { 
-      username, 
-      password, 
-      isAdmin: username.toLowerCase() === 'admin' 
-    };
-    const isValid = await verifyToken(credentials);
+    const authParams = getSubsonicAuthParams({ username, password });
+    const isValid = await verifyToken({ username, password });
     if (isValid) {
+      let isAdmin = ['admin', 'musicadmin', 'serveradmin'].includes(username.toLowerCase());
+      try {
+        const userRes = await fetch(getAmpacheUrl(`action=getUser&username=${encodeURIComponent(username)}&${authParams}`));
+        const userData = await userRes.json();
+        const userObj = userData?.['subsonic-response']?.user;
+        if (userObj && (userObj.adminRole === true || userObj.adminRole === 'true' || userObj.adminRole === 1)) {
+          isAdmin = true;
+        }
+      } catch (e) {}
+
+      const credentials = { 
+        username, 
+        password, 
+        isAdmin 
+      };
       setUser(credentials);
       // Persist across devices and browser sessions
       localStorage.setItem('ampache_user', JSON.stringify(credentials));

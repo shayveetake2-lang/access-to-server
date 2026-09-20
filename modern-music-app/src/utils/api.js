@@ -44,7 +44,13 @@ export function getSubsonicAuthParams(user = null) {
   const password = credentials.password || '';
   const token = md5(password + salt);
 
-  return `u=${encodeURIComponent(credentials.username)}&t=${token}&s=${salt}&v=1.16.1&c=Aether&f=json`;
+  // Provide enc:hex password parameter for Ampache backwards-compatibility & users without dedicated API keys
+  const hexPass = password
+    ? Array.from(password).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+    : '';
+  const pParam = hexPass ? `&p=enc:${hexPass}` : '';
+
+  return `u=${encodeURIComponent(credentials.username)}&t=${token}&s=${salt}${pParam}&v=1.16.1&c=Aether&f=json`;
 }
 
 export function getCoverArtUrl(coverArtId, authParams = '') {

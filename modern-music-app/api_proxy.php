@@ -229,31 +229,52 @@ if ($action === 'register') {
         exit;
     }
     
-    // Check internal path (support both root and /access-to-server/ subfolder)
-    $hasSubfolder = file_exists(__DIR__ . '/../ampache/public/rest/index.php');
-    $subPath = $hasSubfolder ? '/access-to-server' : '';
-    $url = "http://127.0.0.1:8888{$subPath}/ampache/public/rest/index.php?action=createUser&username={$newUser}&password={$newPass}&email={$email}&u={$admin_u}&p={$admin_p}&v=1.16.1&c=test&f=json";
-    
+    $candidates = [
+        "http://127.0.0.1:8888/ampache/public/rest/index.php",
+        "http://10.247.192.231:8888/ampache/public/rest/index.php",
+        "http://127.0.0.1:8888/access-to-server/ampache/public/rest/index.php",
+        "http://10.247.192.231:8888/access-to-server/ampache/public/rest/index.php"
+    ];
+
+    $response = false;
     $ctx = stream_context_create([
         'http' => [
             'timeout' => 5,
             'ignore_errors' => true
         ]
     ]);
-    
-    $response = @file_get_contents($url, false, $ctx);
-    if ($response === false) {
-        // Try alternate direct root path fallback
-        $altUrl = "http://127.0.0.1:8888/ampache/public/rest/index.php?action=createUser&username={$newUser}&password={$newPass}&email={$email}&u={$admin_u}&p={$admin_p}&v=1.16.1&c=test&f=json";
-        $response = @file_get_contents($altUrl, false, $ctx);
+
+    foreach ($candidates as $baseUrl) {
+        $url = "{$baseUrl}?action=createUser&username={$newUser}&password={$newPass}&email={$email}&u={$admin_u}&p={$admin_p}&v=1.16.1&c=Aether&f=json";
+        $resp = @file_get_contents($url, false, $ctx);
+        if ($resp !== false) {
+            $parsed = @json_decode($resp, true);
+            if (is_array($parsed) && isset($parsed['subsonic-response'])) {
+                $response = $resp;
+                break;
+            }
+        }
     }
-    
+
     if ($response === false) {
         http_response_code(502);
         echo json_encode(['status' => 'error', 'message' => 'Ampache backend service unreachable on port 8888.']);
         exit;
     }
-    
+
+    $parsed = @json_decode($response, true);
+    if (($parsed['subsonic-response']['status'] ?? '') === 'ok') {
+        // Automatically provision an apikey for the new user so Subsonic token auth succeeds
+        $pdo = getProxyPdo();
+        if ($pdo) {
+            try {
+                $userApiKey = md5($username . '_' . bin2hex(random_bytes(8)));
+                $stmt = $pdo->prepare("UPDATE user SET apikey = :k WHERE username = :u AND (apikey IS NULL OR apikey = '')");
+                $stmt->execute([':k' => $userApiKey, ':u' => $username]);
+            } catch (\Exception $e) {}
+        }
+    }
+
     echo $response;
     exit;
 }

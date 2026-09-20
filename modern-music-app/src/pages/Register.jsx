@@ -23,17 +23,28 @@ export default function Register() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'register', username, password })
       });
-      const data = await res.json();
+
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        throw new Error("Invalid response received from server registration service.");
+      }
       
       if (data?.['subsonic-response']?.status === 'ok') {
         // Auto log in
-        await login(username, password);
-        navigate('/');
+        const loginRes = await login(username, password);
+        if (loginRes.success) {
+          navigate('/');
+        } else {
+          navigate('/login');
+        }
       } else {
-        setError(data?.['subsonic-response']?.error?.message || "Registration failed. Username may already exist.");
+        const errMsg = data?.['subsonic-response']?.error?.message || data?.message || "Registration failed. Username may already exist.";
+        setError(errMsg);
       }
     } catch (err) {
-      setError("Network error connecting to server.");
+      setError(err.message || "Network error connecting to server.");
     } finally {
       setIsRegistering(false);
     }

@@ -533,7 +533,7 @@
                                         <div class="w-7 h-7 rounded-full bg-purple-500/20 text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</div>
                                         <div>
                                             <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Launch Aether Audio</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">Click <span class="font-semibold text-purple-400">Open Aether Audio</span> above, or open <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">http://10.247.192.231:8888/access-to-server/modern-music-app/dist/</code> in Safari, Chrome, or any mobile browser.</p>
+                                            <p class="text-xs text-slate-400 leading-relaxed">Click <span class="font-semibold text-purple-400">Open Aether Audio</span> above, or open <code class="font-mono bg-slate-100 dark:bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded-md text-[11px]">http://10.247.192.231:8888/modern-music-app/dist/</code> in Safari, Chrome, or any mobile browser.</p>
                                         </div>
                                     </div>
 
@@ -1132,7 +1132,7 @@
             if (e && typeof e.preventDefault === 'function') e.preventDefault();
             const base = window.location.pathname.includes('/access-to-server') ? '/access-to-server' : '';
             const target = window.location.protocol === 'file:' 
-                ? 'http://10.247.192.231:8888/access-to-server/modern-music-app/dist/'
+                ? 'http://10.247.192.231:8888/modern-music-app/dist/'
                 : window.location.origin + base + '/modern-music-app/dist/';
             window.open(target, '_blank');
         }
@@ -1142,7 +1142,7 @@
             if (e && typeof e.preventDefault === 'function') e.preventDefault();
             let target = '/ampache/public/login.php';
             if (window.location.protocol === 'file:') {
-                target = 'http://10.247.192.231:8888/access-to-server/ampache/public/login.php';
+                target = 'http://10.247.192.231:8888/ampache/public/login.php';
             } else if (window.location.hostname === 'serverflow.icu') {
                 target = 'https://serverflow.icu/ampache/public/login.php';
             } else if (window.location.hostname.includes('serveousercontent.com')) {
