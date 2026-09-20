@@ -4,7 +4,7 @@ import { Play, Clock, ListMusic, Trash2, ListPlus, Volume2, Globe, Lock, Bookmar
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl, getApiProxyUrl, getSubsonicAuthParams } from '../utils/api';
+import { getAmpacheUrl, getCoverArtUrl, getApiProxyUrl, getSubsonicAuthParams, DEFAULT_COVER_ART } from '../utils/api';
 
 export default function PlaylistDetails() {
   const { id } = useParams();
@@ -262,6 +262,11 @@ export default function PlaylistDetails() {
                       className="w-11 h-11 rounded-xl bg-slate-800 object-cover shadow-sm border border-white/5" 
                       alt="" 
                       loading="lazy"
+                      onError={(e) => {
+                        if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                          e.currentTarget.src = DEFAULT_COVER_ART;
+                        }
+                      }}
                     />
                     {isCurrent && (
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
@@ -344,7 +349,17 @@ export default function PlaylistDetails() {
                   </td>
                   <td className="px-4 py-3 min-w-0">
                     <div className="flex items-center gap-3 min-w-0">
-                      <img src={getCoverArtUrl(song.coverArt, getAuthParams(user))} className="w-10 h-10 rounded-lg bg-slate-800 object-cover shrink-0 border border-white/5 shadow-sm" alt="" loading="lazy" />
+                      <img 
+                        src={getCoverArtUrl(song.coverArt, getAuthParams(user))} 
+                        className="w-10 h-10 rounded-lg bg-slate-800 object-cover shrink-0 border border-white/5 shadow-sm" 
+                        alt="" 
+                        loading="lazy" 
+                        onError={(e) => {
+                          if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                            e.currentTarget.src = DEFAULT_COVER_ART;
+                          }
+                        }}
+                      />
                       <div className="min-w-0 flex-1">
                         <div className={`font-medium transition-colors truncate ${
                           isCurrent ? 'text-purple-300 font-semibold' : 'text-white group-hover:text-purple-400'

@@ -3,7 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, ListVideo, Music, 
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
-import { getCoverArtUrl, getStreamUrl, getSubsonicAuthParams } from '../utils/api';
+import { getCoverArtUrl, getStreamUrl, getSubsonicAuthParams, DEFAULT_COVER_ART } from '../utils/api';
 
 export default function StickyPlayer() {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
@@ -202,7 +202,16 @@ export default function StickyPlayer() {
         <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
           <div className="w-10 h-10 rounded-xl bg-slate-800 shrink-0 overflow-hidden shadow-sm flex items-center justify-center border border-white/5">
             {currentTrack.coverArt ? (
-              <img src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} className="w-full h-full object-cover" alt="" />
+              <img 
+                src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
+                className="w-full h-full object-cover" 
+                alt="" 
+                onError={(e) => {
+                  if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                    e.currentTarget.src = DEFAULT_COVER_ART;
+                  }
+                }}
+              />
             ) : (
               <Music size={18} className="text-purple-400" />
             )}
@@ -264,7 +273,16 @@ export default function StickyPlayer() {
           <div className="my-auto py-4 flex items-center justify-center">
             <div className="w-[74vw] max-w-[320px] aspect-square rounded-3xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.85)] border border-white/10 bg-slate-900 flex items-center justify-center">
               {currentTrack.coverArt ? (
-                <img src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} className="w-full h-full object-cover" alt="" />
+                <img 
+                  src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
+                  className="w-full h-full object-cover" 
+                  alt="" 
+                  onError={(e) => {
+                    if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                      e.currentTarget.src = DEFAULT_COVER_ART;
+                    }
+                  }}
+                />
               ) : (
                 <Music size={72} className="text-purple-400/50" />
               )}
@@ -353,7 +371,16 @@ export default function StickyPlayer() {
             title="Expand Fullscreen View"
           >
              {currentTrack.coverArt ? (
-               <img src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="Cover" />
+               <img 
+                 src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
+                 className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                 alt="Cover" 
+                 onError={(e) => {
+                   if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                     e.currentTarget.src = DEFAULT_COVER_ART;
+                   }
+                 }}
+               />
              ) : (
                <Music size={20} className="text-white/50" />
              )}
@@ -529,6 +556,11 @@ export default function StickyPlayer() {
                             className="w-full h-full object-cover" 
                             alt="" 
                             loading="lazy" 
+                            onError={(e) => {
+                              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                                e.currentTarget.src = DEFAULT_COVER_ART;
+                              }
+                            }}
                           />
                         ) : (
                           <Music size={15} className="text-slate-400" />

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl } from '../utils/api';
+import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 
 const GENRE_CATEGORIES = [
   { id: 'all', label: 'All Genres' },
@@ -498,12 +498,16 @@ export default function AllAlbums() {
                     {/* Square Cover Art */}
                     <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5">
                       <img 
-                        src={getCoverArtUrl(album.coverArt, getAuthParams(user))} 
+                        src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
                         alt={album.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                         decoding="async"
-                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=60'; }}
+                        onError={(e) => {
+                          if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                            e.currentTarget.src = DEFAULT_COVER_ART;
+                          }
+                        }}
                       />
                       {/* Quick Play Overlay */}
                       <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
@@ -555,12 +559,16 @@ export default function AllAlbums() {
               {/* Square Cover Art */}
               <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5">
                 <img 
-                  src={getCoverArtUrl(album.coverArt, getAuthParams(user))} 
+                  src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
                   alt={album.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                   decoding="async"
-                  onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=60'; }}
+                  onError={(e) => {
+                    if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                      e.currentTarget.src = DEFAULT_COVER_ART;
+                    }
+                  }}
                 />
                 {/* Quick Play Overlay */}
                 <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">

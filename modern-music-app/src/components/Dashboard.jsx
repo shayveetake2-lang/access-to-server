@@ -1,10 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Play, Shuffle, Globe, User, BookmarkPlus, Flame, ListMusic, ChevronRight } from 'lucide-react';
+import { Play, Shuffle, Globe, User, BookmarkPlus, Flame, ListMusic, ChevronRight, Sparkles, Disc, Music, Plus, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl } from '../utils/api';
+import { getAmpacheUrl, getCoverArtUrl, fetchRecentlyAdded, DEFAULT_COVER_ART } from '../utils/api';
 
 const GENRE_CATEGORIES = [
   { id: 'all', label: 'All Genres' },
@@ -18,6 +18,9 @@ const GENRE_CATEGORIES = [
 
 export default function Dashboard() {
   const [allAlbums, setAllAlbums] = useState([]);
+  const [recentAlbums, setRecentAlbums] = useState([]);
+  const [recentSongs, setRecentSongs] = useState([]);
+  const [recentTab, setRecentTab] = useState('albums'); // 'albums' | 'songs'
   const [publicPlaylists, setPublicPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,83 +30,130 @@ export default function Dashboard() {
   const [savingPlaylistId, setSavingPlaylistId] = useState(null);
 
   const { user, getAuthParams } = useAuth();
-  const { playQueue } = usePlayer();
+  const { playQueue, addToQueue } = usePlayer();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       if (!user) return;
       try {
         setLoading(true);
-        // 1. Fetch library albums (500 retrieves full catalog)
-        const albumRes = await fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${getAuthParams(user)}`));
-        const albumData = await albumRes.json();
-        
+
+        // Fetch parallel:
+        // 1. Recently Added (Proxy with fallback to Subsonic getAlbumList2 newest)
+        // 2. Full Catalog Albums (alphabeticalByArtist for genres & full library)
+        // 3. Playlists (community public playlists)
+        const [recentRes, albumRes, playlistRes] = await Promise.allSettled([
+          fetchRecentlyAdded(user, { songLimit: 20, albumLimit: 16 }),
+          fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${getAuthParams(user)}`)),
+          fetch(getAmpacheUrl(`action=getPlaylists&${getAuthParams(user)}`))
+        ]);
+
+        if (!isMounted) return;
+
+        // Process Recently Added
+        let recAlbums = [];
+        let recSongs = [];
+        if (recentRes.status === 'fulfilled' && recentRes.value) {
+          recAlbums = Array.isArray(recentRes.value.recentAlbums) ? recentRes.value.recentAlbums : [];
+          recSongs = Array.isArray(recentRes.value.recentSongs) ? recentRes.value.recentSongs : [];
+        }
+
+        // Process Library Albums
         let loadedAlbums = [];
-        if (albumData?.['subsonic-response']?.status === 'ok') {
-          const raw = albumData['subsonic-response'].albumList?.album || [];
-          loadedAlbums = Array.isArray(raw) ? raw : [raw];
-        }
-
-        // 2. Fetch playlists to surface public community playlists
-        let loadedPlaylists = [];
-        try {
-          const playlistRes = await fetch(getAmpacheUrl(`action=getPlaylists&${getAuthParams(user)}`));
-          const playlistData = await playlistRes.json();
-          if (playlistData?.['subsonic-response']?.status === 'ok') {
-            const rawPl = playlistData['subsonic-response'].playlists?.playlist || [];
-            const arr = Array.isArray(rawPl) ? rawPl : [rawPl];
-            loadedPlaylists = arr.filter(p => 
-              p.owner !== 'System' && 
-              !p.id.startsWith('400000') && 
-              (p.public === 'true' || p.public === true)
-            );
+        if (albumRes.status === 'fulfilled') {
+          try {
+            const albumData = await albumRes.value.json();
+            if (albumData?.['subsonic-response']?.status === 'ok') {
+              const raw = albumData['subsonic-response'].albumList?.album || [];
+              loadedAlbums = Array.isArray(raw) ? raw : [raw];
+            }
+          } catch (e) {
+            console.debug("Album list parse note:", e);
           }
-        } catch (pe) {
-          console.debug("Public playlists fetch error:", pe);
         }
 
+        // Fallback for recentAlbums if proxy had no items
+        if (recAlbums.length === 0) {
+          try {
+            const newestRes = await fetch(getAmpacheUrl(`action=getAlbumList2&type=newest&size=16&${getAuthParams(user)}`));
+            const newestData = await newestRes.json();
+            if (newestData?.['subsonic-response']?.status === 'ok') {
+              const rawN = newestData['subsonic-response']?.albumList2?.album || newestData['subsonic-response']?.albumList?.album || [];
+              recAlbums = Array.isArray(rawN) ? rawN : (rawN ? [rawN] : []);
+            }
+          } catch (ne) {
+            console.debug("Subsonic getAlbumList2 fallback note:", ne);
+          }
+
+          // Secondary fallback: slice newest from loaded catalog
+          if (recAlbums.length === 0 && loadedAlbums.length > 0) {
+            recAlbums = loadedAlbums.slice(0, 12);
+          }
+        }
+
+        // Process Public Playlists
+        let loadedPlaylists = [];
+        if (playlistRes.status === 'fulfilled') {
+          try {
+            const playlistData = await playlistRes.value.json();
+            if (playlistData?.['subsonic-response']?.status === 'ok') {
+              const rawPl = playlistData['subsonic-response'].playlists?.playlist || [];
+              const arr = Array.isArray(rawPl) ? rawPl : [rawPl];
+              loadedPlaylists = arr.filter(p => 
+                p.owner !== 'System' && 
+                !p.id.startsWith('400000') && 
+                (p.public === 'true' || p.public === true)
+              );
+            }
+          } catch (pe) {
+            console.debug("Public playlists fetch note:", pe);
+          }
+        }
+
+        setRecentAlbums(recAlbums);
+        setRecentSongs(recSongs);
         setAllAlbums(loadedAlbums);
         setPublicPlaylists(loadedPlaylists);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
         setError("Could not load music catalog.");
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
-  // STRICT FILTER: Only albums with verified album cover art
-  const albumsWithCovers = useMemo(() => {
-    return allAlbums.filter(a => 
-      a && 
-      a.coverArt && 
-      String(a.coverArt).trim() !== '' && 
-      String(a.coverArt) !== '0'
-    );
-  }, [allAlbums]);
-
-  // Top Album of the Week: Highest play count and popularity with cover
+  // Top Album of the Week: Highest play count and popularity (preferring covers if available)
   const topAlbumOfTheWeek = useMemo(() => {
-    if (albumsWithCovers.length === 0) return null;
-    const sorted = [...albumsWithCovers].sort((a, b) => {
+    if (allAlbums.length === 0) return null;
+    const withCovers = allAlbums.filter(a => a && a.coverArt && String(a.coverArt).trim() !== '' && String(a.coverArt) !== '0');
+    const pool = withCovers.length > 0 ? withCovers : allAlbums;
+    const sorted = [...pool].sort((a, b) => {
       const pDiff = (b.playCount || 0) - (a.playCount || 0);
       if (pDiff !== 0) return pDiff;
       return (b.songCount || 0) - (a.songCount || 0);
     });
-    return sorted[0];
-  }, [albumsWithCovers]);
+    return sorted[0] || null;
+  }, [allAlbums]);
 
   // Group albums by genre categories
   const genreSections = useMemo(() => {
     const list = [];
     for (const cat of GENRE_CATEGORIES) {
       if (cat.id === 'all') continue;
-      const matchedAlbums = albumsWithCovers.filter(album => {
+      const matchedAlbums = allAlbums.filter(album => {
         if (!album.genre) return false;
         const g = album.genre.toLowerCase();
         return cat.match.some(m => g.includes(m));
@@ -120,8 +170,8 @@ export default function Dashboard() {
       }
     }
 
-    // Fallback: If some albums with covers don't fit the above categories, group into Popular
-    const uncategorized = albumsWithCovers.filter(album => {
+    // Fallback: Group uncategorized albums
+    const uncategorized = allAlbums.filter(album => {
       if (!album.genre) return true;
       const g = album.genre.toLowerCase();
       return !GENRE_CATEGORIES.some(cat => cat.id !== 'all' && cat.match.some(m => g.includes(m)));
@@ -137,7 +187,15 @@ export default function Dashboard() {
     }
 
     return list;
-  }, [albumsWithCovers]);
+  }, [allAlbums]);
+
+  // Format duration helper
+  const formatDuration = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   // Quick Listen: Instant random playback
   const handleQuickListen = async () => {
@@ -180,9 +238,9 @@ export default function Dashboard() {
         const songs = Array.isArray(rawSongs) ? rawSongs : [rawSongs];
         if (songs.length > 0) {
           playQueue(songs, 0);
-          showToast(`▶ Playing album "${album.name}"`, 'success');
+          showToast(`▶ Playing album "${album.name || album.title}"`, 'success');
         } else {
-          showToast(`No tracks in "${album.name}"`, 'warning');
+          showToast(`No tracks in "${album.name || album.title}"`, 'warning');
         }
       }
     } catch (err) {
@@ -190,6 +248,20 @@ export default function Dashboard() {
     } finally {
       setPlayingAlbumId(null);
     }
+  };
+
+  // Play individual song
+  const handlePlaySong = (song, index, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (recentSongs.length > 0) {
+      playQueue(recentSongs, index);
+    } else {
+      playQueue([song], 0);
+    }
+    showToast(`▶ Playing "${song.title}" by ${song.artist}`, 'success');
   };
 
   // Save public playlist to personal library
@@ -302,10 +374,12 @@ export default function Dashboard() {
           {/* 🌟 Spotlight: Top Album of the Week */}
           {topAlbumOfTheWeek && (
             <section aria-label="Top Album of the Week" className="relative rounded-3xl overflow-hidden border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.6)] bg-gradient-to-br from-purple-950/80 via-slate-950 to-indigo-950/60 backdrop-blur-xl">
-              {/* Subtle Ambient Glow Background */}
+              {/* Subtle Ambient Glow Background with Graceful Gradient Fallback */}
               <div 
                 className="absolute inset-0 opacity-20 bg-cover bg-center filter blur-3xl scale-125 pointer-events-none"
-                style={{ backgroundImage: `url(${getCoverArtUrl(topAlbumOfTheWeek.coverArt, getAuthParams(user))})` }}
+                style={{ 
+                  backgroundImage: `url(${getCoverArtUrl(topAlbumOfTheWeek.coverArt || topAlbumOfTheWeek.id, getAuthParams(user))}), linear-gradient(135deg, #3b0764, #1e1b4b)` 
+                }}
               ></div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent pointer-events-none"></div>
 
@@ -313,13 +387,18 @@ export default function Dashboard() {
                 {/* Album Cover Art */}
                 <div 
                   onClick={() => navigate(`/albums/${topAlbumOfTheWeek.id}`)}
-                  className="w-40 h-40 sm:w-52 sm:h-52 md:w-60 md:h-60 rounded-2xl overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.8)] shrink-0 border border-white/10 group cursor-pointer relative"
+                  className="w-40 h-40 sm:w-52 sm:h-52 md:w-60 md:h-60 rounded-2xl overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.8)] shrink-0 border border-white/10 group cursor-pointer relative bg-slate-900"
                 >
                   <img 
-                    src={getCoverArtUrl(topAlbumOfTheWeek.coverArt, getAuthParams(user))} 
-                    alt={topAlbumOfTheWeek.name}
+                    src={getCoverArtUrl(topAlbumOfTheWeek.coverArt || topAlbumOfTheWeek.id, getAuthParams(user))} 
+                    alt={topAlbumOfTheWeek.name || topAlbumOfTheWeek.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="eager"
+                    onError={(e) => {
+                      if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                        e.currentTarget.src = DEFAULT_COVER_ART;
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <div className="w-13 h-13 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-xl">
@@ -346,7 +425,7 @@ export default function Dashboard() {
                     onClick={() => navigate(`/albums/${topAlbumOfTheWeek.id}`)}
                     className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight truncate mb-1 hover:text-purple-300 transition-colors cursor-pointer"
                   >
-                    {topAlbumOfTheWeek.name}
+                    {topAlbumOfTheWeek.name || topAlbumOfTheWeek.title}
                   </h2>
                   <p className="text-base sm:text-xl text-slate-300 font-medium truncate mb-4">
                     {topAlbumOfTheWeek.artist}
@@ -389,7 +468,208 @@ export default function Dashboard() {
             </section>
           )}
 
-          {/* 🌐 Top Public Community Playlists Showcase (Positioned Above Genres, Below Album of the Week) */}
+          {/* 🕒 Recently Added Section (New Releases & New Songs) */}
+          {(recentAlbums.length > 0 || recentSongs.length > 0) && (
+            <section aria-label="Recently Added" className="space-y-4 pt-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+                <div>
+                  <h3 className="text-lg sm:text-2xl font-bold text-white flex items-center gap-2">
+                    <Sparkles size={20} className="text-purple-400" />
+                    <span>Recently Added</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Newly added albums and fresh tracks in your library
+                  </p>
+                </div>
+
+                {/* Tabs Switcher: New Albums vs New Songs */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex bg-slate-900/80 p-1 rounded-full border border-white/10 shadow-inner">
+                    <button
+                      onClick={() => setRecentTab('albums')}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        recentTab === 'albums'
+                          ? 'bg-purple-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Disc size={13} />
+                      <span>New Albums</span>
+                      {recentAlbums.length > 0 && (
+                        <span className="text-[10px] opacity-75">({recentAlbums.length})</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setRecentTab('songs')}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        recentTab === 'songs'
+                          ? 'bg-purple-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Music size={13} />
+                      <span>New Songs</span>
+                      {recentSongs.length > 0 && (
+                        <span className="text-[10px] opacity-75">({recentSongs.length})</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {recentTab === 'albums' ? (
+                    <Link 
+                      to="/albums" 
+                      className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 group transition-colors ml-2"
+                    >
+                      <span>Explore all</span>
+                      <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  ) : (
+                    <Link 
+                      to="/songs" 
+                      className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 group transition-colors ml-2"
+                    >
+                      <span>Explore all</span>
+                      <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* View 1: New Albums Carousel */}
+              {recentTab === 'albums' && (
+                <div className="flex gap-3.5 sm:gap-5 overflow-x-auto pb-3 pt-1 touch-scroll scrollbar-none px-1">
+                  {recentAlbums.map(album => (
+                    <div 
+                      key={album.id}
+                      className="group flex flex-col w-36 sm:w-44 md:w-48 shrink-0 bg-slate-900/40 hover:bg-slate-800/60 p-2.5 sm:p-3 rounded-2xl transition-all border border-white/5 hover:border-purple-500/30 backdrop-blur-sm relative active:scale-[0.98] cursor-pointer"
+                      onClick={() => navigate(`/albums/${album.id}`)}
+                    >
+                      {/* Square Cover Art with Graceful Fallback */}
+                      <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5">
+                        <img 
+                          src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
+                          alt={album.name || album.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                              e.currentTarget.src = DEFAULT_COVER_ART;
+                            }
+                          }}
+                        />
+                        {/* Quick Play Overlay */}
+                        <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
+                          <button 
+                            onClick={(e) => handlePlayAlbum(album, e)}
+                            disabled={playingAlbumId === album.id}
+                            className="w-11 h-11 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:scale-105 active:scale-95"
+                            title="Play Album"
+                            aria-label="Play Album"
+                          >
+                            {playingAlbumId === album.id ? (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <Play fill="currentColor" size={18} className="ml-0.5" />
+                            )}
+                          </button>
+                        </div>
+
+                        {/* New Tag */}
+                        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md border border-purple-500/30 text-[9px] font-bold text-purple-300">
+                          NEW
+                        </div>
+                      </div>
+
+                      {/* Title & Artist */}
+                      <div className="px-0.5 min-w-0">
+                        <h4 className="font-semibold text-slate-100 group-hover:text-purple-300 transition-colors text-xs sm:text-sm truncate leading-snug">
+                          {album.name || album.title}
+                        </h4>
+                        <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
+                          {album.artist}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1">
+                          {album.year && <span>{album.year}</span>}
+                          {album.year && album.songCount && <span>•</span>}
+                          {album.songCount && <span>{album.songCount} tracks</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* View 2: New Songs List */}
+              {recentTab === 'songs' && (
+                recentSongs.length === 0 ? (
+                  <div className="text-center py-10 bg-slate-900/30 rounded-2xl border border-white/5 text-xs text-slate-400">
+                    No recently added individual songs found in catalog. Check back after next library rescan.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 px-1">
+                    {recentSongs.map((song, idx) => (
+                      <div
+                        key={song.id || idx}
+                        onClick={(e) => handlePlaySong(song, idx, e)}
+                        className="group flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-slate-900/40 hover:bg-slate-800/60 border border-white/5 hover:border-purple-500/30 transition-all cursor-pointer backdrop-blur-sm active:scale-[0.99]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Song Thumbnail */}
+                          <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-white/5 shadow-sm">
+                            <img
+                              src={getCoverArtUrl(song.coverArt || song.parent, getAuthParams(user))}
+                              alt={song.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                                  e.currentTarget.src = DEFAULT_COVER_ART;
+                                }
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Play fill="currentColor" size={16} className="text-white ml-0.5" />
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 pr-2">
+                            <h4 className="font-semibold text-slate-100 group-hover:text-purple-300 transition-colors text-xs sm:text-sm truncate">
+                              {song.title}
+                            </h4>
+                            <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
+                              {song.artist} <span className="opacity-40">•</span> {song.album}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[11px] font-mono text-slate-400">
+                            {formatDuration(song.duration)}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToQueue(song);
+                              showToast(`Added "${song.title}" to queue`, 'success');
+                            }}
+                            className="w-8 h-8 rounded-full bg-white/5 hover:bg-purple-500/20 text-slate-400 hover:text-purple-300 flex items-center justify-center transition-colors active:scale-95"
+                            title="Add to Queue"
+                            aria-label="Add to Queue"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+            </section>
+          )}
+
+          {/* 🌐 Top Public Community Playlists Showcase */}
           {publicPlaylists.length > 0 && (
             <section className="space-y-4 pt-1">
               <div className="flex items-center justify-between px-1">
@@ -525,11 +805,16 @@ export default function Dashboard() {
                         {/* Square Cover Art */}
                         <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5">
                           <img 
-                            src={getCoverArtUrl(album.coverArt, getAuthParams(user))} 
-                            alt={album.name}
+                            src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
+                            alt={album.name || album.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             loading="lazy"
                             decoding="async"
+                            onError={(e) => {
+                              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                                e.currentTarget.src = DEFAULT_COVER_ART;
+                              }
+                            }}
                           />
                           {/* Quick Play Overlay */}
                           <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
@@ -552,7 +837,7 @@ export default function Dashboard() {
                         {/* Title & Artist */}
                         <div className="px-0.5 min-w-0">
                           <h4 className="font-semibold text-slate-100 group-hover:text-purple-300 transition-colors text-xs sm:text-sm truncate leading-snug">
-                            {album.name}
+                            {album.name || album.title}
                           </h4>
                           <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
                             {album.artist}

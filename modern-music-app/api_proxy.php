@@ -136,9 +136,9 @@ if ($action === 'getTopSongs') {
 
         $songs = [];
         foreach ($rows as $r) {
-            $subId = '30000' . str_pad((string)$r['id'], 4, '0', STR_PAD_LEFT);
-            $subAlbId = '20000' . str_pad((string)($r['albumId'] ?? 0), 4, '0', STR_PAD_LEFT);
-            $subArtId = '10000' . str_pad((string)($r['artistId'] ?? 0), 4, '0', STR_PAD_LEFT);
+            $subId = (string)(300000000 + (int)$r['id']);
+            $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
+            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
             $songs[] = [
                 'id' => $subId,
                 'parent' => $subAlbId,
@@ -165,6 +165,114 @@ if ($action === 'getTopSongs') {
             'status' => 'ok',
             'count' => count($songs),
             'songs' => $songs
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Recently Added Endpoint (New Songs & New Albums) ───────────────────────
+if ($action === 'getRecentlyAdded' || $action === 'getRecent') {
+    $songLimit = intval($_GET['songLimit'] ?? $_GET['songCount'] ?? ($input['songLimit'] ?? 20));
+    $albumLimit = intval($_GET['albumLimit'] ?? $_GET['albumCount'] ?? ($input['albumLimit'] ?? 16));
+    if ($songLimit < 1 || $songLimit > 100) $songLimit = 20;
+    if ($albumLimit < 1 || $albumLimit > 50) $albumLimit = 16;
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    try {
+        // 1. Fetch recent songs (ordered by newest addition_time)
+        $stmtSongs = $pdo->prepare("
+            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                   s.total_count as playCount, s.addition_time as additionTime,
+                   art.name as artist, art.id as artistId,
+                   alb.name as album, alb.id as albumId, alb.year as year
+            FROM song s
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album alb ON s.album = alb.id
+            WHERE s.enabled = 1
+            ORDER BY s.addition_time DESC, s.id DESC
+            LIMIT :lim
+        ");
+        $stmtSongs->bindValue(':lim', $songLimit, PDO::PARAM_INT);
+        $stmtSongs->execute();
+        $songRows = $stmtSongs->fetchAll(PDO::FETCH_ASSOC);
+
+        $recentSongs = [];
+        foreach ($songRows as $r) {
+            $subId = (string)(300000000 + (int)$r['id']);
+            $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
+            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+            $recentSongs[] = [
+                'id' => $subId,
+                'parent' => $subAlbId,
+                'title' => $r['title'] ?: 'Unknown Track',
+                'isDir' => false,
+                'isVideo' => false,
+                'type' => 'music',
+                'albumId' => $subAlbId,
+                'album' => $r['album'] ?: 'Unknown Album',
+                'artistId' => $subArtId,
+                'artist' => $r['artist'] ?: 'Unknown Artist',
+                'coverArt' => 'al-' . $subAlbId,
+                'duration' => (int)$r['duration'],
+                'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
+                'track' => (int)$r['track'],
+                'size' => (int)$r['size'],
+                'playCount' => (int)$r['playCount'],
+                'created' => $r['additionTime'] ? date('c', (int)$r['additionTime']) : null,
+                'year' => (int)$r['year'],
+                'contentType' => 'audio/mpeg',
+                'suffix' => 'mp3'
+            ];
+        }
+
+        // 2. Fetch recent albums (ordered by newest addition_time)
+        $stmtAlbums = $pdo->prepare("
+            SELECT alb.id, alb.name, alb.year, alb.addition_time as additionTime,
+                   art.name as artist, art.id as artistId,
+                   COUNT(s.id) as songCount
+            FROM album alb
+            LEFT JOIN artist art ON alb.album_artist = art.id
+            LEFT JOIN song s ON s.album = alb.id AND s.enabled = 1
+            GROUP BY alb.id, alb.name, alb.year, alb.addition_time, art.name, art.id
+            ORDER BY alb.addition_time DESC, alb.id DESC
+            LIMIT :alim
+        ");
+        $stmtAlbums->bindValue(':alim', $albumLimit, PDO::PARAM_INT);
+        $stmtAlbums->execute();
+        $albumRows = $stmtAlbums->fetchAll(PDO::FETCH_ASSOC);
+
+        $recentAlbums = [];
+        foreach ($albumRows as $a) {
+            $subAlbId = (string)(200000000 + (int)$a['id']);
+            $subArtId = (string)(100000000 + (int)($a['artistId'] ?? 0));
+            $recentAlbums[] = [
+                'id' => $subAlbId,
+                'name' => $a['name'] ?: 'Unknown Album',
+                'title' => $a['name'] ?: 'Unknown Album',
+                'artist' => $a['artist'] ?: 'Unknown Artist',
+                'artistId' => $subArtId,
+                'coverArt' => 'al-' . $subAlbId,
+                'songCount' => (int)$a['songCount'],
+                'year' => (int)$a['year'],
+                'created' => $a['additionTime'] ? date('c', (int)$a['additionTime']) : null,
+                'isDir' => true
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'ok',
+            'recentSongs' => $recentSongs,
+            'recentAlbums' => $recentAlbums
         ]);
         exit;
     } catch (\Exception $e) {

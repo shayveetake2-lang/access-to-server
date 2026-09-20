@@ -2,7 +2,7 @@ import { Home, Search, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, V
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
-import { getMediaPortalUrl, getCoverArtUrl } from '../utils/api';
+import { getMediaPortalUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 
 export default function Sidebar() {
   const { user, getAuthParams } = useAuth();
@@ -69,7 +69,16 @@ export default function Sidebar() {
           <div className="p-2.5 rounded-2xl bg-slate-900/60 border border-white/5 flex items-center gap-3 backdrop-blur-md shadow-lg">
             <div className="w-10 h-10 rounded-xl bg-slate-800 shrink-0 overflow-hidden relative shadow-sm border border-white/5 flex items-center justify-center">
               {currentTrack.coverArt ? (
-                <img src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} className="w-full h-full object-cover" alt="" />
+                <img 
+                  src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
+                  className="w-full h-full object-cover" 
+                  alt="" 
+                  onError={(e) => {
+                    if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                      e.currentTarget.src = DEFAULT_COVER_ART;
+                    }
+                  }}
+                />
               ) : (
                 <Music size={16} className="text-purple-400" />
               )}
