@@ -58,6 +58,18 @@ namespace PHPUnit\Framework {
                     throw new \Exception($msg ?: "Failed asserting that actual equals expected");
                 }
             }
+
+            public function assertStringContainsString(string $needle, string $haystack, string $msg = ''): void {
+                if (strpos($haystack, $needle) === false) {
+                    throw new \Exception($msg ?: "Did not find '{$needle}' in string");
+                }
+            }
+
+            public function assertNotEmpty($actual, string $msg = ''): void {
+                if (empty($actual)) {
+                    throw new \Exception($msg ?: "Failed asserting that value is not empty");
+                }
+            }
         }
     }
 }

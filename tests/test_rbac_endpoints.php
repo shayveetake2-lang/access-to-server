@@ -10,6 +10,9 @@ putenv("DB_SQLITE_PATH=/tmp/access_db.sqlite");
 require_once __DIR__ . '/../config/config.php';
 
 $pdo = getDBConnection();
+try {
+    $pdo->exec("PRAGMA busy_timeout = 5000;");
+} catch (\Exception $e) {}
 
 // Set up test users in sys_users
 // 1: Admin user (admin)
@@ -225,7 +228,19 @@ runTest("update_role.php rejects invalid role input (HTTP 400)", function() use 
     }
 });
 
-runTest("update_role.php demotes an admin to 'member' successfully (HTTP 200)", function() use ($adminToken, $admin2Id, $pdo) {
+function getLatestUserRole($userId) {
+    $conn = new SQLitePDO("sqlite:" . (getenv('DB_SQLITE_PATH') ?: DB_SQLITE_PATH));
+    $conn->exec("PRAGMA busy_timeout = 5000;");
+    $stmt = $conn->prepare("SELECT role FROM sys_users WHERE id = :id");
+    $stmt->execute([':id' => $userId]);
+    $role = $stmt->fetchColumn();
+    $stmt->closeCursor();
+    $stmt = null;
+    $conn = null;
+    return $role;
+}
+
+runTest("update_role.php demotes an admin to 'member' successfully (HTTP 200)", function() use ($adminToken, $admin2Id) {
     $res = invokeEndpoint(__DIR__ . '/../api/update_role.php', 'POST', ['Authorization' => "Bearer $adminToken"], ['user_id' => $admin2Id, 'new_role' => 'member']);
     if ($res['code'] !== 200) {
         throw new \Exception("Expected 200, got " . $res['code'] . ": " . $res['raw']);
@@ -235,9 +250,7 @@ runTest("update_role.php demotes an admin to 'member' successfully (HTTP 200)", 
     }
 
     // Verify in database
-    $stmt = $pdo->prepare("SELECT role FROM sys_users WHERE id = :id");
-    $stmt->execute([':id' => $admin2Id]);
-    $dbRole = $stmt->fetchColumn();
+    $dbRole = getLatestUserRole($admin2Id);
     if ($dbRole !== 'member') {
         throw new \Exception("Database role was not updated to 'member': got '$dbRole'");
     }
@@ -255,16 +268,14 @@ runTest("update_role.php blocks demoting the sole remaining admin (HTTP 400)", f
     }
 });
 
-runTest("update_role.php promotes a member to 'admin' successfully (HTTP 200)", function() use ($adminToken, $admin2Id, $pdo) {
+runTest("update_role.php promotes a member to 'admin' successfully (HTTP 200)", function() use ($adminToken, $admin2Id) {
     $res = invokeEndpoint(__DIR__ . '/../api/update_role.php', 'POST', ['Authorization' => "Bearer $adminToken"], ['user_id' => $admin2Id, 'new_role' => 'admin']);
     if ($res['code'] !== 200) {
         throw new \Exception("Expected 200, got " . $res['code'] . ": " . $res['raw']);
     }
 
     // Verify in database
-    $stmt = $pdo->prepare("SELECT role FROM sys_users WHERE id = :id");
-    $stmt->execute([':id' => $admin2Id]);
-    $dbRole = $stmt->fetchColumn();
+    $dbRole = getLatestUserRole($admin2Id);
     if ($dbRole !== 'admin') {
         throw new \Exception("Database role was not updated to 'admin': got '$dbRole'");
     }
@@ -290,15 +301,16 @@ runTest("JWT token decoding and verification in api/update_role.php", function()
     }
 
     // Verify role in database
-    $stmt = $pdo->prepare("SELECT role FROM sys_users WHERE id = :id");
-    $stmt->execute([':id' => $member1Id]);
-    $role12 = $stmt->fetchColumn();
+    $role12 = getLatestUserRole($member1Id);
     if ($role12 !== 'admin') {
         throw new \Exception("Role was not updated to admin with JWT: got '$role12'");
     }
 
     // Reset member1 back to member
-    $pdo->prepare("UPDATE sys_users SET role = 'member' WHERE id = :id")->execute([':id' => $member1Id]);
+    $resetConn = new SQLitePDO("sqlite:" . (getenv('DB_SQLITE_PATH') ?: DB_SQLITE_PATH));
+    $resetConn->exec("PRAGMA busy_timeout = 5000;");
+    $resetConn->prepare("UPDATE sys_users SET role = 'member' WHERE id = :id")->execute([':id' => $member1Id]);
+    $resetConn = null;
 });
 
 echo "\n======================================\n";
