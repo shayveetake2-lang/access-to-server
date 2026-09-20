@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2 } from 'lucide-react';
+import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAmpacheUrl } from '../utils/api';
+import AdminMetadataEditor from '../components/AdminMetadataEditor';
 
 export default function AdminSettings() {
   const { user: currentUser, getAuthParams } = useAuth();
+  const [adminTab, setAdminTab] = useState('metadata'); // 'metadata' | 'users'
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,8 +30,10 @@ export default function AdminSettings() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [currentUser]);
+    if (adminTab === 'users') {
+      fetchUsers();
+    }
+  }, [currentUser, adminTab]);
 
   const handleResetPassword = async (username) => {
     const newPass = prompt(`Enter new password for ${username}:`);
@@ -68,32 +72,68 @@ export default function AdminSettings() {
     }
   };
 
-  const isUserAdmin = currentUser?.isAdmin || currentUser?.username?.toLowerCase() === 'admin';
+  const isUserAdmin = currentUser?.isAdmin || currentUser?.role === 'admin' || currentUser?.username?.toLowerCase() === 'admin';
   if (!isUserAdmin) {
     return <div className="p-8 text-center text-red-400">Access Denied. Administrator privileges required.</div>;
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-24">
-      <div className="flex items-center gap-4 mb-8 mt-4">
-        <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400">
-          <ShieldAlert size={24} />
+    <div className="max-w-6xl mx-auto pb-24">
+      {/* Admin Header */}
+      <div className="flex items-center justify-between flex-wrap gap-4 mb-6 mt-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-lg shadow-purple-500/10">
+            <ShieldAlert size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">Admin Control Center</h1>
+            <p className="text-xs sm:text-sm text-slate-400">Manage catalog metadata, ID3 deduplication, and user privileges.</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
-          <p className="text-slate-400">Manage users, permissions, and server settings.</p>
+
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-white/10">
+          <button
+            onClick={() => setAdminTab('metadata')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+              adminTab === 'metadata'
+                ? 'bg-purple-500 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sparkles size={14} />
+            <span>Metadata & Deduplication</span>
+          </button>
+          <button
+            onClick={() => setAdminTab('users')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+              adminTab === 'users'
+                ? 'bg-purple-500 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Users size={14} />
+            <span>User Accounts</span>
+          </button>
         </div>
       </div>
 
-      <div className="bg-slate-900/50 backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden">
-        <div className="p-6 border-b border-white/5 flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-            <Users size={20} className="text-blue-400" /> Server Users
-          </h3>
-          <span className="text-sm font-medium px-3 py-1 bg-white/5 rounded-full text-slate-300">
-            {users.length} Users
-          </span>
-        </div>
+      {/* Tab 1: Metadata Editor Component */}
+      {adminTab === 'metadata' && (
+        <AdminMetadataEditor />
+      )}
+
+      {/* Tab 2: User Accounts Table */}
+      {adminTab === 'users' && (
+        <div className="bg-slate-900/50 backdrop-blur-sm border border-white/5 rounded-2xl overflow-hidden animate-in fade-in">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+              <Users size={20} className="text-blue-400" /> Server Users
+            </h3>
+            <span className="text-sm font-medium px-3 py-1 bg-white/5 rounded-full text-slate-300">
+              {users.length} Users
+            </span>
+          </div>
 
         {loading ? (
           <div className="p-12 flex justify-center"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>
@@ -151,6 +191,7 @@ export default function AdminSettings() {
           </div>
         )}
       </div>
-    </div>
-  );
+    )}
+  </div>
+);
 }

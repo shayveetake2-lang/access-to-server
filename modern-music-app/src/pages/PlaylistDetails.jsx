@@ -4,7 +4,7 @@ import { Play, Clock, ListMusic, Trash2, ListPlus, Volume2, Globe, Lock, Bookmar
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl, getApiProxyUrl } from '../utils/api';
+import { getAmpacheUrl, getCoverArtUrl, getApiProxyUrl, getSubsonicAuthParams } from '../utils/api';
 
 export default function PlaylistDetails() {
   const { id } = useParams();
@@ -14,12 +14,13 @@ export default function PlaylistDetails() {
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
-  const { user, getAuthParams } = useAuth();
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const fetchPlaylistDetails = async () => {
     try {
-      const response = await fetch(getAmpacheUrl(`action=getPlaylist&id=${id}&_t=${Date.now()}&${getAuthParams(user)}`));
+      const auth = getSubsonicAuthParams(user);
+      const response = await fetch(getAmpacheUrl(`action=getPlaylist&id=${id}&_t=${Date.now()}&${auth}`));
       const data = await response.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         setPlaylist(data['subsonic-response'].playlist);
@@ -42,7 +43,8 @@ export default function PlaylistDetails() {
     if (!confirm("Remove this track from the playlist?")) return;
     
     try {
-      const res = await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${id}&songIndexToRemove=${indexToRemove}&${getAuthParams(user)}`));
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${id}&songIndexToRemove=${indexToRemove}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         showToast("Track removed from playlist", "success");
@@ -59,7 +61,8 @@ export default function PlaylistDetails() {
     if (!confirm("Are you sure you want to delete this entire playlist?")) return;
     
     try {
-      const res = await fetch(getAmpacheUrl(`action=deletePlaylist&id=${id}&${getAuthParams(user)}`));
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=deletePlaylist&id=${id}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         showToast("Playlist deleted", "success");
@@ -78,7 +81,7 @@ export default function PlaylistDetails() {
   // Convert single object to array if only 1 song is returned by XML to JSON converter
   const tracks = Array.isArray(playlist.entry) ? playlist.entry : (playlist.entry ? [playlist.entry] : []);
 
-  const isOwner = user && (playlist.owner === user.username || !playlist.owner || playlist.owner === '');
+  const isOwner = user && (!playlist.owner || playlist.owner === '' || (user.username && playlist.owner.toLowerCase() === user.username.toLowerCase()));
   const isPublic = playlist.public === 'true' || playlist.public === true;
 
   const handleToggleVisibility = async () => {
@@ -99,7 +102,8 @@ export default function PlaylistDetails() {
 
       // 3. Also notify Subsonic API for internal cache consistency
       try {
-        await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${id}&public=${nextPublic ? 'true' : 'false'}&${getAuthParams(user)}`));
+        const auth = getSubsonicAuthParams(user);
+        await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${id}&public=${nextPublic ? 'true' : 'false'}&${auth}`));
       } catch (se) {
         console.debug("Subsonic toggle notice:", se);
       }
@@ -125,14 +129,15 @@ export default function PlaylistDetails() {
     }
     setIsSaving(true);
     try {
+      const auth = getSubsonicAuthParams(user);
       const copyName = `${playlist.name} (Saved)`;
-      const res = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(copyName)}&${getAuthParams(user)}`));
+      const res = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(copyName)}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         const newId = data['subsonic-response']?.playlist?.id;
         if (newId) {
           const songIds = tracks.map(t => t.id).join(',');
-          await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&songIdToAdd=${songIds}&${getAuthParams(user)}`));
+          await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&songIdToAdd=${songIds}&${auth}`));
         }
         showToast(`Saved "${playlist.name}" to My Playlists!`, "success");
       } else {

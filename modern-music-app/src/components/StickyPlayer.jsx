@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, ListVideo, Music, Repeat1, ChevronUp, ChevronDown, Trash2, X, Volume2, Volume1, VolumeX, Plus } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
-import { getCoverArtUrl } from '../utils/api';
+import { getCoverArtUrl, getStreamUrl, getSubsonicAuthParams } from '../utils/api';
 
 export default function StickyPlayer() {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
@@ -16,9 +16,129 @@ export default function StickyPlayer() {
     queue, currentIndex, removeFromQueue, reorderQueue, clearQueue,
     skipToQueueIndex,
     togglePlay, playNext, playPrevious: playPrev, toggleShuffle, toggleRepeat, seek,
-    volume, setVolume
+    volume, setVolume,
+    swapAudio, setPrefetchBuffer
   } = usePlayer();
   const prevVolumeRef = useRef(volume || 0.8);
+
+  // Hidden in-memory Audio prefetch buffer refs
+  const prefetchAudioRef = useRef(null);
+  const prefetchedTrackIdRef = useRef(null);
+
+  const getNextTrackInfo = () => {
+    if (!queue || queue.length === 0) return null;
+    if (repeatMode === 'one') {
+      return { track: currentTrack, index: currentIndex };
+    }
+    let nextIndex;
+    if (isShuffle) {
+      nextIndex = Math.floor(Math.random() * queue.length);
+    } else {
+      nextIndex = currentIndex + 1;
+      if (nextIndex >= queue.length) {
+        if (repeatMode === 'all') {
+          nextIndex = 0;
+        } else {
+          return null;
+        }
+      }
+    }
+    return { track: queue[nextIndex], index: nextIndex };
+  };
+
+  // ── Background In-Memory Audio Pre-fetch Buffer (MacBook Pro 2011 Transcoding Eliminator) ──
+  useEffect(() => {
+    if (!currentTrack || !duration || duration <= 15) return;
+    const remainingTime = duration - currentTime;
+
+    // When 15 seconds or less remain on the active track, spawn the hidden in-memory Audio buffer
+    if (remainingTime <= 15 && remainingTime > 0) {
+      const nextInfo = getNextTrackInfo();
+      if (!nextInfo || !nextInfo.track) return;
+
+      const nextTrack = nextInfo.track;
+
+      // Ensure we only trigger once per track transition
+      if (prefetchedTrackIdRef.current !== nextTrack.id) {
+        console.log(`[Aether Pre-fetch Buffer] 15s remaining (${Math.round(remainingTime)}s). Spawning pre-fetch buffer for next track: "${nextTrack.title}" (ID: ${nextTrack.id})`);
+        
+        // Discard any previous buffer
+        if (prefetchAudioRef.current) {
+          prefetchAudioRef.current.pause();
+          prefetchAudioRef.current.src = '';
+          prefetchAudioRef.current = null;
+        }
+
+        const streamUrl = getStreamUrl(nextTrack.id, getSubsonicAuthParams(user));
+        const prefetchAudio = new Audio();
+        prefetchAudio.preload = 'auto';
+        prefetchAudio.src = streamUrl;
+
+        prefetchAudio.onerror = (e) => {
+          console.warn(`[Aether Pre-fetch Buffer] Pre-buffering encountered error for "${nextTrack.title}":`, e);
+          prefetchAudioRef.current = null;
+          prefetchedTrackIdRef.current = null;
+          if (setPrefetchBuffer) setPrefetchBuffer(null, null, -1);
+        };
+
+        // Kicks off FLAC on-the-fly transcoding on the 2011 MacBook Pro ahead of time
+        prefetchAudio.load();
+
+        prefetchAudioRef.current = prefetchAudio;
+        prefetchedTrackIdRef.current = nextTrack.id;
+
+        // Register in PlayerContext so that natural track conclusion triggers 0ms swap
+        if (setPrefetchBuffer) {
+          setPrefetchBuffer(prefetchAudio, nextTrack, nextInfo.index);
+        }
+      }
+    }
+  }, [currentTime, duration, currentTrack?.id, queue, currentIndex, repeatMode, isShuffle, user]);
+
+  // Clean up stale prefetch buffer when track changes or component unmounts
+  useEffect(() => {
+    if (prefetchedTrackIdRef.current && prefetchedTrackIdRef.current !== currentTrack?.id) {
+      const nextInfo = getNextTrackInfo();
+      if (!nextInfo || nextInfo.track?.id !== prefetchedTrackIdRef.current) {
+        if (prefetchAudioRef.current) {
+          prefetchAudioRef.current.pause();
+          prefetchAudioRef.current.src = '';
+          prefetchAudioRef.current = null;
+        }
+        prefetchedTrackIdRef.current = null;
+        if (setPrefetchBuffer) setPrefetchBuffer(null, null, -1);
+      }
+    }
+  }, [currentTrack?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (prefetchAudioRef.current) {
+        prefetchAudioRef.current.pause();
+        prefetchAudioRef.current.src = '';
+        prefetchAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleSkipNext = () => {
+    const nextInfo = getNextTrackInfo();
+    if (!nextInfo || !nextInfo.track) {
+      playNext();
+      return;
+    }
+
+    const bufferedAudio = prefetchAudioRef.current;
+    if (bufferedAudio && prefetchedTrackIdRef.current === nextInfo.track.id) {
+      console.log(`[Aether Pre-fetch Buffer] Instant zero-latency Skip triggered for: "${nextInfo.track.title}"`);
+      prefetchAudioRef.current = null;
+      prefetchedTrackIdRef.current = null;
+      if (setPrefetchBuffer) setPrefetchBuffer(null, null, -1);
+      swapAudio(bufferedAudio, nextInfo.track, nextInfo.index);
+    } else {
+      playNext();
+    }
+  };
 
   const handleToggleMute = () => {
     if (volume > 0) {
@@ -103,7 +223,7 @@ export default function StickyPlayer() {
             {isPlaying ? <Pause size={17} /> : <Play size={17} className="ml-0.5" />}
           </button>
           <button 
-            onClick={playNext} 
+            onClick={handleSkipNext} 
             className="p-2 text-slate-400 hover:text-white active:scale-90 transition-all"
             aria-label="Next track"
           >
@@ -202,7 +322,7 @@ export default function StickyPlayer() {
                 {isPlaying ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
               </button>
               <button 
-                onClick={playNext} 
+                onClick={handleSkipNext} 
                 className="p-2 text-slate-300 active:scale-90 transition-transform"
                 aria-label="Next Track"
               >
@@ -285,7 +405,7 @@ export default function StickyPlayer() {
               {isPlaying ? <Pause size={19} /> : <Play size={19} className="ml-0.5" />}
             </button>
             <button 
-              onClick={playNext} 
+              onClick={handleSkipNext} 
               className="p-1.5 text-slate-400 hover:text-white transition-all active:scale-90"
               title="Next Track (Shift + →)"
             >

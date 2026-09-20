@@ -21,7 +21,34 @@ export function PlayerProvider({ children }) {
   const [errorToast, setErrorToast] = useState(null);
   
   const audioRef = useRef(null);
+  const prefetchBufferRef = useRef({ audio: null, track: null, index: -1 });
   const { user, getAuthParams } = useAuth();
+
+  const playNextRef = useRef();
+
+  const updateProgress = () => {
+    if (audioRef.current) {
+      setProgress(audioRef.current.currentTime);
+      setDuration(audioRef.current.duration || 0);
+    }
+  };
+
+  const handleEnded = () => {
+    if (playNextRef.current) {
+      playNextRef.current();
+    }
+  };
+
+  const handleError = () => {
+    if (audioRef.current && audioRef.current.src) {
+      setErrorToast(`Song unavailable: Skipping track...`);
+      setTimeout(() => setErrorToast(null), 3000);
+      // Add a slight delay before skipping to prevent rapid error loops
+      setTimeout(() => {
+        if (playNextRef.current) playNextRef.current();
+      }, 1000);
+    }
+  };
 
   useEffect(() => {
     if (!audioRef.current) {
@@ -30,27 +57,6 @@ export function PlayerProvider({ children }) {
     }
 
     const audio = audioRef.current;
-
-    const updateProgress = () => {
-      setProgress(audio.currentTime);
-      setDuration(audio.duration || 0);
-    };
-
-    const handleEnded = () => {
-      playNext();
-    };
-
-    const handleError = () => {
-      if (audio.src) {
-        setErrorToast(`Song unavailable: Skipping track...`);
-        setTimeout(() => setErrorToast(null), 3000);
-        // Add a slight delay before skipping to prevent rapid error loops
-        setTimeout(() => {
-          playNext();
-        }, 1000);
-      }
-    };
-
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
@@ -60,7 +66,42 @@ export function PlayerProvider({ children }) {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
     };
-  }, [currentIndex, queue, repeatMode, isShuffled]);
+  }, []);
+
+  const swapAudio = (newAudio, nextTrack, nextIndex) => {
+    if (!newAudio || !nextTrack) return;
+
+    const oldAudio = audioRef.current;
+    if (oldAudio) {
+      oldAudio.pause();
+      oldAudio.removeEventListener('timeupdate', updateProgress);
+      oldAudio.removeEventListener('ended', handleEnded);
+      oldAudio.removeEventListener('error', handleError);
+      oldAudio.src = '';
+    }
+
+    audioRef.current = newAudio;
+    audioRef.current.volume = volume;
+
+    audioRef.current.addEventListener('timeupdate', updateProgress);
+    audioRef.current.addEventListener('ended', handleEnded);
+    audioRef.current.addEventListener('error', handleError);
+
+    setCurrentTrack(nextTrack);
+    setCurrentIndex(nextIndex);
+    setIsPlaying(true);
+    setProgress(newAudio.currentTime || 0);
+    setDuration(newAudio.duration || nextTrack.duration || 0);
+
+    const playPromise = newAudio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(e => console.warn("[Aether Audio] Play notice on swapped audio:", e));
+    }
+  };
+
+  const setPrefetchBuffer = (audio, track, index) => {
+    prefetchBufferRef.current = { audio, track, index };
+  };
 
   // Lock-screen / Media Session integration for iOS Safari and mobile browsers
   useEffect(() => {
@@ -101,6 +142,13 @@ export function PlayerProvider({ children }) {
   const loadTrack = (track) => {
     if (!track || !user) return;
     setCurrentTrack(track);
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.volume = volume;
+      audioRef.current.addEventListener('timeupdate', updateProgress);
+      audioRef.current.addEventListener('ended', handleEnded);
+      audioRef.current.addEventListener('error', handleError);
+    }
     audioRef.current.src = getStreamUrl(track.id, getAuthParams(user));
     audioRef.current.play().catch(e => console.log("Autoplay blocked or error"));
     setIsPlaying(true);
@@ -127,8 +175,10 @@ export function PlayerProvider({ children }) {
     if (queue.length === 0) return;
     
     if (repeatMode === 'one') {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play();
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      }
       return;
     }
 
@@ -147,9 +197,24 @@ export function PlayerProvider({ children }) {
       }
     }
     
+    const nextTrack = queue[nextIndex];
+    if (!nextTrack) return;
+
+    // Zero-latency instant swap if pre-fetched buffer matches next track
+    const prefetched = prefetchBufferRef.current;
+    if (prefetched.audio && prefetched.track && prefetched.track.id === nextTrack.id) {
+      console.log(`[Aether Audio] Zero-latency track transition using pre-fetched buffer for: "${nextTrack.title}"`);
+      const readyAudio = prefetched.audio;
+      prefetchBufferRef.current = { audio: null, track: null, index: -1 };
+      swapAudio(readyAudio, nextTrack, nextIndex);
+      return;
+    }
+
     setCurrentIndex(nextIndex);
-    loadTrack(queue[nextIndex]);
+    loadTrack(nextTrack);
   };
+
+  playNextRef.current = playNext;
 
   const playPrevious = () => {
     if (queue.length === 0) return;
@@ -322,7 +387,10 @@ export function PlayerProvider({ children }) {
         removeFromQueue,
         reorderQueue,
         clearQueue,
-        skipToQueueIndex
+        skipToQueueIndex,
+        audioRef,
+        swapAudio,
+        setPrefetchBuffer
       }}
     >
       {children}

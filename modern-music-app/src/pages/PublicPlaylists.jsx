@@ -5,10 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl } from '../utils/api';
+import { getAmpacheUrl, getSubsonicAuthParams } from '../utils/api';
 
 export default function PublicPlaylists() {
-  const { user, getAuthParams } = useAuth();
+  const { user } = useAuth();
   const { playQueue } = usePlayer();
   const { openCreatePlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
@@ -21,7 +21,8 @@ export default function PublicPlaylists() {
   const fetchPublicPlaylists = async () => {
     if (!user) return;
     try {
-      const response = await fetch(`/ampache/public/rest/index.php?action=getPlaylists&${getAuthParams(user)}`);
+      const auth = getSubsonicAuthParams(user);
+      const response = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await response.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         let allPlaylists = data['subsonic-response'].playlists?.playlist || [];
@@ -64,7 +65,8 @@ export default function PublicPlaylists() {
     setPlayingId(playlist.id);
 
     try {
-      const res = await fetch(getAmpacheUrl(`action=getPlaylist&id=${playlist.id}&${getAuthParams(user)}`));
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=getPlaylist&id=${playlist.id}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         const rawEntries = data['subsonic-response']?.playlist?.entry || [];
@@ -90,8 +92,9 @@ export default function PublicPlaylists() {
     setSavingId(playlist.id);
 
     try {
+      const auth = getSubsonicAuthParams(user);
       // 1. Fetch tracks
-      const resTracks = await fetch(getAmpacheUrl(`action=getPlaylist&id=${playlist.id}&${getAuthParams(user)}`));
+      const resTracks = await fetch(getAmpacheUrl(`action=getPlaylist&id=${playlist.id}&${auth}`));
       const dataTracks = await resTracks.json();
       const rawEntries = dataTracks?.['subsonic-response']?.playlist?.entry || [];
       const tracks = Array.isArray(rawEntries) ? rawEntries : (rawEntries ? [rawEntries] : []);
@@ -103,14 +106,14 @@ export default function PublicPlaylists() {
 
       // 2. Create personal playlist copy
       const copyName = `${playlist.name} (Saved)`;
-      const resCreate = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(copyName)}&${getAuthParams(user)}`));
+      const resCreate = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(copyName)}&${auth}`));
       const dataCreate = await resCreate.json();
       
       if (dataCreate?.['subsonic-response']?.status === 'ok') {
         const newId = dataCreate['subsonic-response']?.playlist?.id;
         if (newId) {
           const songIds = tracks.map(t => t.id).join(',');
-          await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&songIdToAdd=${songIds}&${getAuthParams(user)}`));
+          await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&songIdToAdd=${songIds}&${auth}`));
         }
         showToast(`Saved "${playlist.name}" to My Playlists!`, 'success');
       } else {

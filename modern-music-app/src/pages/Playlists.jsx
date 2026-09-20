@@ -4,17 +4,20 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
+import { getAmpacheUrl, getSubsonicAuthParams } from '../utils/api';
 
 export default function Playlists() {
-  const { user, getAuthParams } = useAuth();
+  const { user } = useAuth();
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const { openCreatePlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
 
   const fetchPlaylists = async () => {
+    if (!user) return;
     try {
-      const response = await fetch(`/ampache/public/rest/index.php?action=getPlaylists&${getAuthParams(user)}`);
+      const auth = getSubsonicAuthParams(user);
+      const response = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await response.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         let allPlaylists = data['subsonic-response'].playlists?.playlist || [];
@@ -24,7 +27,7 @@ export default function Playlists() {
         const userPlaylists = allPlaylists.filter(p => 
           p.owner !== 'System' && 
           !p.id.startsWith('400000') && 
-          (p.owner === user.username || !p.owner)
+          (!p.owner || p.owner === '' || (user?.username && p.owner.toLowerCase() === user.username.toLowerCase()))
         );
         setPlaylists(userPlaylists.slice(0, 9));
       } else {
@@ -53,7 +56,8 @@ export default function Playlists() {
     if (!confirm("Are you sure you want to delete this playlist entirely?")) return;
     
     try {
-      const res = await fetch(`/ampache/public/rest/index.php?action=deletePlaylist&id=${id}&${getAuthParams(user)}`);
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=deletePlaylist&id=${id}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         fetchPlaylists();

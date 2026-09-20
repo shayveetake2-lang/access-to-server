@@ -911,49 +911,74 @@ async function triggerCatalogUpdate() {
     const btns = document.querySelectorAll('#sf-catalog-update-btn, #sf-catalog-update-btn-media');
     const textEls = document.querySelectorAll('#sf-catalog-text');
     const iconEls = document.querySelectorAll('#sf-catalog-icon');
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('active_session_token') || '';
 
-    btns.forEach(b => { b.disabled = true; b.classList.add('opacity-70'); });
-    textEls.forEach(t => { t.textContent = 'Starting scan...'; });
-    iconEls.forEach(i => { i.textContent = '⏳'; });
+    // Set immediate loading state
+    btns.forEach(b => { 
+        b.disabled = true; 
+        b.classList.add('opacity-75', 'cursor-not-allowed', 'animate-pulse'); 
+    });
+    textEls.forEach(t => { t.textContent = 'Scanning mac2 drive...'; });
+    iconEls.forEach(i => { 
+        i.textContent = '⏳'; 
+        i.classList.add('inline-block', 'animate-spin');
+    });
 
     try {
-        const res = await fetch('api/system/update_catalog.php', {
+        const res = await fetch('api/update_catalog.php', {
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({ token: token })
         });
         const data = await res.json();
         
         if (res.ok && data.status === 'success') {
-            textEls.forEach(t => { t.textContent = 'Scanning in background...'; });
+            textEls.forEach(t => { t.textContent = 'Indexing mac2 files...'; });
             if (typeof showActionNotification === 'function') {
-                showActionNotification('success', data.message || 'Catalog scan started.');
+                showActionNotification('success', data.message || 'Catalog scan started on 2011 Mac.');
+            }
+            pollCatalogStatus();
+        } else if (res.status === 429) {
+            textEls.forEach(t => { t.textContent = 'Scan in progress...'; });
+            if (typeof showActionNotification === 'function') {
+                showActionNotification('info', data.message || 'A catalog scan is already running.');
             }
             pollCatalogStatus();
         } else {
-            textEls.forEach(t => { t.textContent = 'Update Music Catalog'; });
-            iconEls.forEach(i => { i.textContent = '🎵'; });
-            btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-70'); });
-            alert(data.message || 'Failed to start catalog update.');
+            resetCatalogButtons();
+            alert(data.message || 'Failed to start catalog update. Ensure you have admin privileges.');
         }
     } catch (err) {
-        textEls.forEach(t => { t.textContent = 'Update Music Catalog'; });
-        iconEls.forEach(i => { i.textContent = '🎵'; });
-        btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-70'); });
+        resetCatalogButtons();
         alert('Network error while requesting catalog update.');
     }
 }
 
+function resetCatalogButtons() {
+    const btns = document.querySelectorAll('#sf-catalog-update-btn, #sf-catalog-update-btn-media');
+    const textEls = document.querySelectorAll('#sf-catalog-text');
+    const iconEls = document.querySelectorAll('#sf-catalog-icon');
+    textEls.forEach(t => { t.textContent = 'Update Music Catalog'; });
+    iconEls.forEach(i => { 
+        i.textContent = '🎵'; 
+        i.classList.remove('animate-spin');
+    });
+    btns.forEach(b => { 
+        b.disabled = false; 
+        b.classList.remove('opacity-75', 'cursor-not-allowed', 'animate-pulse'); 
+    });
+}
+
 function pollCatalogStatus() {
     if (catalogUpdatePollTimer) clearInterval(catalogUpdatePollTimer);
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('jwt_token') || sessionStorage.getItem('active_session_token') || '';
     
     catalogUpdatePollTimer = setInterval(async () => {
         try {
-            const res = await fetch('api/system/update_catalog.php?status=1', {
+            const res = await fetch('api/update_catalog.php?status=1', {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             const data = await res.json();
@@ -961,14 +986,9 @@ function pollCatalogStatus() {
                 if (!data.running) {
                     clearInterval(catalogUpdatePollTimer);
                     catalogUpdatePollTimer = null;
-                    const btns = document.querySelectorAll('#sf-catalog-update-btn, #sf-catalog-update-btn-media');
-                    const textEls = document.querySelectorAll('#sf-catalog-text');
-                    const iconEls = document.querySelectorAll('#sf-catalog-icon');
-                    textEls.forEach(t => { t.textContent = 'Update Music Catalog'; });
-                    iconEls.forEach(i => { i.textContent = '🎵'; });
-                    btns.forEach(b => { b.disabled = false; b.classList.remove('opacity-70'); });
+                    resetCatalogButtons();
                     if (typeof showActionNotification === 'function') {
-                        showActionNotification('success', 'Music catalog update finished successfully!');
+                        showActionNotification('success', 'Music catalog update finished! New tracks indexed from mac2.');
                     }
                 }
             }

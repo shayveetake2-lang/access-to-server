@@ -2,7 +2,7 @@ import { createContext, useState, useEffect, useContext } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { X, Plus, ListMusic, Globe, Lock } from 'lucide-react';
-import { getApiProxyUrl } from '../utils/api';
+import { getApiProxyUrl, getAmpacheUrl, getSubsonicAuthParams } from '../utils/api';
 
 const PlaylistModalContext = createContext();
 
@@ -42,22 +42,24 @@ export function PlaylistModalProvider({ children }) {
     
     setIsCreating(true);
     try {
-      const res = await fetch(`/ampache/public/rest/index.php?action=createPlaylist&name=${encodeURIComponent(createPlaylistName.trim())}&${getAuthParams(user)}`);
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(createPlaylistName.trim())}&${auth}`));
       const data = await res.json();
       if (data?.["subsonic-response"]?.status === "ok") {
         const createdPlaylist = data["subsonic-response"]?.playlist;
         const newId = createdPlaylist?.id;
         if (newId) {
-          // Explicitly set public or private flag based on user selection
+          // Explicitly set public or private flag based on user selection in Subsonic API
+          try {
+            await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&public=${isPublic ? 'true' : 'false'}&${auth}`));
+          } catch (pe) {
+            console.debug("Failed setting playlist visibility via Subsonic:", pe);
+          }
+          // Direct DB persistence via API proxy
           try {
             await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${newId}&public=${isPublic ? 'true' : 'false'}`);
           } catch (pe) {
             console.debug("Proxy visibility notice:", pe);
-          }
-          try {
-            await fetch(`/ampache/public/rest/index.php?action=updatePlaylist&playlistId=${newId}&public=${isPublic ? 'true' : 'false'}&${getAuthParams(user)}`);
-          } catch (pe) {
-            console.debug("Failed setting playlist visibility via Subsonic:", pe);
           }
         }
         setIsCreateOpen(false);
@@ -89,12 +91,17 @@ export function PlaylistModalProvider({ children }) {
     if (!user) return;
     setLoading(true);
     try {
-      const res = await fetch(`/ampache/public/rest/index.php?action=getPlaylists&${getAuthParams(user)}`);
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         let allPlaylists = data['subsonic-response'].playlists?.playlist || [];
         allPlaylists = Array.isArray(allPlaylists) ? allPlaylists : [allPlaylists];
-        const userPlaylists = allPlaylists.filter(p => p.owner !== 'System' && !p.id.startsWith('400000'));
+        const userPlaylists = allPlaylists.filter(p => 
+          p.owner !== 'System' && 
+          !p.id.startsWith('400000') &&
+          (!p.owner || p.owner === '' || p.owner.toLowerCase() === user.username.toLowerCase())
+        );
         setPlaylists(userPlaylists.slice(0, 9));
       }
     } catch (err) {
@@ -107,7 +114,8 @@ export function PlaylistModalProvider({ children }) {
   const addToPlaylist = async (playlistId) => {
     if (!user || !songIdToAdd) return;
     try {
-      const res = await fetch(`/ampache/public/rest/index.php?action=updatePlaylist&playlistId=${playlistId}&songIdToAdd=${songIdToAdd}&${getAuthParams(user)}`);
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${playlistId}&songIdToAdd=${songIdToAdd}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         showToast("Added to playlist!", "success");

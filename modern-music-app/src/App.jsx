@@ -50,6 +50,7 @@ function ProtectedLayout() {
             <Route path="/help" element={<Help />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin" element={<AdminSettings />} />
+            <Route path="/admin/metadata" element={<AdminSettings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
