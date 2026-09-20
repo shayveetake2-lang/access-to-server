@@ -213,12 +213,12 @@
                     </div>
                     <!-- Quick Launch Buttons -->
                     <div class="flex items-center gap-2 shrink-0">
-                        <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-purple-400 transition-all">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                        <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-400 text-xs font-bold shadow-md shadow-amber-500/10 min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-amber-400 transition-all">
+                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
                             Launch Plex ↗
                         </a>
-                        <a href="modern-music-app/dist/" onclick="openAetherAudio(event)" target="_blank" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-purple-400 transition-all shadow-[0_0_12px_rgba(168,85,247,0.3)]">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                        <a href="modern-music-app/dist/" onclick="openAetherAudio(event)" target="_blank" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-400 text-xs font-bold shadow-md shadow-purple-500/10 min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-purple-400 transition-all shadow-[0_0_12px_rgba(168,85,247,0.2)]">
+                            <svg class="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
                             Launch Aether Audio ↗
                         </a>
                         <button onclick="switchMediaTab('zerotier')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold border border-slate-700 hover:border-slate-600 min-h-[44px] inline-flex items-center gap-1.5 focus:ring-2 focus:ring-slate-500 transition-all">
@@ -236,7 +236,7 @@
                             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                         </span>
                         <div class="text-xs text-slate-300">
-                            <strong class="text-white">ZeroTier Required for Remote Access:</strong> To watch Plex or stream Ampache music outside local Wi-Fi, join our private <span class="font-semibold text-emerald-400">ZeroTier Virtual LAN</span> (IP: <code class="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono font-semibold">10.247.192.231</code>).
+                            <strong class="text-white">ZeroTier Required ONLY for Plex:</strong> ZeroTier is <strong class="text-amber-300">strictly for remote Plex streaming</strong>. ZeroTier is <strong class="text-emerald-400">NOT required for music streaming</strong> (Aether Audio streams directly via standard HTTP).
                         </div>
                     </div>
                     <button onclick="switchMediaTab('zerotier')" class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
@@ -285,8 +285,8 @@
                     <div class="p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
                                 </div>
                                 <div>
                                     <h3 class="text-sm font-bold text-slate-900 dark:text-white">Plex Media Server</h3>
@@ -300,7 +300,7 @@
                         <!-- Quick stats row -->
                         <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800/60 grid grid-cols-3 gap-4">
                             <div class="text-center">
-                                <div class="text-lg font-bold font-mono text-purple-400">32400</div>
+                                <div class="text-lg font-bold font-mono text-amber-400">32400</div>
                                 <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Port</div>
                             </div>
                             <div class="text-center">
@@ -314,9 +314,9 @@
                         </div>
 
                         <div class="mt-4 flex flex-wrap items-center gap-2.5">
-                            <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-purple-400 transition-all">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                Open Plex Web App
+                            <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-amber-500/40 hover:border-amber-400 text-xs font-bold shadow-md shadow-amber-500/10 min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-amber-400 transition-all">
+                                <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                Open Plex Web App ↗
                             </a>
                             <button onclick="switchMediaTab('zerotier')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-300 dark:border-slate-700 min-h-[44px] inline-flex items-center justify-center gap-2 transition-all">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
@@ -457,8 +457,8 @@
                                 <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Port (Apache)</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-lg font-bold font-mono text-cyan-400">Wi-Fi / ZeroTier</div>
-                                <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">Access Mode</div>
+                                <div class="text-lg font-bold font-mono text-emerald-400">Direct Web</div>
+                                <div class="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">ZeroTier Not Required</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-lg font-bold font-mono text-emerald-400">Active</div>
@@ -467,9 +467,9 @@
                         </div>
 
                         <div class="mt-4 flex flex-wrap items-center gap-2.5">
-                            <a href="modern-music-app/dist/" onclick="openAetherAudio(event)" target="_blank" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-purple-400 transition-all shadow-[0_0_15px_rgba(168,85,247,0.35)]">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                Open Aether Audio
+                            <a href="modern-music-app/dist/" onclick="openAetherAudio(event)" target="_blank" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 hover:text-white border border-purple-500/40 hover:border-purple-400 text-xs font-bold shadow-md shadow-purple-500/15 min-h-[44px] inline-flex items-center justify-center gap-2 focus:ring-2 focus:ring-purple-400 transition-all shadow-[0_0_15px_rgba(168,85,247,0.25)]">
+                                <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Open Aether Audio ↗
                             </a>
                             <a href="ampache/public/login.php" onclick="openAmpacheLogin(event)" target="_blank" class="auth-admin-nav hidden w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 hover:text-white text-xs font-bold border border-purple-500/30 min-h-[44px] inline-flex items-center justify-center gap-2 transition-all" title="Legacy administrative backend for catalog indexing & system settings">
                                 <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -478,10 +478,6 @@
                             <button id="sf-catalog-update-btn-media" onclick="triggerCatalogUpdate()" class="auth-admin-nav hidden w-full sm:w-auto px-4 py-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 hover:text-white text-xs font-bold border border-purple-500/30 min-h-[44px] inline-flex items-center justify-center gap-2 transition-all" title="Scan mounted music folder and update Ampache catalog index">
                                 <span>🎵</span>
                                 <span>Update Music Catalog</span>
-                            </button>
-                            <button onclick="switchMediaTab('zerotier')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-300 dark:border-slate-700 min-h-[44px] inline-flex items-center justify-center gap-2 transition-all">
-                                <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                ZeroTier Setup Guide →
                             </button>
                         </div>
                     </div>
@@ -507,32 +503,28 @@
                             <div class="accordion-inner">
                                 <div class="px-6 pb-6 pt-1 space-y-5">
 
-                                    <!-- ZeroTier Prerequisite Notice Box -->
-                                    <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-                                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <!-- Music Streaming Direct Access Notice Box -->
+                                    <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
                                         </div>
                                         <div class="flex-1">
-                                            <h4 class="text-xs font-bold text-amber-300 dark:text-amber-400 mb-1 flex items-center gap-2">
-                                                Remote Access Notice: ZeroTier Needed ONLY Away from Home Wi-Fi
-                                                <span class="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-mono font-bold">REMOTE ONLY</span>
+                                            <h4 class="text-xs font-bold text-emerald-300 dark:text-emerald-400 mb-1 flex items-center gap-2">
+                                                ZeroTier is NOT required to stream from the Music Front-End
+                                                <span class="px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 text-[10px] font-mono font-bold">DIRECT STREAMING</span>
                                             </h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed mb-2.5">
-                                                The Apache server listens on internal port 8888. When connected directly to your <strong class="text-white">local home Wi-Fi</strong>, you can open and stream from Aether Audio immediately without ZeroTier! When connecting remotely on mobile data or public Wi-Fi, your device must be connected to our private <strong class="text-white">ZeroTier Virtual LAN</strong> to reach <code class="font-mono text-cyan-400 text-[11px]">http://10.247.192.231:8888/</code>.
+                                            <p class="text-xs text-slate-400 leading-relaxed">
+                                                <strong class="text-white">ZeroTier is NOT required to stream from the Music Front-End.</strong> You do NOT need ZeroTier to listen to music or use the Aether Audio web player. Aether Audio streams directly via the Apache web server. ZeroTier is strictly and exclusively required only for Plex movie &amp; TV streaming.
                                             </p>
-                                            <button onclick="switchMediaTab('zerotier')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-sm">
-                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                                Open ZeroTier Setup &amp; Downloads →
-                                            </button>
                                         </div>
                                     </div>
 
                                     <!-- Step 1 -->
                                     <div class="flex gap-4">
-                                        <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
+                                        <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
                                         <div>
-                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Check Your Network Connection</h4>
-                                            <p class="text-xs text-slate-400 leading-relaxed">If you are on local home Wi-Fi, no setup is required! If you are away from home, launch ZeroTier on your device and verify it shows <code class="font-mono text-emerald-400 text-[11px]">OK</code>. This connects you to the server's private <code class="font-mono text-cyan-400 text-[11px]">10.247.192.x</code> network.</p>
+                                            <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Direct Web Access (ZeroTier Not Required)</h4>
+                                            <p class="text-xs text-slate-400 leading-relaxed">ZeroTier is NOT required for music streaming! Simply open Aether Audio in any web browser on your phone, tablet, or computer.</p>
                                         </div>
                                     </div>
 
@@ -592,8 +584,8 @@
                                             <span class="text-xs font-bold text-amber-400">Troubleshooting</span>
                                         </div>
                                         <ul class="space-y-1.5 text-xs text-slate-400 leading-relaxed">
-                                            <li class="flex gap-2"><span class="text-amber-400 shrink-0">›</span> <span><strong class="text-amber-300">Player won't load from remote network?</strong> Ensure ZeroTier is running on your device and shows <code class="font-mono text-emerald-400 text-[11px]">OK</code>. Without ZeroTier, Apache port 8888 is not accessible from external cellular/Wi-Fi networks.</span></li>
-                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Player won't load locally?</strong> Confirm Apache/MAMP is active on the server via the ServerFlow Dashboard.</span></li>
+                                            <li class="flex gap-2"><span class="text-emerald-400 shrink-0">›</span> <span><strong class="text-slate-300">Network connection:</strong> Remember that ZeroTier is NOT required to stream from the Music Front-End (ZeroTier is strictly for Plex). Confirm Apache/MAMP is active on the server via the ServerFlow Dashboard.</span></li>
+                                            <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Player won't load?</strong> Confirm Apache/MAMP is active on the server via the ServerFlow Dashboard.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Forgot your password?</strong> The Server Administrator can reset your password or update your privileges directly from the Aether Audio Admin Panel.</span></li>
                                             <li class="flex gap-2"><span class="text-slate-600 dark:text-slate-500 shrink-0">›</span> <span><strong class="text-slate-300">Missing newly added music?</strong> The server admin can trigger a music catalog index update from the Music Admin Portal.</span></li>
                                         </ul>
@@ -846,51 +838,29 @@
 
                             <!-- Step 5 -->
                             <div class="flex gap-4">
-                                <div class="w-8 h-8 rounded-full bg-purple-500/15 text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">5</div>
+                                <div class="w-8 h-8 rounded-full bg-amber-500/15 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm">5</div>
                                 <div class="flex-1">
-                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Launch Plex &amp; Ampache Music Frontend</h4>
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white mb-1">Launch Plex Media Server</h4>
                                     <p class="text-xs text-slate-400 leading-relaxed mb-3">
-                                        You are ready to stream! Open the services directly:
+                                        You are ready to stream Plex movies and TV shows! <span class="text-emerald-400 font-medium">Remember: ZeroTier is strictly required ONLY for Plex. Music from Aether Audio streams directly without ZeroTier.</span>
                                     </p>
 
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div class="max-w-md">
                                         <!-- Plex Card -->
-                                        <div class="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/25 space-y-2">
+                                        <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-2">
                                             <div class="flex items-center gap-2">
-                                                <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                                                <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
                                                 <span class="text-xs font-bold text-white">Movie Portal (Plex)</span>
                                             </div>
                                             <p class="text-[11px] text-slate-400 leading-relaxed">
                                                 Open Plex Web App or direct internal port. Also works on the official Plex app on iOS &amp; Android.
                                             </p>
                                             <div class="pt-1 flex flex-wrap gap-2">
-                                                <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold inline-flex items-center gap-1 transition-all">
+                                                <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-400 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm">
                                                     Open Plex Web App ↗
                                                 </a>
                                                 <button onclick="copyToClipboard('http://10.247.192.231:32400/web', this, 'Copied Link!')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-all">
                                                     Direct IP Link
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <!-- Aether Audio Card -->
-                                        <div class="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/25 space-y-2">
-                                            <div class="flex items-center gap-2">
-                                                <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
-                                                <span class="text-xs font-bold text-white">Music Portal (Aether Audio)</span>
-                                            </div>
-                                            <p class="text-[11px] text-slate-400 leading-relaxed">
-                                                Stream audio from Apache port 8888 with gapless playback in your browser or with Subsonic mobile apps (Symfonium/DSub).
-                                            </p>
-                                            <div class="pt-1 flex flex-wrap gap-2">
-                                                <a href="modern-music-app/dist/" onclick="openAetherAudio(event)" target="_blank" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold inline-flex items-center gap-1 transition-all shadow-[0_0_10px_rgba(168,85,247,0.3)]">
-                                                    Open Aether Audio ↗
-                                                </a>
-                                                <button onclick="copyToClipboard('http://10.247.192.231:8888/access-to-server/modern-music-app/dist/', this, 'Copied Player URL!')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-all">
-                                                    Copy Web URL
-                                                </button>
-                                                <button onclick="copyToClipboard('http://10.247.192.231:8888/ampache/public/', this, 'Copied Subsonic URL!')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-all" title="Subsonic server URL for Symfonium/DSub">
-                                                    Subsonic App URL
                                                 </button>
                                             </div>
                                         </div>
@@ -932,7 +902,7 @@
                                             <span>📱</span> How do I stream on my phone or tablet when away from home?
                                         </h5>
                                         <p>
-                                            Whenever you leave your home Wi-Fi and want to watch Plex or listen to music, simply open the <strong>ZeroTier One app</strong> and flip the toggle switch to <strong>ON</strong>. Once the VPN key icon appears in your device status bar, open the Plex app or Ampache in Safari/Chrome.
+                                            Whenever you leave your home Wi-Fi and want to watch <strong>Plex movies &amp; TV</strong>, simply open the <strong>ZeroTier One app</strong> and flip the toggle switch to <strong>ON</strong>. Once the VPN key icon appears in your device status bar, open the Plex app. <br><span class="text-emerald-400 font-semibold mt-1 inline-block">Note: ZeroTier is NOT required at all for music</span> — you can stream music directly from the Aether Audio web player anytime without ZeroTier.
                                         </p>
                                     </div>
 
@@ -951,16 +921,16 @@
                                         </h5>
                                         <p>
                                             <strong class="text-amber-300">ACCESS_DENIED</strong>: You have successfully reached the server's network, but the administrator hasn't checked the "Authorize" box yet. Send your 10-digit Node ID to the admin.<br>
-                                            <strong class="text-rose-300">NOT_FOUND</strong>: Check the 16-digit Network ID for typing errors.
+                                             <strong class="text-rose-300">NOT_FOUND</strong>: Check the 16-digit Network ID for typing errors.
                                         </p>
                                     </div>
 
                                     <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
                                         <h5 class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                            <span>🎶</span> Can I use dedicated third-party music streaming apps?
+                                            <span>🎶</span> Do I need ZeroTier for music streaming or dedicated music apps?
                                         </h5>
                                         <p>
-                                            Yes! Ampache includes built-in Subsonic API compatibility. With ZeroTier active on your device, download apps like <strong class="text-white">Symfonium</strong> (Android), <strong class="text-white">Ultrasonic</strong>, or <strong class="text-white">DSub</strong> and enter server URL <code class="font-mono text-cyan-400">http://10.247.192.231:8888/ampache/public/</code> with your Ampache username and password.
+                                            <strong class="text-emerald-400 font-semibold">No, ZeroTier is NOT needed for music streaming.</strong> The Aether Audio web player streams music directly in your browser. For Subsonic-compatible mobile apps (Symfonium, Ultrasonic, DSub), connect to your server's music endpoint URL without needing ZeroTier active. ZeroTier is strictly reserved for Plex video streaming.
                                         </p>
                                     </div>
                                 </div>
@@ -1018,8 +988,8 @@
             <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
             <div id="admin-modal-login-view" class="space-y-4">
                 <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Admin Login</h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Authenticate to manage server resources</p>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Account Sign In</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Sign in to access your ServerFlow account and features</p>
                 </div>
                 <div id="admin-login-error" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium"></div>
                 <div id="admin-login-success" class="hidden p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium"></div>

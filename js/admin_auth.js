@@ -38,15 +38,11 @@ window.fetch = async function(...args) {
 
     try {
         const response = await _sfOriginalFetch.call(this, resource, config);
-        const urlStr = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : '');
-        const isAuthEndpoint = urlStr.includes('api/auth/login.php') || urlStr.includes('api/auth/register.php');
-        if (response.status === 401 && !currentAdminState.logged_in && !isAuthEndpoint) {
-            openAdminModal();
-            const errBanner = document.getElementById('admin-login-error');
-            if (errBanner) {
-                errBanner.innerText = '🔒 Session expired or authentication required. Please sign in.';
-                errBanner.classList.remove('hidden');
-            }
+        // If a 401 occurs on background requests, silently reset state without popping up the login modal
+        if (response.status === 401 && currentAdminState.logged_in) {
+            currentAdminState.logged_in = false;
+            currentAdminState.user = null;
+            updateAdminUI(false, null, 'guest');
         }
         return response;
     } catch (err) {

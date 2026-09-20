@@ -3,12 +3,50 @@
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 
-$usbMountPath = '/Volumes/Music';
+function getUsbMountPaths() {
+    $detectedUsbVolumes = [];
+    $currentUser = get_current_user();
+    $systemExcluded = array_filter(['Macintosh HD', 'Macintosh', 'Recovery', 'htdocs', 'Music', 'Movies', 'Movie', $currentUser, 'akshayveerasamy']);
+
+    if (is_dir('/Volumes')) {
+        $volumes = @scandir('/Volumes');
+        if (is_array($volumes)) {
+            foreach ($volumes as $vol) {
+                if ($vol === '.' || $vol === '..' || strpos($vol, '.') === 0) continue;
+                if (in_array($vol, $systemExcluded, true)) continue;
+                $fullPath = '/Volumes/' . $vol;
+                if (is_dir($fullPath)) {
+                    if (is_link($fullPath) && realpath($fullPath) === '/') continue;
+                    $detectedUsbVolumes[] = [
+                        'label' => $vol,
+                        'path'  => $fullPath
+                    ];
+                }
+            }
+        }
+    }
+
+    $port1Path = is_dir('/Volumes/USBDrive') ? '/Volumes/USBDrive' : null;
+    $port2Path = is_dir('/Volumes/USBDrive 1') ? '/Volumes/USBDrive 1' : (is_dir('/Volumes/USBDrive2') ? '/Volumes/USBDrive2' : null);
+
+    foreach ($detectedUsbVolumes as $vol) {
+        if ($port1Path && $port1Path === $vol['path']) continue;
+        if ($port2Path && $port2Path === $vol['path']) continue;
+
+        if (!$port1Path) {
+            $port1Path = $vol['path'];
+        } elseif (!$port2Path) {
+            $port2Path = $vol['path'];
+        }
+    }
+
+    return [
+        1 => $port1Path ?: '/Volumes/USBDrive',
+        2 => $port2Path ?: '/Volumes/USBDrive 1'
+    ];
+}
 
 if (!function_exists('formatBytes')) {
-    /**
-     * Format bytes to human-readable format
-     */
     function formatBytes($bytes, $precision = 2) {
         if ($bytes <= 0) return '0 B';
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -20,25 +58,21 @@ if (!function_exists('formatBytes')) {
     }
 }
 
-/**
- * Retrieve storage capacity and status of the USB drive
- */
 function getUsbStorageStatus($mountPath) {
-    // Check if the USB drive directory exists and is accessible
     if (!is_dir($mountPath)) {
         return [
-            'status'         => 'warning',
-            'connected'      => false,
-            'is_full'        => false,
-            'message'        => 'USB Drive is currently unplugged or unmounted at ' . $mountPath,
-            'mount_path'     => $mountPath,
-            'total_bytes'    => 0,
-            'free_bytes'     => 0,
-            'used_bytes'     => 0,
-            'percent_used'   => 0,
-            'total_formatted'=> '0 B',
-            'free_formatted' => '0 B',
-            'used_formatted' => '0 B',
+            'status'          => 'warning',
+            'connected'       => false,
+            'is_full'         => false,
+            'message'         => 'USB Drive is currently unplugged or unmounted at ' . $mountPath,
+            'mount_path'      => $mountPath,
+            'total_bytes'     => 0,
+            'free_bytes'      => 0,
+            'used_bytes'      => 0,
+            'percent_used'    => 0,
+            'total_formatted' => '0 B',
+            'free_formatted'  => '0 B',
+            'used_formatted'  => '0 B',
         ];
     }
 
@@ -47,51 +81,63 @@ function getUsbStorageStatus($mountPath) {
 
     if ($freeBytes === false || $totalBytes === false || $totalBytes <= 0) {
         return [
-            'status'         => 'error',
-            'connected'      => true,
-            'is_full'        => false,
-            'message'        => 'Unable to read disk capacity from ' . $mountPath,
-            'mount_path'     => $mountPath,
-            'total_bytes'    => 0,
-            'free_bytes'     => 0,
-            'used_bytes'     => 0,
-            'percent_used'   => 0,
-            'total_formatted'=> 'Unknown',
-            'free_formatted' => 'Unknown',
-            'used_formatted' => 'Unknown',
+            'status'          => 'error',
+            'connected'       => true,
+            'is_full'         => false,
+            'message'         => 'Unable to read disk capacity from ' . $mountPath,
+            'mount_path'      => $mountPath,
+            'total_bytes'     => 0,
+            'free_bytes'      => 0,
+            'used_bytes'      => 0,
+            'percent_used'    => 0,
+            'total_formatted' => 'Unknown',
+            'free_formatted'  => 'Unknown',
+            'used_formatted'  => 'Unknown',
         ];
     }
 
-    $usedBytes   = $totalBytes - $freeBytes;
+    $usedBytes   = max(0, $totalBytes - $freeBytes);
     $percentUsed = round(($usedBytes / $totalBytes) * 100, 1);
-    // Consider drive full if less than 5MB free
     $isFull      = ($freeBytes < (5 * 1024 * 1024));
 
     return [
-        'status'         => $isFull ? 'warning' : 'success',
-        'connected'      => true,
-        'is_full'        => $isFull,
-        'message'        => $isFull ? 'Warning: USB Drive is full!' : 'USB Drive connected and ready.',
-        'mount_path'     => $mountPath,
-        'total_bytes'    => $totalBytes,
-        'free_bytes'     => $freeBytes,
-        'used_bytes'     => $usedBytes,
-        'percent_used'   => $percentUsed,
+        'status'          => $isFull ? 'warning' : 'success',
+        'connected'       => true,
+        'is_full'         => $isFull,
+        'message'         => $isFull ? 'Warning: USB Drive is full!' : 'USB Drive connected and ready.',
+        'mount_path'      => $mountPath,
+        'total_bytes'     => $totalBytes,
+        'free_bytes'      => $freeBytes,
+        'used_bytes'      => $usedBytes,
+        'percent_used'    => $percentUsed,
         'total_gb'        => round($totalBytes / (1024 * 1024 * 1024), 2),
         'free_gb'         => round($freeBytes / (1024 * 1024 * 1024), 2),
         'used_gb'         => round($usedBytes / (1024 * 1024 * 1024), 2),
-        'total_formatted'=> formatBytes($totalBytes),
-        'free_formatted' => formatBytes($freeBytes),
-        'used_formatted' => formatBytes($usedBytes),
+        'total_formatted' => formatBytes($totalBytes),
+        'free_formatted'  => formatBytes($freeBytes),
+        'used_formatted'  => formatBytes($usedBytes),
     ];
 }
 
 $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-// 1. GET: Return USB Storage Capacity and Connection Status
+// 1. GET: Return USB Storage Capacity and Connection Status for all ports
 if ($requestMethod === 'GET') {
-    $status = getUsbStorageStatus($usbMountPath);
-    echo json_encode($status);
+    $ports = getUsbMountPaths();
+    $port1Status = getUsbStorageStatus($ports[1]);
+    $port1Status['port_number'] = 1;
+    $port2Status = getUsbStorageStatus($ports[2]);
+    $port2Status['port_number'] = 2;
+
+    $requestedPort = isset($_GET['port']) && (int)$_GET['port'] === 2 ? 2 : 1;
+    $primaryStatus = $requestedPort === 2 ? $port2Status : $port1Status;
+
+    // Response contains primary requested port data, plus full dual-port breakdown
+    $response = $primaryStatus;
+    $response['port_1'] = $port1Status;
+    $response['port_2'] = $port2Status;
+    $response['ports_connected'] = ($port1Status['connected'] ? 1 : 0) + ($port2Status['connected'] ? 1 : 0);
+    echo json_encode($response);
     exit;
 }
 
@@ -100,6 +146,16 @@ if ($requestMethod === 'POST') {
     require_once __DIR__ . '/api/auth/require_admin.php';
     requireAdmin();
 
+    $ports = getUsbMountPaths();
+    $targetPort = isset($_POST['port']) && (int)$_POST['port'] === 2 ? 2 : 1;
+    // If targeted port is offline but alternate is mounted, use the mounted one
+    if (!is_dir($ports[$targetPort])) {
+        $altPort = $targetPort === 1 ? 2 : 1;
+        if (is_dir($ports[$altPort])) {
+            $targetPort = $altPort;
+        }
+    }
+    $usbMountPath = $ports[$targetPort];
     $storage = getUsbStorageStatus($usbMountPath);
 
     // Verify drive is connected

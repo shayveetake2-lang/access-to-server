@@ -7,8 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 
-require_once __DIR__ . '/../auth/require_auth.php';
-requireAuth();
+// Public storage telemetry (read-only)
 
 function formatBytes($bytes, $precision = 2) {
     if ($bytes <= 0) return '0 B';

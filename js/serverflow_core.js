@@ -1,6 +1,6 @@
 /**
  * js/serverflow_core.js — ServerFlow Unified UI Core Module
- * Provides unified theme management, navigation state, notification bell,
+ * Provides unified theme management, navigation state,
  * user profile dropdown, and interactive ServerFlow Help AI Chatbot.
  */
 
@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTimestampDisplays();
     initThemeSegmentedControl();
     initChatWidgetListeners();
-    initNotificationDropdown();
     initProfileDropdown();
     initGlobalKeyboardListeners();
 });
@@ -49,10 +48,8 @@ function closeMobileSidebar() {
 function initGlobalKeyboardListeners() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            const notifMenu = document.getElementById('sf-notification-menu');
             const profileMenu = document.getElementById('sf-profile-menu');
             const chatWidget = document.getElementById('sf-chat-widget');
-            if (notifMenu && !notifMenu.classList.contains('hidden')) notifMenu.classList.add('hidden');
             if (profileMenu && !profileMenu.classList.contains('hidden')) profileMenu.classList.add('hidden');
             if (chatWidget && !chatWidget.classList.contains('hidden')) toggleServerFlowChat();
             closeMobileSidebar();
@@ -100,26 +97,6 @@ function updateThemeUI(theme) {
     }
 }
 
-// Notification Bell Dropdown
-function initNotificationDropdown() {
-    const bellBtn = document.getElementById('sf-notification-btn');
-    const notifMenu = document.getElementById('sf-notification-menu');
-    if (!bellBtn || !notifMenu) return;
-
-    bellBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        notifMenu.classList.toggle('hidden');
-        const profileMenu = document.getElementById('sf-profile-menu');
-        if (profileMenu) profileMenu.classList.add('hidden');
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!notifMenu.contains(e.target) && e.target !== bellBtn) {
-            notifMenu.classList.add('hidden');
-        }
-    });
-}
-
 // User Profile Dropdown
 function initProfileDropdown() {
     const profileBtn = document.getElementById('sf-profile-btn');
@@ -129,8 +106,6 @@ function initProfileDropdown() {
     profileBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         profileMenu.classList.toggle('hidden');
-        const notifMenu = document.getElementById('sf-notification-menu');
-        if (notifMenu) notifMenu.classList.add('hidden');
     });
 
     document.addEventListener('click', (e) => {

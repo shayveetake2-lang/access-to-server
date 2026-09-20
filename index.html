@@ -237,21 +237,6 @@
                         </button>
                     </div>
 
-                    <!-- Notification Bell Button -->
-                    <div class="relative">
-                        <button id="sf-notification-btn" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-cyan-400 transition-all relative">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                            <span class="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2 ring-2 ring-slate-900"></span>
-                        </button>
-
-                        <div id="sf-notification-menu" class="hidden absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 z-50">
-                            <div class="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2 border-b border-slate-200 dark:border-slate-800 pb-2">Notifications</div>
-                            <div class="space-y-2 text-xs">
-                                <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">Deployment finished for portfolio-site</div>
-                                <div class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">Plex scan completed successfully</div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Admin Quick Action: Music Catalog Update -->
                     <button id="sf-catalog-update-btn" onclick="triggerCatalogUpdate()" class="auth-admin-nav hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-300 text-xs font-semibold shadow-sm transition-all min-h-[36px]" title="Scan mounted music folder and update Ampache catalog index">
@@ -530,7 +515,7 @@
                             </div>
                         </div>
 
-                        <!-- CARD 4: Primary SSD Storage -->
+                        <!-- CARD 4: Primary SSD Storage & Network Nodes -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
                                 <div class="flex items-start justify-between mb-4 gap-2">
@@ -540,7 +525,7 @@
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <span id="srv-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">Checking...</span>
-                                        <button id="btn-refresh-ssd" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0" title="Refresh Storage">
+                                        <button id="btn-refresh-ssd" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0 transition-transform" title="Refresh Storage">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                         </button>
                                     </div>
@@ -563,38 +548,127 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="srv-breakdown-list" class="space-y-1.5 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80"></div>
+                            <div id="srv-breakdown-list" class="space-y-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80"></div>
+                            
+                            <!-- External Storage Nodes (mac2 Music & Movie Drive) -->
+                            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+                                <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>External Storage Nodes</span>
+                                    <span id="net-nodes-count" class="text-cyan-400">0 Online</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                                    <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-sans font-bold text-slate-900 dark:text-white text-[11px] truncate">mac2 (Music)</span>
+                                            <span id="net-mac2-pill" class="px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-slate-800 text-slate-400">○ Offline</span>
+                                        </div>
+                                        <div class="text-[9px] text-slate-400 truncate">/Volumes/Music</div>
+                                        <div class="flex justify-between items-center text-[10px] pt-1 mt-1 border-t border-slate-200/60 dark:border-slate-800/40">
+                                            <span class="text-slate-400">Used: <span id="net-mac2-used" class="text-slate-200">--</span></span>
+                                            <span class="text-slate-400">Free: <span id="net-mac2-free" class="text-emerald-400">--</span></span>
+                                        </div>
+                                    </div>
+                                    <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-sans font-bold text-slate-900 dark:text-white text-[11px] truncate">Movie Storage</span>
+                                            <span id="net-movies-pill" class="px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-slate-800 text-slate-400">○ Offline</span>
+                                        </div>
+                                        <div class="text-[9px] text-slate-400 truncate">/Volumes/Movies</div>
+                                        <div class="flex justify-between items-center text-[10px] pt-1 mt-1 border-t border-slate-200/60 dark:border-slate-800/40">
+                                            <span class="text-slate-400">Used: <span id="net-movies-used" class="text-slate-200">--</span></span>
+                                            <span class="text-slate-400">Free: <span id="net-movies-free" class="text-emerald-400">--</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- CARD 5: USB Drive Storage -->
+                        <!-- CARD 5: Dual USB Port Storage -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
                                 <div class="flex items-center justify-between mb-4 gap-2">
-                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate min-w-0">USB Drive Storage</h3>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate min-w-0 flex items-center gap-1.5">
+                                            <span>Dual USB Port Storage</span>
+                                            <span id="usb-total-badge" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">2 Ports</span>
+                                        </h3>
+                                        <p class="text-[10px] font-mono text-slate-400">MacBook Pro 2011 Hardware Ports</p>
+                                    </div>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <span id="usb-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">--</span>
-                                        <button id="btn-refresh-usb" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0" title="Refresh USB Status">
+                                        <button id="btn-refresh-usb" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0 transition-transform" title="Refresh USB Status">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                         </button>
                                     </div>
                                 </div>
-                                <div id="usb-warning-banner" class="hidden p-3 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-400 font-medium mb-3"></div>
-                                <div class="grid grid-cols-3 gap-2 text-xs font-mono my-2">
-                                    <div><span class="text-slate-400 block text-[10px]">USB USED</span><span id="usb-used-text" class="text-slate-200 font-bold truncate">--</span></div>
-                                    <div><span class="text-slate-400 block text-[10px]">USB FREE</span><span id="usb-free-text" class="text-emerald-400 font-bold truncate">--</span></div>
-                                    <div><span class="text-slate-400 block text-[10px]">USB TOTAL</span><span id="usb-total-text" class="text-slate-200 font-bold truncate">--</span></div>
+                                <div id="usb-warning-banner" class="hidden p-2.5 rounded-xl text-[11px] bg-rose-500/10 border border-rose-500/30 text-rose-400 font-medium mb-3"></div>
+
+                                <!-- Dual Port Visual Cards -->
+                                <div class="space-y-2.5 my-2">
+                                    <!-- USB Port 1 -->
+                                    <div id="usb-port1-card" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 space-y-1.5">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <span class="w-2 h-2 rounded-full bg-slate-600 shrink-0" id="usb1-dot"></span>
+                                                <span class="text-xs font-bold text-slate-900 dark:text-white truncate" id="usb1-title">USB Port 1</span>
+                                            </div>
+                                            <span id="usb1-status-pill" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-slate-800 text-slate-400 shrink-0">○ Empty</span>
+                                        </div>
+                                        <div class="text-[10px] font-mono text-slate-400 truncate" id="usb1-path-text">/Volumes/USBDrive</div>
+                                        <div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                            <div id="usb1-bar-fill" class="h-full bg-cyan-500 rounded-full transition-all duration-500" style="width: 0%;"></div>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-1 text-[11px] font-mono pt-0.5">
+                                            <div><span class="text-slate-400 block text-[9px]">USED</span><span id="usb1-used-text" class="text-slate-700 dark:text-slate-200 font-bold truncate">0 B</span></div>
+                                            <div><span class="text-slate-400 block text-[9px]">FREE</span><span id="usb1-free-text" class="text-emerald-400 font-bold truncate">0 B</span></div>
+                                            <div><span class="text-slate-400 block text-[9px]">TOTAL</span><span id="usb1-total-text" class="text-slate-700 dark:text-slate-200 font-bold truncate">0 B</span></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- USB Port 2 -->
+                                    <div id="usb-port2-card" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 space-y-1.5">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <span class="w-2 h-2 rounded-full bg-slate-600 shrink-0" id="usb2-dot"></span>
+                                                <span class="text-xs font-bold text-slate-900 dark:text-white truncate" id="usb2-title">USB Port 2</span>
+                                            </div>
+                                            <span id="usb2-status-pill" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-slate-800 text-slate-400 shrink-0">○ Empty</span>
+                                        </div>
+                                        <div class="text-[10px] font-mono text-slate-400 truncate" id="usb2-path-text">/Volumes/USBDrive 1</div>
+                                        <div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                            <div id="usb2-bar-fill" class="h-full bg-cyan-500 rounded-full transition-all duration-500" style="width: 0%;"></div>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-1 text-[11px] font-mono pt-0.5">
+                                            <div><span class="text-slate-400 block text-[9px]">USED</span><span id="usb2-used-text" class="text-slate-700 dark:text-slate-200 font-bold truncate">0 B</span></div>
+                                            <div><span class="text-slate-400 block text-[9px]">FREE</span><span id="usb2-free-text" class="text-emerald-400 font-bold truncate">0 B</span></div>
+                                            <div><span class="text-slate-400 block text-[9px]">TOTAL</span><span id="usb2-total-text" class="text-slate-700 dark:text-slate-200 font-bold truncate">0 B</span></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- Hidden elements for backward compatibility -->
+                            <span id="usb-used-text" class="hidden">--</span>
+                            <span id="usb-free-text" class="hidden">--</span>
+                            <span id="usb-total-text" class="hidden">--</span>
+
                             <!-- Drag & Drop File Form (Only visible when logged in) -->
                             <div class="logged-out-prompt text-center py-3 text-xs text-slate-400 mt-2 border-t border-slate-100 dark:border-slate-800/80">
                                 🔒 <button type="button" onclick="openAdminModal(event)" class="admin-login-trigger text-cyan-400 font-semibold hover:underline">Log in</button> to upload files to USB storage.
                             </div>
-                            <form id="usb-upload-form" onsubmit="event.preventDefault(); uploadUsbFile();" class="auth-required-btn space-y-3 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                                <div id="usb-drop-zone" class="p-4 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/40 text-center hover:border-cyan-500 cursor-pointer transition-all">
+                            <form id="usb-upload-form" onsubmit="event.preventDefault(); uploadUsbFile();" class="auth-required-btn space-y-2.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-400 font-medium text-[11px]">Upload Target Port:</span>
+                                    <select id="usb-upload-target-port" class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg px-2 py-1 focus:outline-none">
+                                        <option value="1">USB Port 1</option>
+                                        <option value="2">USB Port 2</option>
+                                    </select>
+                                </div>
+                                <div id="usb-drop-zone" class="p-3 rounded-xl border-2 border-dashed border-slate-700 bg-slate-900/40 text-center hover:border-cyan-500 cursor-pointer transition-all">
                                     <input type="file" id="usb-file-input" aria-label="Upload file to USB storage" onchange="handleUsbFileSelect(this)" class="hidden">
-                                    <label for="usb-file-input" class="cursor-pointer space-y-1 block">
+                                    <label for="usb-file-input" class="cursor-pointer space-y-0.5 block">
                                         <div id="usb-file-name" class="text-xs text-slate-300 font-semibold truncate">Drop files here or browse</div>
-                                        <div class="text-[10px] text-slate-400">Formats: zip, sql, iso (Max 2GB)</div>
+                                        <div class="text-[10px] text-slate-400">Formats: zip, sql, iso, txt, images (Max 2GB)</div>
                                     </label>
                                 </div>
                                 <button id="usb-upload-btn" type="submit" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-md transition-all min-h-[44px] focus:ring-2 focus:ring-cyan-500">Upload to USB</button>
@@ -1305,7 +1379,7 @@
     <script src="js/serverflow_core.js?v=20260910_v3"></script>
     <script src="js/admin_auth.js?v=20260910_v3"></script>
     <script>
-        function switchTab(tabId) {
+        function switchTab(tabId, userInitiated = false) {
             const adminRequiredTabs = ['data', 'activity', 'settings'];
             const authRequiredTabs = ['servers', ...adminRequiredTabs];
 
@@ -1319,11 +1393,13 @@
                     return;
                 }
                 tabId = 'overview';
-                openAdminModal();
-                const errBanner = document.getElementById('admin-login-error');
-                if (errBanner) {
-                    errBanner.innerText = '🔒 Please log in to access this section.';
-                    errBanner.classList.remove('hidden');
+                if (userInitiated) {
+                    openAdminModal();
+                    const errBanner = document.getElementById('admin-login-error');
+                    if (errBanner) {
+                        errBanner.innerText = '🔒 Please log in to access this section.';
+                        errBanner.classList.remove('hidden');
+                    }
                 }
             } else if (adminRequiredTabs.includes(tabId) && currentUserRole !== 'admin') {
                 tabId = 'overview';
@@ -1599,48 +1675,9 @@
             } catch(e){}
         }
         async function loadUsbStatus() {
-            try {
-                const res = await fetch('usb_manager.php?action=status');
-                const data = await res.json();
-                const pill = document.getElementById('usb-status-pill');
-                const banner = document.getElementById('usb-warning-banner');
-                const dropzone = document.getElementById('usb-drop-zone');
-                const uploadBtn = document.getElementById('usb-upload-btn');
-                const usedText = document.getElementById('usb-used-text');
-                const freeText = document.getElementById('usb-free-text');
-                const totalText = document.getElementById('usb-total-text');
-                const isConnected = data && data.connected;
-
-                if (usedText) usedText.textContent = isConnected ? (data.used_formatted || (data.used_gb !== undefined ? data.used_gb + ' GB' : '0 B')) : '0 B (Offline)';
-                if (freeText) freeText.textContent = isConnected ? (data.free_formatted || (data.free_gb !== undefined ? data.free_gb + ' GB' : '0 B')) : '0 B (Offline)';
-                if (totalText) totalText.textContent = isConnected ? (data.total_formatted || (data.total_gb !== undefined ? data.total_gb + ' GB' : '0 B')) : '0 B (Offline)';
-
-                if (pill) {
-                    pill.textContent = isConnected ? '● Connected' : '○ Offline';
-                    pill.className = isConnected 
-                        ? 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
-                }
-                if (banner) {
-                    if (isConnected) {
-                        banner.classList.add('hidden');
-                    } else {
-                        banner.classList.remove('hidden');
-                        banner.textContent = '⚠️ USB storage is currently offline or unplugged. Uploads are disabled until a drive is mounted at /Volumes/USBDrive.';
-                    }
-                }
-                if (dropzone && uploadBtn) {
-                    if (isConnected) {
-                        dropzone.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-                        uploadBtn.disabled = false;
-                        uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    } else {
-                        dropzone.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-                        uploadBtn.disabled = true;
-                        uploadBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                    }
-                }
-            } catch(e){}
+            if (typeof fetchUnifiedStorage === 'function') {
+                return fetchUnifiedStorage();
+            }
         }
         
         async function submitMediaRequest(event) {
@@ -1739,8 +1776,10 @@
                 const fileInput = document.getElementById('usb-file-input');
                 if (!fileInput || !fileInput.files[0]) return alert('Select a file to upload');
                 const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+                const targetPort = document.getElementById('usb-upload-target-port')?.value || '1';
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
+                formData.append('port', targetPort);
                 if (token) formData.append('token', token);
                 try {
                     const res = await fetch('usb_manager.php?action=upload', { 
@@ -1751,7 +1790,9 @@
                     const data = await res.json();
                     if (data && data.status === 'success') {
                         alert(data.message || 'File uploaded successfully to USB storage');
-                        loadUsbStatus();
+                        if (typeof fetchUnifiedStorage === 'function') {
+                            fetchUnifiedStorage();
+                        }
                     } else {
                         alert('Upload failed: ' + ((data && data.message) ? data.message : 'USB drive unavailable'));
                     }
@@ -2282,68 +2323,178 @@
             }
         }
 
-                async function fetchUnifiedStorage() {
+        async function fetchUnifiedStorage() {
+            const btnSsd = document.getElementById('btn-refresh-ssd');
+            const btnUsb = document.getElementById('btn-refresh-usb');
+            const ssdSvg = btnSsd ? btnSsd.querySelector('svg') : null;
+            const usbSvg = btnUsb ? btnUsb.querySelector('svg') : null;
+
+            if (ssdSvg) ssdSvg.classList.add('animate-spin');
+            if (usbSvg) usbSvg.classList.add('animate-spin');
+
             try {
-                const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
-                const res = await fetch('api/system/storage_stats.php', {
-                    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
-                });
+                const res = await fetch('api/drive_monitor.php');
                 const data = await res.json();
                 
-                if (data && data.status === 'success') {
-                    // Update SSD
-                    const ssd = data.ssd;
-                    const percent = Math.round(ssd.percent_used || 0);
-                    const text = document.getElementById('srv-percent-text');
-                    if (text) text.textContent = percent + '%';
-                    const donut = document.getElementById('srv-donut-segment');
-                    if (donut) donut.setAttribute('stroke-dasharray', `${percent}, 100`);
-                    const used = document.getElementById('srv-used-text');
-                    if (used) used.textContent = ssd.used_formatted;
-                    const free = document.getElementById('srv-free-text');
-                    if (free) free.textContent = ssd.free_formatted;
-                    const total = document.getElementById('srv-total-text');
-                    if (total) total.textContent = ssd.total_formatted;
-                    const path = document.getElementById('srv-disk-path');
-                    if (path) path.textContent = ssd.path || '/';
-                    const pill = document.getElementById('srv-status-pill');
-                    if (pill) {
-                        pill.textContent = '● Online';
-                        pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                if (data && data.status === 'success' && data.drives) {
+                    const drives = data.drives;
+                    const summary = data.summary || {};
+
+                    // 1. Primary Internal SSD
+                    const ssd = drives.ssd;
+                    if (ssd) {
+                        const percent = Math.round(ssd.percent_used || 0);
+                        const text = document.getElementById('srv-percent-text');
+                        if (text) text.textContent = percent + '%';
+                        const donut = document.getElementById('srv-donut-segment');
+                        if (donut) donut.setAttribute('stroke-dasharray', `${percent}, 100`);
+                        const used = document.getElementById('srv-used-text');
+                        if (used) used.textContent = ssd.used_formatted;
+                        const free = document.getElementById('srv-free-text');
+                        if (free) free.textContent = ssd.free_formatted;
+                        const total = document.getElementById('srv-total-text');
+                        if (total) total.textContent = ssd.total_formatted;
+                        const path = document.getElementById('srv-disk-path');
+                        if (path) path.textContent = ssd.path || '/';
+                        const pill = document.getElementById('srv-status-pill');
+                        if (pill) {
+                            pill.textContent = ssd.mounted ? '● Online' : '○ Offline';
+                            pill.className = ssd.mounted
+                                ? 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                        }
                     }
-                    
-                    // Update USB
-                    const usb = data.usb;
-                    const isConnected = usb.connected;
-                    const usbUsedText = document.getElementById('usb-used-text');
-                    if (usbUsedText) usbUsedText.textContent = isConnected ? usb.used_formatted : '0 B (Offline)';
-                    const usbFreeText = document.getElementById('usb-free-text');
-                    if (usbFreeText) usbFreeText.textContent = isConnected ? usb.free_formatted : '0 B (Offline)';
-                    const usbTotalText = document.getElementById('usb-total-text');
-                    if (usbTotalText) usbTotalText.textContent = isConnected ? usb.total_formatted : '0 B (Offline)';
-                    
+
+                    // 2. External Network Storage Nodes
+                    const nodesCount = document.getElementById('net-nodes-count');
+                    if (nodesCount) {
+                        nodesCount.textContent = (summary.network_nodes_online || 0) + ' Online';
+                    }
+
+                    const mac2 = drives.mac2;
+                    if (mac2) {
+                        const mac2Pill = document.getElementById('net-mac2-pill');
+                        if (mac2Pill) {
+                            mac2Pill.textContent = mac2.mounted ? '● Connected' : '○ Offline';
+                            mac2Pill.className = mac2.mounted
+                                ? 'px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-slate-800 text-slate-400';
+                        }
+                        const mac2Used = document.getElementById('net-mac2-used');
+                        if (mac2Used) mac2Used.textContent = mac2.mounted ? mac2.used_formatted : '--';
+                        const mac2Free = document.getElementById('net-mac2-free');
+                        if (mac2Free) mac2Free.textContent = mac2.mounted ? mac2.free_formatted : '--';
+                    }
+
+                    const movies = drives.movies;
+                    if (movies) {
+                        const moviesPill = document.getElementById('net-movies-pill');
+                        if (moviesPill) {
+                            moviesPill.textContent = movies.mounted ? '● Connected' : '○ Offline';
+                            moviesPill.className = movies.mounted
+                                ? 'px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-slate-800 text-slate-400';
+                        }
+                        const moviesUsed = document.getElementById('net-movies-used');
+                        if (moviesUsed) moviesUsed.textContent = movies.mounted ? movies.used_formatted : '--';
+                        const moviesFree = document.getElementById('net-movies-free');
+                        if (moviesFree) moviesFree.textContent = movies.mounted ? movies.free_formatted : '--';
+                    }
+
+                    // 3. Dual-Port USB Storage
+                    const usb1 = drives.usb_port1;
+                    const usb2 = drives.usb_port2;
+                    const usbConnectedCount = summary.usb_connected_count || 0;
+
+                    // Port 1 UI
+                    if (usb1) {
+                        const title1 = document.getElementById('usb1-title');
+                        if (title1) title1.textContent = usb1.mounted && usb1.volume_label ? `Port 1 (${usb1.volume_label})` : 'USB Port 1';
+                        const dot1 = document.getElementById('usb1-dot');
+                        if (dot1) dot1.className = usb1.mounted ? 'w-2 h-2 rounded-full bg-emerald-400 shrink-0' : 'w-2 h-2 rounded-full bg-slate-600 shrink-0';
+                        const pill1 = document.getElementById('usb1-status-pill');
+                        if (pill1) {
+                            pill1.textContent = usb1.mounted ? `● ${usb1.volume_label || 'Mounted'}` : '○ Empty';
+                            pill1.className = usb1.mounted
+                                ? 'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0'
+                                : 'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-slate-800 text-slate-400 shrink-0';
+                        }
+                        const path1 = document.getElementById('usb1-path-text');
+                        if (path1) path1.textContent = usb1.path;
+                        const bar1 = document.getElementById('usb1-bar-fill');
+                        if (bar1) bar1.style.width = usb1.mounted ? `${Math.min(100, usb1.percent_used || 0)}%` : '0%';
+                        const used1 = document.getElementById('usb1-used-text');
+                        if (used1) used1.textContent = usb1.mounted ? usb1.used_formatted : '0 B';
+                        const free1 = document.getElementById('usb1-free-text');
+                        if (free1) free1.textContent = usb1.mounted ? usb1.free_formatted : '0 B';
+                        const total1 = document.getElementById('usb1-total-text');
+                        if (total1) total1.textContent = usb1.mounted ? usb1.total_formatted : '0 B';
+                    }
+
+                    // Port 2 UI
+                    if (usb2) {
+                        const title2 = document.getElementById('usb2-title');
+                        if (title2) title2.textContent = usb2.mounted && usb2.volume_label ? `Port 2 (${usb2.volume_label})` : 'USB Port 2';
+                        const dot2 = document.getElementById('usb2-dot');
+                        if (dot2) dot2.className = usb2.mounted ? 'w-2 h-2 rounded-full bg-emerald-400 shrink-0' : 'w-2 h-2 rounded-full bg-slate-600 shrink-0';
+                        const pill2 = document.getElementById('usb2-status-pill');
+                        if (pill2) {
+                            pill2.textContent = usb2.mounted ? `● ${usb2.volume_label || 'Mounted'}` : '○ Empty';
+                            pill2.className = usb2.mounted
+                                ? 'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0'
+                                : 'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-slate-800 text-slate-400 shrink-0';
+                        }
+                        const path2 = document.getElementById('usb2-path-text');
+                        if (path2) path2.textContent = usb2.path;
+                        const bar2 = document.getElementById('usb2-bar-fill');
+                        if (bar2) bar2.style.width = usb2.mounted ? `${Math.min(100, usb2.percent_used || 0)}%` : '0%';
+                        const used2 = document.getElementById('usb2-used-text');
+                        if (used2) used2.textContent = usb2.mounted ? usb2.used_formatted : '0 B';
+                        const free2 = document.getElementById('usb2-free-text');
+                        if (free2) free2.textContent = usb2.mounted ? usb2.free_formatted : '0 B';
+                        const total2 = document.getElementById('usb2-total-text');
+                        if (total2) total2.textContent = usb2.mounted ? usb2.total_formatted : '0 B';
+                    }
+
+                    // Overall USB Header Pill
                     const usbPill = document.getElementById('usb-status-pill');
                     if (usbPill) {
-                        usbPill.textContent = isConnected ? '● Connected' : '○ Offline';
-                        usbPill.className = isConnected 
-                            ? 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                        if (usbConnectedCount === 2) {
+                            usbPill.textContent = '● 2 Ports Active';
+                            usbPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                        } else if (usbConnectedCount === 1) {
+                            usbPill.textContent = '● 1 Port Active';
+                            usbPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20';
+                        } else {
+                            usbPill.textContent = '○ All Empty';
+                            usbPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400';
+                        }
                     }
-                    
+
                     const usbBanner = document.getElementById('usb-warning-banner');
                     if (usbBanner) {
-                        if (isConnected) {
+                        if (usbConnectedCount > 0) {
                             usbBanner.classList.add('hidden');
                         } else {
                             usbBanner.classList.remove('hidden');
-                            usbBanner.textContent = '⚠️ USB storage is currently offline or unplugged. Uploads are disabled until a drive is mounted at /Volumes/USBDrive.';
+                            usbBanner.textContent = '⚠️ No USB drives currently detected in Port 1 or Port 2. Plug a USB drive into the MacBook Pro to upload files.';
                         }
                     }
-                    
+
+                    // Target Port Selector options
+                    const portSelect = document.getElementById('usb-upload-target-port');
+                    if (portSelect) {
+                        const port1Label = usb1 && usb1.mounted ? `Port 1 (${usb1.volume_label || 'Mounted'})` : 'Port 1 (Empty)';
+                        const port2Label = usb2 && usb2.mounted ? `Port 2 (${usb2.volume_label || 'Mounted'})` : 'Port 2 (Empty)';
+                        const currentVal = portSelect.value;
+                        portSelect.innerHTML = `<option value="1"${currentVal === '1' || (usb1?.mounted && !usb2?.mounted) ? ' selected' : ''}>${port1Label}</option><option value="2"${currentVal === '2' || (!usb1?.mounted && usb2?.mounted) ? ' selected' : ''}>${port2Label}</option>`;
+                    }
+
+                    // Enable / disable dropzone based on whether any port is active
                     const dropzone = document.getElementById('usb-drop-zone');
                     const uploadBtn = document.getElementById('usb-upload-btn');
                     if (dropzone && uploadBtn) {
-                        if (isConnected) {
+                        if (usbConnectedCount > 0) {
                             dropzone.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
                             uploadBtn.disabled = false;
                             uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -2353,9 +2504,23 @@
                             uploadBtn.classList.add('opacity-50', 'cursor-not-allowed');
                         }
                     }
+
+                    // Legacy fallback elements
+                    const legacyUsed = document.getElementById('usb-used-text');
+                    const legacyFree = document.getElementById('usb-free-text');
+                    const legacyTotal = document.getElementById('usb-total-text');
+                    const activeUsb = (usb1 && usb1.mounted) ? usb1 : ((usb2 && usb2.mounted) ? usb2 : null);
+                    if (legacyUsed) legacyUsed.textContent = activeUsb ? activeUsb.used_formatted : '0 B (Offline)';
+                    if (legacyFree) legacyFree.textContent = activeUsb ? activeUsb.free_formatted : '0 B (Offline)';
+                    if (legacyTotal) legacyTotal.textContent = activeUsb ? activeUsb.total_formatted : '0 B (Offline)';
                 }
             } catch(e) {
-                console.error('Failed to fetch unified storage stats', e);
+                console.error('Failed to fetch unified drive telemetry', e);
+            } finally {
+                setTimeout(() => {
+                    if (ssdSvg) ssdSvg.classList.remove('animate-spin');
+                    if (usbSvg) usbSvg.classList.remove('animate-spin');
+                }, 400);
             }
         }
 
