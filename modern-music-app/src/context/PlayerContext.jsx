@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useContext, useRef } from 'react';
 import { useAuth } from './AuthContext';
-import { getStreamUrl, getCoverArtUrl } from '../utils/api';
+import { getStreamUrl, getCoverArtUrl, getApiProxyUrl } from '../utils/api';
 
 const PlayerContext = createContext();
 
@@ -23,8 +23,21 @@ export function PlayerProvider({ children }) {
   const audioRef = useRef(null);
   const prefetchBufferRef = useRef({ audio: null, track: null, index: -1 });
   const { user, getAuthParams } = useAuth();
-
   const playNextRef = useRef();
+  const recordedTracksRef = useRef(new Set());
+
+  const recordPlayEvent = (track) => {
+    if (!track || !track.id) return;
+    const trackKey = `${track.id}_${Math.floor(Date.now() / 60000)}`;
+    if (recordedTracksRef.current.has(trackKey)) return;
+    recordedTracksRef.current.add(trackKey);
+
+    // Send stream logging event to proxy for real-time daily charts
+    try {
+      const uParam = user?.username ? `&u=${encodeURIComponent(user.username)}` : '';
+      fetch(`${getApiProxyUrl()}?action=recordPlay&id=${encodeURIComponent(track.id)}${uParam}`).catch(() => {});
+    } catch (e) {}
+  };
 
   const updateProgress = () => {
     if (audioRef.current) {
@@ -97,6 +110,7 @@ export function PlayerProvider({ children }) {
     if (playPromise !== undefined) {
       playPromise.catch(e => console.warn("[Aether Audio] Play notice on swapped audio:", e));
     }
+    recordPlayEvent(nextTrack);
   };
 
   const setPrefetchBuffer = (audio, track, index) => {
@@ -152,6 +166,7 @@ export function PlayerProvider({ children }) {
     audioRef.current.src = getStreamUrl(track.id, getAuthParams(user));
     audioRef.current.play().catch(e => console.log("Autoplay blocked or error"));
     setIsPlaying(true);
+    recordPlayEvent(track);
   };
 
   const playQueue = (tracks, index = 0) => {

@@ -9,6 +9,7 @@ export default function AllArtists() {
   const [rawAlbums, setRawAlbums] = useState([]);
   const { user, getAuthParams } = useAuth();
   const [loading, setLoading] = useState(true);
+  const isAdmin = user?.role === 'admin' || user?.isAdmin === true || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase());
 
   // Grouping and filtering state
   const [activeTab, setActiveTab] = useState('name'); // 'name' | 'genre'
@@ -160,8 +161,19 @@ export default function AllArtists() {
           </p>
         </div>
 
-        {/* View Mode Toggle: By Name vs By Genre */}
-        <div className="flex items-center gap-2">
+        {/* View Mode Toggle & Admin Shortcuts */}
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="px-3.5 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 hover:text-white border border-purple-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              title="Clean and merge similar artist profiles"
+            >
+              <Sparkles size={13} className="text-purple-400" />
+              <span>Merge Similar Artists</span>
+            </Link>
+          )}
+
           <div className="bg-slate-900/80 p-1 rounded-xl border border-white/10 flex items-center">
             <button
               onClick={() => { setActiveTab('name'); setSelectedGenre('All'); }}

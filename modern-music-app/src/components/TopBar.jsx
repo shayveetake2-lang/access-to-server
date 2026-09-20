@@ -250,7 +250,7 @@ export default function TopBar() {
             <div className="hidden md:flex flex-col items-start text-left">
               <span className="text-sm font-medium text-slate-200">{user?.username}</span>
               <span className="text-xs text-purple-400 uppercase tracking-wider font-semibold">
-                [{user?.username?.toLowerCase() === 'admin' ? 'Admin' : 'Standard'}]
+                [{user?.role === 'admin' || user?.isAdmin || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase()) ? 'Admin' : 'Standard'}]
               </span>
             </div>
           </button>
@@ -260,9 +260,19 @@ export default function TopBar() {
               <div className="px-4 py-2.5 border-b border-white/10">
                 <p className="text-sm font-semibold text-white truncate">{user?.username}</p>
                 <p className="text-[11px] text-purple-400 uppercase tracking-wider mt-0.5">
-                  {user?.username?.toLowerCase() === 'admin' ? 'Administrator' : 'Standard User'}
+                  {user?.role === 'admin' || user?.isAdmin || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase()) ? 'Administrator' : 'Standard User'}
                 </p>
               </div>
+
+              {(user?.role === 'admin' || user?.isAdmin || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase())) && (
+                <Link 
+                  to="/admin" 
+                  onClick={() => setShowProfileMenu(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-purple-300 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <ShieldAlert size={15} className="text-purple-400" /> Admin Panel
+                </Link>
+              )}
               
               <Link 
                 to="/settings" 

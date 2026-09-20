@@ -54,6 +54,78 @@ function getAmpacheMySQLConnection() {
     return null;
 }
 
+// ─── HELPER: ARTIST NORMALIZATION & FUZZY SIMILARITY ENGINE ───
+function normalizeArtistKeyForFuzzy($rawName) {
+    if (empty($rawName)) return '';
+    $name = trim($rawName);
+
+    // 1. Remove parenthetical features: "(feat. X)", "[ft. Y]", "(with Z)", etc.
+    $name = preg_replace('/\s*[\(\[]\s*(?:feat\.?|ft\.?|featuring|with|prod\.?|vs\.?)\s+[^)\]]+[\)\]]/i', '', $name);
+
+    // 2. Remove inline trailing features: "feat. X", "ft. X", "featuring X", "with X", "vs. X"
+    $name = preg_replace('/\s+(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+.+$/i', '', $name);
+
+    // 3. Remove leading "The ", "A ", "An "
+    $name = preg_replace('/^(?:the|a|an)\s+/i', '', $name);
+
+    // 4. Strip accents / diacritics
+    if (function_exists('transliterator_transliterate')) {
+        $trans = transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $name);
+        if ($trans !== false) {
+            $name = $trans;
+        }
+    } else {
+        $trans = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+        if ($trans !== false) {
+            $name = strtolower($trans);
+        } else {
+            $name = strtolower($name);
+        }
+    }
+
+    // 5. Remove punctuation, symbols, and whitespace for canonical comparison key
+    $name = preg_replace('/[\s\W]+/u', '', $name);
+
+    return trim(strtolower($name));
+}
+
+function detectSimilarityReason($n1, $n2, $k1, $k2) {
+    $clean1 = strtolower(trim($n1));
+    $clean2 = strtolower(trim($n2));
+
+    if ($clean1 === $clean2) {
+        return 'Exact case/whitespace duplicate';
+    }
+
+    $hasThe1 = (bool)preg_match('/^(?:the|a|an)\s+/i', $n1);
+    $hasThe2 = (bool)preg_match('/^(?:the|a|an)\s+/i', $n2);
+    if ($hasThe1 !== $hasThe2) {
+        return "Leading article 'The' variation";
+    }
+
+    $hasFeat1 = (bool)preg_match('/\s*(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+/i', $n1);
+    $hasFeat2 = (bool)preg_match('/\s*(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+/i', $n2);
+    if ($hasFeat1 || $hasFeat2) {
+        return 'Featured collaborator appearance';
+    }
+
+    if ($k1 === $k2) {
+        $punc1 = preg_replace('/[^\w\s]/u', '', $clean1);
+        $punc2 = preg_replace('/[^\w\s]/u', '', $clean2);
+        if ($punc1 !== $clean1 || $punc2 !== $clean2) {
+            return 'Punctuation or spacing variation';
+        }
+        return 'Diacritics or accent variation';
+    }
+
+    similar_text($k1, $k2, $percent);
+    return 'Fuzzy typo / similarity match (' . round($percent) . '%)';
+}
+
+if (defined('UNIT_TESTING') && UNIT_TESTING === true) {
+    return;
+}
+
 // ─── 2. AUTHENTICATION & RBAC (JWT, SYS_USERS TOKEN, OR AMPACHE ADMIN) ───
 $headers = function_exists('getallheaders') ? getallheaders() : [];
 $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
@@ -123,15 +195,44 @@ if (!$requester && !empty($_SESSION['role'])) {
     ];
 }
 
-// Check Subsonic credentials if passed in headers or body
+// Check Subsonic credentials if passed in headers, query, or body
 $subsonicUser = $data['u'] ?? $_GET['u'] ?? $_POST['u'] ?? null;
 if (!$requester && $subsonicUser) {
-    if (strtolower($subsonicUser) === 'admin') {
+    $cleanUser = strtolower(trim($subsonicUser));
+    if ($cleanUser === 'admin' || $cleanUser === 'musicadmin') {
         $requester = [
             'id' => 1,
             'username' => $subsonicUser,
             'role' => 'admin'
         ];
+    } else {
+        // Check sys_users for admin role
+        if ($sysPdo) {
+            $stmt = $sysPdo->prepare("SELECT id, username, role FROM sys_users WHERE LOWER(username) = :u AND role = 'admin' LIMIT 1");
+            $stmt->execute([':u' => $cleanUser]);
+            $u = $stmt->fetch();
+            if ($u) {
+                $requester = $u;
+            }
+        }
+        // Also check Ampache user table (access >= 75 indicates admin or catalog manager)
+        if (!$requester) {
+            $ampPdo = getAmpacheMySQLConnection();
+            if ($ampPdo) {
+                try {
+                    $stmt = $ampPdo->prepare("SELECT id, username, access FROM user WHERE LOWER(username) = :u AND access >= 75 LIMIT 1");
+                    $stmt->execute([':u' => $cleanUser]);
+                    $u = $stmt->fetch();
+                    if ($u) {
+                        $requester = [
+                            'id' => $u['id'],
+                            'username' => $u['username'],
+                            'role' => 'admin'
+                        ];
+                    }
+                } catch (\Exception $e) {}
+            }
+        }
     }
 }
 
@@ -150,7 +251,7 @@ if ($requester['role'] !== 'admin') {
 // ─── 3. GET ACTIONS (READ CATALOG METADATA FOR ADMIN UI) ───
 $action = $_GET['action'] ?? ($data['action'] ?? 'merge');
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' || $action === 'search_artists' || $action === 'get_duplicates') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' || in_array($action, ['search_artists', 'get_duplicates', 'find_similar_artists', 'get_artist_items'])) {
     $pdo = getAmpacheMySQLConnection();
     if (!$pdo) {
         http_response_code(500);
@@ -204,17 +305,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || $action === 'search_artists' || $act
         exit;
     }
 
-    if ($action === 'get_duplicates') {
-        // Query potential duplicate artists (similar names or case variations)
-        $stmt = $pdo->query("
-            SELECT a1.id as id1, a1.name as name1, a1.song_count as songs1,
-                   a2.id as id2, a2.name as name2, a2.song_count as songs2
-            FROM artist a1
-            JOIN artist a2 ON LOWER(TRIM(a1.name)) = LOWER(TRIM(a2.name)) AND a1.id < a2.id
-            LIMIT 50
-        ");
-        $dupes = $stmt->fetchAll();
-        echo json_encode(['status' => 'success', 'duplicates' => $dupes]);
+    if ($action === 'find_similar_artists' || $action === 'get_duplicates') {
+        // Fetch all artists from database
+        $stmt = $pdo->query("SELECT id, name, song_count, album_count FROM artist ORDER BY song_count DESC, album_count DESC, id ASC");
+        $allArtists = $stmt->fetchAll();
+
+        $clusters = []; // key -> array of artists
+        $keys = []; // id -> normalized key
+
+        foreach ($allArtists as $art) {
+            $rawName = $art['name'] ?? '';
+            $normKey = normalizeArtistKeyForFuzzy($rawName);
+            if (empty($normKey)) continue;
+
+            $keys[$art['id']] = $normKey;
+            $clusters[$normKey][] = $art;
+        }
+
+        // Fuzzy match across cluster keys (for typos e.g. Levenshtein <= 2 or similar_text >= 88%)
+        $clusterKeys = array_keys($clusters);
+        $keyCount = count($clusterKeys);
+        $mergedKeysMap = [];
+
+        for ($i = 0; $i < $keyCount; $i++) {
+            $k1 = $clusterKeys[$i];
+            if (isset($mergedKeysMap[$k1]) || strlen($k1) < 5) continue;
+
+            for ($j = $i + 1; $j < $keyCount; $j++) {
+                $k2 = $clusterKeys[$j];
+                if (isset($mergedKeysMap[$k2]) || strlen($k2) < 5) continue;
+
+                $lenDiff = abs(strlen($k1) - strlen($k2));
+                if ($lenDiff > 3) continue;
+
+                $lev = levenshtein($k1, $k2);
+                $isFuzzyMatch = ($lev <= 1) || ($lev <= 2 && strlen($k1) >= 8);
+
+                if (!$isFuzzyMatch) {
+                    similar_text($k1, $k2, $pct);
+                    if ($pct >= 88.0) {
+                        $isFuzzyMatch = true;
+                    }
+                }
+
+                if ($isFuzzyMatch) {
+                    // Merge cluster $k2 into $k1
+                    $mergedKeysMap[$k2] = $k1;
+                    foreach ($clusters[$k2] as $item) {
+                        $clusters[$k1][] = $item;
+                    }
+                    unset($clusters[$k2]);
+                }
+            }
+        }
+
+        // Build structured duplicate groups for the admin UI
+        $groups = [];
+        $flatDuplicates = [];
+
+        foreach ($clusters as $normKey => $members) {
+            if (count($members) < 2) continue;
+
+            // Sort members so canonical/primary is first:
+            // Highest song_count, or if equal, cleanest name (not containing feat., shortest)
+            usort($members, function($a, $b) {
+                $diff = (int)($b['song_count'] ?? 0) - (int)($a['song_count'] ?? 0);
+                if ($diff !== 0) return $diff;
+
+                $hasFeatA = preg_match('/\s*(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+/i', $a['name']);
+                $hasFeatB = preg_match('/\s*(?:feat\.?|ft\.?|featuring|with|vs\.?)\s+/i', $b['name']);
+                if ($hasFeatA && !$hasFeatB) return 1;
+                if (!$hasFeatA && $hasFeatB) return -1;
+
+                return strlen($a['name']) - strlen($b['name']);
+            });
+
+            $primary = $members[0];
+            $dupeCandidates = [];
+
+            for ($m = 1; $m < count($members); $m++) {
+                $dup = $members[$m];
+                $k1 = $keys[$primary['id']] ?? $normKey;
+                $k2 = $keys[$dup['id']] ?? $normKey;
+                $reason = detectSimilarityReason($primary['name'], $dup['name'], $k1, $k2);
+                $confidence = ($k1 === $k2) ? 'high' : 'medium';
+
+                $dup['reason'] = $reason;
+                $dup['confidence'] = $confidence;
+                $dupeCandidates[] = $dup;
+
+                $flatDuplicates[] = [
+                    'id1' => $primary['id'],
+                    'name1' => $primary['name'],
+                    'songs1' => $primary['song_count'],
+                    'id2' => $dup['id'],
+                    'name2' => $dup['name'],
+                    'songs2' => $dup['song_count'],
+                    'reason' => $reason,
+                    'confidence' => $confidence
+                ];
+            }
+
+            $groups[] = [
+                'target_artist' => $primary,
+                'duplicates' => $dupeCandidates,
+                'count' => count($dupeCandidates),
+                'key' => $normKey
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'groups' => $groups,
+            'duplicates' => $flatDuplicates,
+            'total_groups' => count($groups),
+            'total_duplicates' => count($flatDuplicates)
+        ]);
         exit;
     }
 }
@@ -226,6 +432,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$batch = $data['batch'] ?? ($_POST['batch'] ?? null);
 $targetArtistId = intval($data['target_artist_id'] ?? ($_POST['target_artist_id'] ?? 0));
 $artistIds = $data['artist_ids'] ?? ($_POST['artist_ids'] ?? []);
 $songIds = $data['song_ids'] ?? ($_POST['song_ids'] ?? []);
@@ -241,6 +448,90 @@ $artistIds = array_values(array_filter(array_map('intval', $artistIds), fn($id) 
 $songIds   = array_values(array_filter(array_map('intval', $songIds), fn($id) => $id > 0));
 $albumIds  = array_values(array_filter(array_map('intval', $albumIds), fn($id) => $id > 0));
 
+$pdo = getAmpacheMySQLConnection();
+if (!$pdo) {
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to connect to Ampache MySQL database.']);
+    exit;
+}
+
+// ─── BATCH MERGE EXECUTION ───
+if (!empty($batch) && is_array($batch)) {
+    try {
+        $pdo->beginTransaction();
+        $totalSongs = 0;
+        $totalAlbums = 0;
+        $totalArtistsMerged = 0;
+        $processedGroups = 0;
+
+        foreach ($batch as $bItem) {
+            $tId = intval($bItem['target_artist_id'] ?? 0);
+            $rawSourceIds = $bItem['artist_ids'] ?? [];
+            if (!is_array($rawSourceIds)) $rawSourceIds = [$rawSourceIds];
+            $srcIds = array_values(array_filter(array_map('intval', $rawSourceIds), fn($id) => $id > 0 && $id !== $tId));
+
+            if ($tId <= 0 || empty($srcIds)) continue;
+
+            // Verify target exists
+            $chkT = $pdo->prepare("SELECT id, name FROM artist WHERE id = :id LIMIT 1");
+            $chkT->execute([':id' => $tId]);
+            if (!$chkT->fetch()) continue;
+
+            $inPh = implode(',', array_fill(0, count($srcIds), '?'));
+
+            // Remap songs
+            $stmtMSongs = $pdo->prepare("UPDATE song SET artist = ? WHERE artist IN ($inPh)");
+            $stmtMSongs->execute(array_merge([$tId], $srcIds));
+            $totalSongs += $stmtMSongs->rowCount();
+
+            // Remap albums
+            $stmtMAlb = $pdo->prepare("UPDATE album SET album_artist = ? WHERE album_artist IN ($inPh)");
+            $stmtMAlb->execute(array_merge([$tId], $srcIds));
+            $totalAlbums += $stmtMAlb->rowCount();
+
+            // Remap artist_map
+            try {
+                $stmtMapArt = $pdo->prepare("UPDATE IGNORE artist_map SET artist_id = ? WHERE artist_id IN ($inPh)");
+                $stmtMapArt->execute(array_merge([$tId], $srcIds));
+                $stmtClMap = $pdo->prepare("DELETE FROM artist_map WHERE artist_id IN ($inPh)");
+                $stmtClMap->execute($srcIds);
+            } catch (\Exception $e) {}
+
+            // Delete duplicates
+            $stmtD = $pdo->prepare("DELETE FROM artist WHERE id IN ($inPh)");
+            $stmtD->execute($srcIds);
+            $totalArtistsMerged += $stmtD->rowCount();
+
+            // Recalculate
+            $stmtRC = $pdo->prepare("
+                UPDATE artist SET 
+                    song_count = (SELECT COUNT(*) FROM song WHERE artist = :tid1),
+                    album_count = (SELECT COUNT(*) FROM album WHERE album_artist = :tid2)
+                WHERE id = :tid3
+            ");
+            $stmtRC->execute([':tid1' => $tId, ':tid2' => $tId, ':tid3' => $tId]);
+            $processedGroups++;
+        }
+
+        $pdo->commit();
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => "Successfully merged {$processedGroups} similar artist group(s)!",
+            'affected_songs' => $totalSongs,
+            'affected_albums' => $totalAlbums,
+            'merged_artists' => $totalArtistsMerged
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Batch merge transaction failed: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// ─── SINGLE GROUP MERGE / REMAP EXECUTION ───
 if ($targetArtistId <= 0) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Target artist ID is required and must be a valid positive integer.']);
@@ -250,13 +541,6 @@ if ($targetArtistId <= 0) {
 if (empty($artistIds) && empty($songIds) && empty($albumIds)) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'No items selected to merge or remap. Provide song_ids, album_ids, or artist_ids.']);
-    exit;
-}
-
-$pdo = getAmpacheMySQLConnection();
-if (!$pdo) {
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Failed to connect to Ampache MySQL database.']);
     exit;
 }
 

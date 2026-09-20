@@ -72,7 +72,7 @@ export default function AdminSettings() {
     }
   };
 
-  const isUserAdmin = currentUser?.isAdmin || currentUser?.role === 'admin' || currentUser?.username?.toLowerCase() === 'admin';
+  const isUserAdmin = currentUser?.isAdmin || currentUser?.role === 'admin' || ['admin', 'musicadmin'].includes(currentUser?.username?.toLowerCase());
   if (!isUserAdmin) {
     return <div className="p-8 text-center text-red-400">Access Denied. Administrator privileges required.</div>;
   }

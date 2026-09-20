@@ -18,7 +18,8 @@ export default function Sidebar() {
     { icon: <Settings size={19} />, label: 'Settings', path: '/settings' },
   ];
 
-  if (user?.username?.toLowerCase() === 'admin') {
+  const isAdmin = user?.role === 'admin' || user?.isAdmin === true || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase());
+  if (isAdmin) {
     navItems.push({ icon: <ShieldAlert size={19} />, label: 'Admin Panel', path: '/admin' });
   }
 

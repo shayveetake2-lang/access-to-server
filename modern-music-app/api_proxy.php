@@ -105,10 +105,14 @@ if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibil
     }
 }
 
-// ── Top 100 Songs Endpoint (Hardware-Optimized Query) ───────────────────────
+// ── Top 100 Songs Endpoint (Hardware-Optimized Daily & Trending Aggregation) ──
 if ($action === 'getTopSongs') {
     $limit = intval($_GET['size'] ?? $_GET['count'] ?? ($input['size'] ?? 100));
     if ($limit < 1 || $limit > 200) $limit = 100;
+    $period = strtolower(trim($_GET['period'] ?? ($input['period'] ?? 'daily')));
+    if (!in_array($period, ['daily', 'weekly', 'alltime'])) {
+        $period = 'daily';
+    }
 
     $pdo = getProxyPdo();
     if (!$pdo) {
@@ -118,23 +122,55 @@ if ($action === 'getTopSongs') {
     }
 
     try {
-        $stmt = $pdo->prepare("
+        $dailySince = time() - 86400; // Past 24 hours
+        $weeklySince = time() - (7 * 86400); // Past 7 days
+
+        if ($period === 'alltime') {
+            $orderBy = "s.total_count DESC, s.played DESC, s.id DESC";
+        } elseif ($period === 'weekly') {
+            $orderBy = "COALESCE(oc_weekly.weekly_plays, 0) DESC, s.total_count DESC, s.id DESC";
+        } else {
+            // 'daily' default: rank primarily by streams in the past 24 hours across all users,
+            // with a composite score blend so today's streamed songs surge to the top while keeping a full 100 chart.
+            $orderBy = "(COALESCE(oc_daily.daily_plays, 0) * 1000 + COALESCE(oc_weekly.weekly_plays, 0) * 50 + s.total_count) DESC, s.played DESC, s.id DESC";
+        }
+
+        $sql = "
             SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
                    s.total_count as playCount,
+                   COALESCE(oc_daily.daily_plays, 0) as dailyPlays,
+                   COALESCE(oc_weekly.weekly_plays, 0) as weeklyPlays,
                    art.name as artist, art.id as artistId,
                    alb.name as album, alb.id as albumId
             FROM song s
             LEFT JOIN artist art ON s.artist = art.id
             LEFT JOIN album alb ON s.album = alb.id
+            LEFT JOIN (
+                SELECT object_id, COUNT(*) as daily_plays
+                FROM object_count
+                WHERE object_type = 'song' AND count_type = 'stream' AND date >= :daily_since
+                GROUP BY object_id
+            ) oc_daily ON oc_daily.object_id = s.id
+            LEFT JOIN (
+                SELECT object_id, COUNT(*) as weekly_plays
+                FROM object_count
+                WHERE object_type = 'song' AND count_type = 'stream' AND date >= :weekly_since
+                GROUP BY object_id
+            ) oc_weekly ON oc_weekly.object_id = s.id
             WHERE s.enabled = 1
-            ORDER BY s.total_count DESC, s.played DESC, s.id DESC
+            ORDER BY {$orderBy}
             LIMIT :lim
-        ");
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':daily_since', $dailySince, PDO::PARAM_INT);
+        $stmt->bindValue(':weekly_since', $weeklySince, PDO::PARAM_INT);
         $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $songs = [];
+        $rank = 1;
         foreach ($rows as $r) {
             $subId = (string)(300000000 + (int)$r['id']);
             $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
@@ -156,6 +192,9 @@ if ($action === 'getTopSongs') {
                 'track' => (int)$r['track'],
                 'size' => (int)$r['size'],
                 'playCount' => (int)$r['playCount'],
+                'dailyPlays' => (int)$r['dailyPlays'],
+                'weeklyPlays' => (int)$r['weeklyPlays'],
+                'rank' => $rank++,
                 'contentType' => 'audio/mpeg',
                 'suffix' => 'mp3'
             ];
@@ -163,6 +202,7 @@ if ($action === 'getTopSongs') {
 
         echo json_encode([
             'status' => 'ok',
+            'period' => $period,
             'count' => count($songs),
             'songs' => $songs
         ]);
@@ -170,6 +210,84 @@ if ($action === 'getTopSongs') {
     } catch (\Exception $e) {
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Playback Stream Logging Endpoint (Cross-User Daily Play Tracker) ─────────
+if ($action === 'recordPlay' || $action === 'scrobble') {
+    $rawSongId = $_GET['id'] ?? ($input['id'] ?? ($_GET['songId'] ?? ($input['songId'] ?? 0)));
+    $cleanSongId = intval($rawSongId);
+    if ($cleanSongId >= 300000000) {
+        $cleanSongId = $cleanSongId % 100000000;
+    }
+
+    if ($cleanSongId <= 0) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Valid song ID required.']);
+        exit;
+    }
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $username = trim($_GET['u'] ?? ($input['u'] ?? ''));
+    $userId = 1; // Default fallback to system primary user
+    if (!empty($username)) {
+        try {
+            $uStmt = $pdo->prepare("SELECT id FROM user WHERE username = :u LIMIT 1");
+            $uStmt->execute([':u' => $username]);
+            $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+            if ($uRow && !empty($uRow['id'])) {
+                $userId = (int)$uRow['id'];
+            }
+        } catch (\Exception $e) {}
+    }
+
+    try {
+        $now = time();
+        // 1. Insert stream event into Ampache's object_count table
+        $ins = $pdo->prepare("
+            INSERT INTO object_count (object_type, object_id, date, user, agent, count_type)
+            VALUES ('song', :sid, :ts, :uid, 'Aether', 'stream')
+        ");
+        $ins->execute([
+            ':sid' => $cleanSongId,
+            ':ts' => $now,
+            ':uid' => $userId
+        ]);
+
+        // 2. Increment song total_count and ensure played is marked true
+        $upd = $pdo->prepare("
+            UPDATE song 
+            SET total_count = total_count + 1, played = 1
+            WHERE id = :sid
+        ");
+        $upd->execute([':sid' => $cleanSongId]);
+
+        echo json_encode([
+            'status' => 'ok',
+            'songId' => $cleanSongId,
+            'user' => $userId,
+            'timestamp' => $now
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Pass-through to Metadata / Deduplication Engine ──────────────────────────
+if (in_array($action, ['find_similar_artists', 'get_duplicates', 'merge_artists', 'search_artists', 'get_artist_items'])) {
+    $mergeScript = __DIR__ . '/../api/merge_metadata.php';
+    if (file_exists($mergeScript)) {
+        require $mergeScript;
         exit;
     }
 }

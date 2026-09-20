@@ -12,11 +12,12 @@ export default function AdminMetadataEditor() {
   const { user, getAuthParams } = useAuth();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('artists'); // 'artists' | 'albums' | 'songs'
+  const [activeTab, setActiveTab] = useState('smart_merge'); // 'smart_merge' | 'artists' | 'albums' | 'songs'
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [songs, setSongs] = useState([]);
   const [duplicates, setDuplicates] = useState([]);
+  const [similarGroups, setSimilarGroups] = useState([]);
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [targetArtistId, setTargetArtistId] = useState('');
@@ -25,9 +26,11 @@ export default function AdminMetadataEditor() {
 
   const [loading, setLoading] = useState(false);
   const [merging, setMerging] = useState(false);
+  const [mergingGroupId, setMergingGroupId] = useState(null);
+  const [batchMerging, setBatchMerging] = useState(false);
   const [lastResult, setLastResult] = useState(null);
 
-  const isAdmin = user?.role === 'admin' || user?.isAdmin === true || user?.username?.toLowerCase() === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.isAdmin === true || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase());
 
   // 1. Fetch initial artists list and potential duplicates
   const fetchMetadata = async () => {
@@ -36,7 +39,8 @@ export default function AdminMetadataEditor() {
     try {
       // Fetch artists via Subsonic or merge API
       const auth = getAuthParams(user);
-      const resArtists = await fetch(`${getMergeMetadataUrl()}?action=search_artists&limit=150`, {
+      const authQ = user?.username ? `&u=${encodeURIComponent(user.username)}` : '';
+      const resArtists = await fetch(`${getMergeMetadataUrl()}?action=search_artists&limit=150${authQ}`, {
         headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '') }
       });
       const dataArtists = await resArtists.json();
@@ -44,13 +48,14 @@ export default function AdminMetadataEditor() {
         setArtists(dataArtists.artists || []);
       }
 
-      // Fetch duplicate suspects
+      // Fetch duplicate & fuzzy similar artist groups
       try {
-        const resDupes = await fetch(`${getMergeMetadataUrl()}?action=get_duplicates`, {
+        const resDupes = await fetch(`${getMergeMetadataUrl()}?action=find_similar_artists${authQ}`, {
           headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '') }
         });
         const dataDupes = await resDupes.json();
         if (dataDupes?.status === 'success') {
+          setSimilarGroups(dataDupes.groups || []);
           setDuplicates(dataDupes.duplicates || []);
         }
       } catch (e) {}
@@ -204,6 +209,94 @@ export default function AdminMetadataEditor() {
     }
   };
 
+  // 1-Click merge for a single detected similar artist group
+  const handleMergeGroup = async (group, customTargetId = null) => {
+    const targetId = customTargetId || group.target_artist.id;
+    const allMembers = [group.target_artist, ...group.duplicates];
+    const targetMember = allMembers.find(m => String(m.id) === String(targetId)) || group.target_artist;
+    const sourceIds = allMembers.filter(m => String(m.id) !== String(targetId)).map(m => m.id);
+
+    if (sourceIds.length === 0) return;
+
+    const confirmMsg = `Merge ${sourceIds.length} duplicate artist profile(s) into canonical artist "${targetMember.name}"?\nAll associated albums and songs across all users will be consolidated, and duplicate profiles deleted.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setMergingGroupId(group.key);
+    try {
+      const payload = {
+        target_artist_id: parseInt(targetId, 10),
+        artist_ids: sourceIds,
+        token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
+        u: user?.username || 'admin'
+      };
+
+      const res = await fetch(getMergeMetadataUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '')
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast(data.message || `Successfully merged into "${targetMember.name}"!`, "success");
+        setSimilarGroups(prev => prev.filter(g => g.key !== group.key));
+        fetchMetadata();
+      } else {
+        showToast(data.message || "Failed to merge artist profiles", "error");
+      }
+    } catch (e) {
+      console.error(e);
+      showToast("Network error executing merge", "error");
+    } finally {
+      setMergingGroupId(null);
+    }
+  };
+
+  // Batch merge for all detected similar artist groups
+  const handleMergeAllSimilar = async () => {
+    if (similarGroups.length === 0) return;
+    const confirmMsg = `Auto-merge ALL ${similarGroups.length} detected similar artist group(s) across the entire server?\nThis will consolidate all duplicate variations and clean the catalog in a single atomic database operation.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setBatchMerging(true);
+    try {
+      const batchList = similarGroups.map(g => ({
+        target_artist_id: g.target_artist.id,
+        artist_ids: g.duplicates.map(d => d.id)
+      }));
+
+      const payload = {
+        batch: batchList,
+        token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
+        u: user?.username || 'admin'
+      };
+
+      const res = await fetch(getMergeMetadataUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '')
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast(data.message || `Successfully merged ${similarGroups.length} artist groups!`, "success");
+        setSimilarGroups([]);
+        fetchMetadata();
+      } else {
+        showToast(data.message || "Failed to batch merge artists", "error");
+      }
+    } catch (e) {
+      console.error(e);
+      showToast("Network error executing batch merge", "error");
+    } finally {
+      setBatchMerging(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="p-8 rounded-2xl bg-red-950/20 border border-red-500/20 text-center max-w-lg mx-auto mt-12">
@@ -261,6 +354,23 @@ export default function AdminMetadataEditor() {
       {/* Operation Mode Tabs */}
       <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
         <button
+          onClick={() => setActiveTab('smart_merge')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
+            activeTab === 'smart_merge'
+              ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+              : 'bg-slate-900/60 text-slate-400 hover:text-white border border-white/5'
+          }`}
+        >
+          <Sparkles size={16} />
+          <span>Smart Similar Artists</span>
+          {similarGroups.length > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-700 text-purple-100 border border-purple-400/30">
+              {similarGroups.length}
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveTab('artists')}
           className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
             activeTab === 'artists'
@@ -269,7 +379,7 @@ export default function AdminMetadataEditor() {
           }`}
         >
           <Users size={16} />
-          <span>Merge Duplicate Artists</span>
+          <span>Manual Artist Merge</span>
         </button>
 
         <button
@@ -297,8 +407,124 @@ export default function AdminMetadataEditor() {
         </button>
       </div>
 
-      {/* Target Artist Selector & Action Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      {activeTab === 'smart_merge' ? (
+        /* Smart Similar Artists View */
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/80 border border-white/10">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Fuzzy Artist Matching Engine</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-normal">
+                  Active across all users
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Automatically detects variations in accents, leading articles (&quot;The&quot;), featured collaborator splits, and punctuation.
+              </p>
+            </div>
+            {similarGroups.length > 0 && (
+              <button
+                onClick={handleMergeAllSimilar}
+                disabled={batchMerging}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-500/25 shrink-0 transition-all"
+              >
+                {batchMerging ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Consolidating Entire Catalog...</span>
+                  </>
+                ) : (
+                  <>
+                    <GitMerge size={15} />
+                    <span>Merge All {similarGroups.length} Groups (1-Click)</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="p-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+              <div className="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+              Scanning database for similar artist names across all users...
+            </div>
+          ) : similarGroups.length === 0 ? (
+            <div className="p-16 text-center rounded-2xl bg-slate-900/40 border border-white/5 max-w-xl mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+                <CheckCircle2 size={24} />
+              </div>
+              <h4 className="text-base font-bold text-white">Artist Catalog is Fully Deduplicated</h4>
+              <p className="text-xs text-slate-400">
+                No duplicate variations, featured splits, or casing anomalies were detected across your library.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {similarGroups.map((group) => (
+                <div key={group.key} className="p-4 sm:p-5 rounded-2xl bg-slate-900/70 border border-white/10 space-y-3 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5 mb-0.5">
+                        <CheckCircle2 size={12} /> Recommended Canonical Profile
+                      </div>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <span>{group.target_artist.name}</span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-mono font-normal">
+                          {group.target_artist.song_count || 0} tracks • {group.target_artist.album_count || 0} albums
+                        </span>
+                      </h3>
+                    </div>
+
+                    <button
+                      onClick={() => handleMergeGroup(group)}
+                      disabled={mergingGroupId === group.key}
+                      className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-purple-500/20 transition-all self-start sm:self-auto"
+                    >
+                      {mergingGroupId === group.key ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <GitMerge size={14} />
+                      )}
+                      <span>Merge into &quot;{group.target_artist.name}&quot;</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-xs text-slate-400 font-medium">
+                      Duplicate profile(s) to fold into {group.target_artist.name}:
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {group.duplicates.map(dup => (
+                        <div key={dup.id} className="p-2.5 rounded-xl bg-slate-950 border border-white/5 flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-semibold text-slate-200 truncate">{dup.name}</div>
+                            <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                              <span>{dup.song_count || 0} tracks • {dup.album_count || 0} albums</span>
+                              <span className="px-1.5 py-0.2 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/25 truncate">
+                                {dup.reason}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleMergeGroup(group, dup.id)}
+                            className="text-[10px] px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition shrink-0"
+                            title="Make this the canonical target artist instead"
+                          >
+                            Set Primary
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Manual Target Artist Selector & Action Controls */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         
         {/* Left Column: Target Artist Selector */}
         <div className="lg:col-span-5 bg-slate-900/70 border border-white/10 rounded-2xl p-4 sm:p-5 space-y-4">
@@ -513,6 +739,7 @@ export default function AdminMetadataEditor() {
         </div>
 
       </div>
+      )}
     </div>
   );
 }
