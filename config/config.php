@@ -143,6 +143,10 @@ function initSQLiteSchema(PDO $pdo) {
 
     // Auto-migrate storage columns and token expiration if missing
     try {
+        @$pdo->exec("ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
+        @$pdo->exec("UPDATE sys_users SET email = username || '@local.server' WHERE email IS NULL OR email = ''");
+    } catch (\Exception $e) {}
+    try {
         @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INTEGER DEFAULT 100");
     } catch (\Exception $e) {}
     try {
@@ -305,7 +309,7 @@ function getDBConnection() {
             return $pdo;
         } catch (\Exception $smbErr) {
             try {
-                $tmpPath = sys_get_temp_dir() . '/access_db.sqlite';
+                $tmpPath = '/tmp/access_db.sqlite';
                 $pdo = new SQLitePDO("sqlite:" . $tmpPath);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

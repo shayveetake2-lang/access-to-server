@@ -46,12 +46,16 @@ if ($action === 'list') {
 
 // ─── 2. UPDATE USER ROLE (Promote to Admin / Demote to User) ───
 if ($action === 'update_role') {
-    $userId = intval($data['id'] ?? $_POST['id'] ?? 0);
-    $newRole = strtolower(trim($data['role'] ?? $_POST['role'] ?? ''));
+    $userId = intval($data['id'] ?? $data['user_id'] ?? $_POST['id'] ?? $_POST['user_id'] ?? 0);
+    $newRole = strtolower(trim($data['role'] ?? $data['new_role'] ?? $_POST['role'] ?? $_POST['new_role'] ?? ''));
 
-    if ($userId <= 0 || !in_array($newRole, ['admin', 'user'], true)) {
+    if ($newRole === 'user') {
+        $newRole = 'member';
+    }
+
+    if ($userId <= 0 || !in_array($newRole, ['admin', 'member'], true)) {
         http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid user ID or role specified. Role must be "admin" or "user".']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid user ID or role specified. Role must be "admin" or "member".']);
         exit;
     }
 
@@ -67,7 +71,7 @@ if ($action === 'update_role') {
     }
 
     // Safety: Prevent demoting the only admin
-    if ($target['role'] === 'admin' && $newRole === 'user') {
+    if ($target['role'] === 'admin' && ($newRole === 'member' || $newRole === 'user')) {
         $adminCount = $pdo->query("SELECT COUNT(*) FROM sys_users WHERE role = 'admin'")->fetchColumn();
         if ($adminCount <= 1) {
             http_response_code(400);

@@ -2019,6 +2019,20 @@
 
         let settingsUsersList = [];
 
+        function getActiveUserRole() {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            if (token && token.split('.').length === 3) {
+                try {
+                    const base64Url = token.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                    const parsed = JSON.parse(jsonPayload);
+                    if (parsed && parsed.role) return parsed.role.toLowerCase();
+                } catch (e) {}
+            }
+            return (currentAdminState.role || localStorage.getItem('user_role') || 'guest').toLowerCase();
+        }
+
         async function loadSettingsTelemetry() {
             const tbody = document.getElementById('settings-admins-body');
             const countBadge = document.getElementById('settings-users-count');
@@ -2026,11 +2040,19 @@
 
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             const currentUsername = currentAdminState.user || localStorage.getItem('admin_user') || 'admin';
+            const viewerRole = getActiveUserRole();
+            const isViewerAdmin = (viewerRole === 'admin');
 
             try {
-                const res = await fetch(`api/system/admin_accounts.php?action=list&token=${encodeURIComponent(token)}`, {
+                // Fetch user list from secure backend endpoint with Authorization header
+                let res = await fetch('api/get_users.php', {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
+                if (!res.ok && res.status === 404) {
+                    res = await fetch('api/system/admin_accounts.php?action=list', {
+                        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                    });
+                }
                 if (!res.ok) throw new Error(`HTTP status ${res.status}`);
                 const data = await res.json();
                 if (data && data.status === 'success' && Array.isArray(data.users)) {
@@ -2038,56 +2060,66 @@
                     if (countBadge) countBadge.textContent = `${data.users.length} ${data.users.length === 1 ? 'Account' : 'Accounts'}`;
 
                     tbody.innerHTML = data.users.map(u => {
-                        const isSelf = (u.username.toLowerCase() === currentUsername.toLowerCase());
-                        const isAdmin = (u.role === 'admin');
+                        const isSelf = ((u.username && u.username.toLowerCase() === currentUsername.toLowerCase()) || (u.email && u.email.toLowerCase() === currentUsername.toLowerCase()));
+                        // DYNAMIC INJECTION: Bind to each specific user's role from payload, NOT the active viewer's session role
+                        const userRole = (u.role || 'member').toLowerCase();
+                        const isUserAdmin = (userRole === 'admin');
+                        const displayName = u.username || u.email || `User #${u.id}`;
+                        const displayEmail = u.email || `${displayName}@local.server`;
 
                         return `
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <tr id="user-row-${u.id}" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2.5">
-                                    <div class="w-7 h-7 rounded-lg ${isAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'} flex items-center justify-center font-bold text-xs">
-                                        ${escapeHtml(u.username.charAt(0).toUpperCase())}
+                                    <div class="w-7 h-7 rounded-lg ${isUserAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'} flex items-center justify-center font-bold text-xs">
+                                        ${escapeHtml(displayName.charAt(0).toUpperCase())}
                                     </div>
                                     <div>
                                         <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                            <span>${escapeHtml(u.username)}</span>
+                                            <span>${escapeHtml(displayName)}</span>
                                             ${isSelf ? '<span class="px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-400 text-[10px] font-mono font-semibold">You</span>' : ''}
                                         </div>
-                                        <div class="text-[10px] text-slate-400 font-mono">ID #${u.id}</div>
+                                        <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(displayEmail)} · ID #${u.id}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2">
-                                    <span class="px-2 py-0.5 rounded-full ${isAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold">
-                                        ${isAdmin ? '👑 Admin' : '👤 User'}
+                                    <span id="user-role-badge-${u.id}" class="px-2 py-0.5 rounded-full ${isUserAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold">
+                                        ${isUserAdmin ? '👑 admin' : '👤 member'}
                                     </span>
-                                    <button onclick="toggleUserRole(${u.id})" class="px-2 py-1 rounded-lg text-[11px] font-semibold ${isAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'} transition-all" title="${isAdmin ? 'Demote to regular user' : 'Promote to administrator'}">
-                                        ${isAdmin ? 'Demote to User' : 'Make Admin 👑'}
+                                    ${isViewerAdmin ? `
+                                    <button id="user-role-btn-${u.id}" onclick="demoteOrPromoteUser(${u.id})" class="px-2 py-1 rounded-lg text-[11px] font-semibold ${isUserAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'} transition-all" title="${isUserAdmin ? 'Demote to regular member' : 'Promote to administrator'}">
+                                        ${isUserAdmin ? 'Demote' : 'Make Admin 👑'}
                                     </button>
+                                    ` : ''}
                                 </div>
                             </td>
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-cyan-400 font-bold text-xs">${u.storage_limit_mb} MB</span>
+                                    <span class="font-mono text-cyan-400 font-bold text-xs">${u.storage_limit_mb || 100} MB</span>
+                                    ${isViewerAdmin ? `
                                     <button onclick="openStorageModal(${u.id})" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-slate-700/60 transition-all">
                                         Allocate ⚙️
                                     </button>
+                                    ` : ''}
                                 </div>
                             </td>
                             <td class="py-3 px-4">
+                                ${isViewerAdmin ? `
                                 <button onclick="openPasswordModal(${u.id})" class="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[11px] font-semibold transition-all">
                                     Change Password 🔑
                                 </button>
+                                ` : '<span class="text-slate-500 text-[11px]">Protected</span>'}
                             </td>
                             <td class="py-3 px-4 text-right">
-                                ${isSelf || u.username === 'admin' ? `
+                                ${isSelf || displayName === 'admin' ? `
                                     <span class="text-slate-400 text-[11px] italic font-mono">Protected</span>
-                                ` : `
+                                ` : isViewerAdmin ? `
                                     <button onclick="deleteUserAccount(${u.id})" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-[11px] font-semibold transition-all">
                                         Delete
                                     </button>
-                                `}
+                                ` : '<span class="text-slate-500 text-[11px]">—</span>'}
                             </td>
                         </tr>
                         `;
@@ -2101,31 +2133,86 @@
             }
         }
 
-        async function toggleUserRole(userId) {
+        async function demoteOrPromoteUser(userId) {
             const user = settingsUsersList.find(x => x.id === userId);
             if (!user) return;
-            const newRole = (user.role === 'admin') ? 'user' : 'admin';
-            if (!confirm(`Are you sure you want to change '${user.username}' role to ${newRole.toUpperCase()}?`)) return;
+            const currentRole = (user.role || 'member').toLowerCase();
+            const newRole = (currentRole === 'admin') ? 'member' : 'admin';
+            const actionLabel = (newRole === 'member') ? 'Demote to member' : 'Promote to admin';
+            const targetLabel = user.email || user.username || `User #${userId}`;
+            
+            if (!confirm(`Are you sure you want to ${actionLabel} for '${targetLabel}'?`)) return;
+            await executeRoleUpdate(userId, newRole);
+        }
+
+        async function demoteUser(userId) {
+            await executeRoleUpdate(userId, 'member');
+        }
+
+        async function executeRoleUpdate(userId, newRole) {
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            const btn = document.getElementById(`user-role-btn-${userId}`);
+            const originalText = btn ? btn.textContent : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Updating...';
+            }
+
             try {
-                const res = await fetch('api/system/admin_accounts.php?action=update_role', {
+                const res = await fetch('api/update_role.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': token ? `Bearer ${token}` : ''
                     },
-                    body: JSON.stringify({ id: userId, role: newRole, token })
+                    body: JSON.stringify({ user_id: userId, new_role: newRole })
                 });
+
                 const data = await res.json();
-                if (data && data.status === 'success') {
-                    showUserMgmtAlert(data.message || `Updated role for ${user.username}`);
-                    loadSettingsTelemetry();
+
+                if (res.ok && data.status === 'success') {
+                    // Update state in memory
+                    const targetUser = settingsUsersList.find(x => x.id === userId);
+                    if (targetUser) {
+                        targetUser.role = newRole;
+                    }
+
+                    // In-place dynamic DOM update (NO page refresh)
+                    const badge = document.getElementById(`user-role-badge-${userId}`);
+                    if (badge) {
+                        const isAdmin = (newRole === 'admin');
+                        badge.className = `px-2 py-0.5 rounded-full ${isAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold`;
+                        badge.textContent = isAdmin ? '👑 admin' : '👤 member';
+                    }
+
+                    if (btn) {
+                        const isAdmin = (newRole === 'admin');
+                        btn.disabled = false;
+                        btn.className = `px-2 py-1 rounded-lg text-[11px] font-semibold ${isAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'} transition-all`;
+                        btn.textContent = isAdmin ? 'Demote' : 'Make Admin 👑';
+                        btn.title = isAdmin ? 'Demote to regular member' : 'Promote to administrator';
+                    }
+
+                    showUserMgmtAlert(data.message || `Successfully updated role to '${newRole}'.`);
                 } else {
-                    alert(data.message || 'Failed to update role.');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                    showUserMgmtAlert(data.message || 'Failed to update role.', true);
                 }
             } catch(e) {
-                alert('Request failed: ' + e.message);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+                showUserMgmtAlert('Request failed: ' + e.message, true);
             }
+        }
+
+        // Backward compatibility alias
+        function toggleUserRole(userId) {
+            demoteOrPromoteUser(userId);
         }
 
         // Storage modal functions
