@@ -586,20 +586,20 @@
                         <!-- CARD 5: Dual USB Port Storage -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
-                                <div class="flex items-center justify-between mb-4 gap-2">
-                                    <div>
-                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate min-w-0 flex items-center gap-1.5">
-                                            <span>Dual USB Port Storage</span>
-                                            <span id="usb-total-badge" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">2 Ports</span>
-                                        </h3>
-                                        <p class="text-[10px] font-mono text-slate-400">MacBook Pro 2011 Hardware Ports</p>
+                                <div class="flex items-center justify-between mb-3 gap-2">
+                                    <div class="min-w-0">
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate">Dual USB Storage</h3>
+                                        <p class="text-[10px] font-mono text-slate-400 truncate">MacBook Pro 2011 Hardware</p>
                                     </div>
-                                    <div class="flex items-center gap-2 shrink-0">
-                                        <span id="usb-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400">--</span>
-                                        <button id="btn-refresh-usb" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0 transition-transform" title="Refresh USB Status">
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        </button>
-                                    </div>
+                                    <button id="btn-refresh-usb" class="text-slate-400 hover:text-cyan-400 p-1 shrink-0 transition-transform" title="Refresh USB Status">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    </button>
+                                </div>
+
+                                <!-- Dedicated full-width status row: Never gets cut off on small screens -->
+                                <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/80 text-[10px] font-mono text-slate-400">
+                                    <span class="uppercase tracking-wider">Hardware Ports</span>
+                                    <span id="usb-status-pill" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-slate-800 text-slate-400">--</span>
                                 </div>
                                 <div id="usb-warning-banner" class="hidden p-2.5 rounded-xl text-[11px] bg-rose-500/10 border border-rose-500/30 text-rose-400 font-medium mb-3"></div>
 
@@ -2456,18 +2456,18 @@
                         if (total2) total2.textContent = usb2.mounted ? usb2.total_formatted : '0 B';
                     }
 
-                    // Overall USB Header Pill
+                    // Overall USB Hardware Ports Pill
                     const usbPill = document.getElementById('usb-status-pill');
                     if (usbPill) {
                         if (usbConnectedCount === 2) {
                             usbPill.textContent = '● 2 Ports Active';
-                            usbPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                            usbPill.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
                         } else if (usbConnectedCount === 1) {
                             usbPill.textContent = '● 1 Port Active';
-                            usbPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20';
+                            usbPill.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20';
                         } else {
                             usbPill.textContent = '○ All Empty';
-                            usbPill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400';
+                            usbPill.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-slate-800 text-slate-400';
                         }
                     }
 
