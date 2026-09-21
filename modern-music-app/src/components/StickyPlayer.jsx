@@ -1,11 +1,29 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, ListVideo, Music, Repeat1, ChevronUp, ChevronDown, Trash2, X, Volume2, Volume1, VolumeX, Plus } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { getCoverArtUrl, getStreamUrl, getSubsonicAuthParams, DEFAULT_COVER_ART } from '../utils/api';
+import OutputSelector from './OutputSelector';
+import HeartButton from './HeartButton';
+
+const getArtistId = (track) => {
+  return track?.artistId || track?.artist_id || null;
+};
+
+const getAlbumId = (track) => {
+  if (track?.albumId) return track.albumId;
+  if (track?.album_id) return track.album_id;
+  if (track?.parent) return track.parent;
+  if (typeof track?.coverArt === 'string' && track.coverArt.startsWith('al-')) {
+    return track.coverArt.replace(/^al-/, '');
+  }
+  return null;
+};
 
 export default function StickyPlayer() {
+  const navigate = useNavigate();
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { user, getAuthParams } = useAuth();
@@ -200,7 +218,12 @@ export default function StickyPlayer() {
 
         {/* Thumbnail + Titles */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
-          <div className="w-10 h-10 rounded-xl bg-slate-800 shrink-0 overflow-hidden shadow-sm flex items-center justify-center border border-white/5">
+          {/* Clickable Album Cover Art */}
+          <div 
+            onClick={albumId ? handleNavigateAlbum : undefined}
+            className={`w-10 h-10 rounded-xl bg-slate-800 shrink-0 overflow-hidden shadow-sm flex items-center justify-center border border-white/5 relative group ${albumId ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
+            title={albumId ? `View Album (${currentTrack.album || 'Tracklist'})` : 'Cover Art'}
+          >
             {currentTrack.coverArt ? (
               <img 
                 src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
@@ -216,14 +239,36 @@ export default function StickyPlayer() {
               <Music size={18} className="text-purple-400" />
             )}
           </div>
+
           <div className="min-w-0 flex-1">
             <div className="text-xs font-semibold text-white truncate">{currentTrack.title}</div>
-            <div className="text-[11px] text-slate-400 truncate mt-0.5">{currentTrack.artist || 'Unknown Artist'}</div>
+            {artistId ? (
+              <div 
+                onClick={handleNavigateArtist}
+                className="text-[11px] text-purple-300 hover:text-purple-200 active:underline truncate mt-0.5 cursor-pointer font-medium"
+                title="Go to Artist Profile"
+              >
+                {currentTrack.artist || 'Unknown Artist'}
+              </div>
+            ) : (
+              <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                {currentTrack.artist || 'Unknown Artist'}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Play/Pause & Next Button */}
+        {/* Action Buttons: Like + Add to Playlist + Play/Pause & Next Button */}
         <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <HeartButton song={currentTrack} size={18} compact className="p-2 rounded-full hover:bg-white/5" />
+          <button 
+            onClick={() => openAddToPlaylistModal(currentTrack.id)} 
+            className="p-2 text-slate-300 hover:text-purple-300 active:scale-90 transition-all rounded-full hover:bg-white/5"
+            title="Add to Playlist"
+            aria-label="Add to Playlist"
+          >
+            <Plus size={18} />
+          </button>
           <button 
             onClick={togglePlay} 
             className="w-9 h-9 rounded-full bg-purple-500 active:bg-purple-400 text-white flex items-center justify-center shadow-md active:scale-95 transition-all"
@@ -247,35 +292,50 @@ export default function StickyPlayer() {
       {isExpanded && (
         <div className="md:hidden fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-3xl flex flex-col justify-between px-6 pt-[max(env(safe-area-inset-top,0px),1rem)] pb-[max(env(safe-area-inset-bottom,0px),1.75rem)] animate-in slide-in-from-bottom-6 duration-200">
           
-          {/* Top Bar */}
+          {/* Top Bar with Album Navigation & Output Selector */}
           <div className="flex items-center justify-between py-2">
             <button 
               onClick={() => setIsExpanded(false)}
-              className="p-2 -ml-2 rounded-full text-slate-400 hover:text-white active:scale-90 transition-all"
+              className="p-2 -ml-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all"
               aria-label="Close player view"
             >
               <ChevronDown size={28} />
             </button>
-            <div className="text-center px-4 min-w-0">
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold block">Now Playing</span>
-              <p className="text-xs font-medium text-white truncate max-w-[220px]">{currentTrack.album || 'Aether Audio'}</p>
-            </div>
-            <button 
-              onClick={() => setIsQueueOpen(!isQueueOpen)}
-              className="p-2 -mr-2 rounded-full text-slate-400 hover:text-white active:scale-90 transition-all"
-              aria-label="Toggle Queue"
+            
+            <div 
+              onClick={albumId ? handleNavigateAlbum : undefined}
+              className={`text-center px-2 min-w-0 ${albumId ? 'cursor-pointer' : ''}`}
             >
-              <ListVideo size={22} className={isQueueOpen ? 'text-purple-400' : ''} />
-            </button>
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold block">Now Playing</span>
+              <p className="text-xs font-semibold text-purple-300 hover:text-white truncate max-w-[190px]">
+                {currentTrack.album || 'Aether Audio'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1">
+              {/* Mobile Output Destination Selector */}
+              <OutputSelector compact align="right" />
+              <button 
+                onClick={() => setIsQueueOpen(!isQueueOpen)}
+                className="p-2 -mr-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all"
+                aria-label="Toggle Queue"
+              >
+                <ListVideo size={22} className={isQueueOpen ? 'text-purple-400' : ''} />
+              </button>
+            </div>
           </div>
 
-          {/* Large Album Artwork */}
+          {/* Large Album Artwork (Clickable -> routes to Album Tracklist) */}
           <div className="my-auto py-4 flex items-center justify-center">
-            <div className="w-[74vw] max-w-[320px] aspect-square rounded-3xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.85)] border border-white/10 bg-slate-900 flex items-center justify-center">
+            <div 
+              onClick={albumId ? handleNavigateAlbum : undefined}
+              className={`w-[74vw] max-w-[320px] aspect-square rounded-3xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.85)] border border-white/10 bg-slate-900 flex items-center justify-center relative group ${albumId ? 'cursor-pointer active:scale-98 transition-transform' : ''}`}
+              title={albumId ? 'View Album Tracklist' : 'Cover Art'}
+            >
               {currentTrack.coverArt ? (
                 <img 
                   src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
-                  className="w-full h-full object-cover" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                   alt="" 
                   onError={(e) => {
                     if (e.currentTarget.src !== DEFAULT_COVER_ART) {
@@ -286,15 +346,47 @@ export default function StickyPlayer() {
               ) : (
                 <Music size={72} className="text-purple-400/50" />
               )}
+              {albumId && (
+                <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] text-purple-200 border border-white/10 flex items-center gap-1">
+                  <span>View Album</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Bottom Track Details, Scrubber & Controls */}
           <div className="space-y-5 pb-2">
-            {/* Title & Artist */}
-            <div className="min-w-0 pr-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-white truncate">{currentTrack.title}</h2>
-              <p className="text-sm sm:text-base text-purple-400 font-medium truncate mt-0.5">{currentTrack.artist || 'Unknown Artist'}</p>
+            {/* Title & Clickable Artist & Add to Playlist Button */}
+            <div className="flex items-center justify-between min-w-0 pr-1">
+              <div className="min-w-0 flex-1 mr-3">
+                <h2 className="text-xl sm:text-2xl font-bold text-white truncate">{currentTrack.title}</h2>
+                {artistId ? (
+                  <button 
+                    onClick={handleNavigateArtist} 
+                    className="text-sm sm:text-base text-purple-300 hover:text-purple-200 font-semibold truncate mt-0.5 text-left block hover:underline"
+                    title="Go to Artist Profile"
+                  >
+                    {currentTrack.artist || 'Unknown Artist'}
+                  </button>
+                ) : (
+                  <p className="text-sm sm:text-base text-purple-300 font-medium truncate mt-0.5">
+                    {currentTrack.artist || 'Unknown Artist'}
+                  </p>
+                )}
+              </div>
+
+              {/* Like + Add to Playlist buttons directly injected into Mobile View */}
+              <div className="flex items-center gap-2 shrink-0">
+                <HeartButton song={currentTrack} size={22} className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-rose-500/20 border border-white/10 shadow-md flex items-center justify-center" />
+                <button 
+                  onClick={() => openAddToPlaylistModal(currentTrack.id)} 
+                  className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-purple-500/30 active:bg-purple-500/50 text-slate-200 hover:text-purple-300 active:scale-95 flex items-center justify-center transition-all shrink-0 border border-white/10 shadow-md"
+                  title="Add to Playlist"
+                  aria-label="Add to Playlist"
+                >
+                  <Plus size={22} />
+                </button>
+              </div>
             </div>
 
             {/* Scrubber Bar */}
@@ -363,12 +455,12 @@ export default function StickyPlayer() {
       {/* ========================================================================= */}
       <div className="hidden md:flex fixed bottom-4 left-72 right-8 h-20 bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-2xl items-center justify-between px-6 shadow-[0_10px_40px_rgba(0,0,0,0.6)] z-30">
         
-        {/* Track Info */}
+        {/* Track Info (Clickable Cover Art & Clickable Artist Name) */}
         <div className="flex items-center gap-4 w-1/3 min-w-0">
           <div 
-            onClick={() => setIsExpanded(true)}
-            className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg flex items-center justify-center shrink-0 overflow-hidden border border-white/10 cursor-pointer group relative"
-            title="Expand Fullscreen View"
+            onClick={albumId ? handleNavigateAlbum : () => setIsExpanded(true)}
+            className={`w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg flex items-center justify-center shrink-0 overflow-hidden border border-white/10 cursor-pointer group relative ${albumId ? 'hover:ring-2 hover:ring-purple-400 transition-all' : ''}`}
+            title={albumId ? `View Album (${currentTrack.album || 'Tracklist'})` : "Expand Fullscreen View"}
           >
              {currentTrack.coverArt ? (
                <img 
@@ -392,11 +484,41 @@ export default function StickyPlayer() {
             <h4 
               onClick={() => setIsExpanded(true)}
               className="text-slate-100 font-semibold truncate text-sm hover:text-purple-400 transition-colors cursor-pointer"
+              title="Expand Player"
             >
               {currentTrack.title}
             </h4>
-            <p className="text-slate-400 text-xs truncate mt-0.5">{currentTrack.artist || 'Unknown Artist'}{currentTrack.album ? ` • ${currentTrack.album}` : ''}</p>
+            <div className="text-xs truncate mt-0.5 flex items-center gap-1.5">
+              {artistId ? (
+                <span
+                  onClick={handleNavigateArtist}
+                  className="text-purple-300 hover:text-purple-200 hover:underline cursor-pointer font-medium truncate"
+                  title="Go to Artist Profile"
+                >
+                  {currentTrack.artist || 'Unknown Artist'}
+                </span>
+              ) : (
+                <span className="text-slate-400 truncate">{currentTrack.artist || 'Unknown Artist'}</span>
+              )}
+              {currentTrack.album && (
+                <>
+                  <span className="text-slate-500">•</span>
+                  {albumId ? (
+                    <span 
+                      onClick={handleNavigateAlbum}
+                      className="text-slate-400 hover:text-slate-200 hover:underline cursor-pointer truncate"
+                      title="View Album Tracklist"
+                    >
+                      {currentTrack.album}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 truncate">{currentTrack.album}</span>
+                  )}
+                </>
+              )}
+            </div>
           </div>
+          <HeartButton song={currentTrack} size={16} compact className="p-2 rounded-full hover:bg-white/5 shrink-0" />
           <button 
             onClick={() => openAddToPlaylistModal(currentTrack.id)} 
             className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-purple-400 hover:bg-white/5 active:bg-purple-500/20 transition-colors shrink-0"
@@ -455,8 +577,11 @@ export default function StickyPlayer() {
           </div>
         </div>
 
-        {/* Actions (Right): Queue Button + Interactive Volume Control */}
-        <div className="flex items-center justify-end gap-3 w-1/3 min-w-[200px]">
+        {/* Actions (Right): Output Selector + Queue Button + Interactive Volume Control */}
+        <div className="flex items-center justify-end gap-2.5 w-1/3 min-w-[260px]">
+          {/* Audio Output Destination Selector Component */}
+          <OutputSelector align="right" />
+
           {/* Queue Button */}
           <button 
             onClick={() => setIsQueueOpen(!isQueueOpen)} 
@@ -503,128 +628,149 @@ export default function StickyPlayer() {
       </div>
       
       {/* ========================================================================= */}
-      {/* QUEUE DRAWER / PANEL (Responsive)                                         */}
+      {/* QUEUE DRAWER / PANEL (Enhanced Mobile Dark Mode Contrast & Accessibility)  */}
       {/* ========================================================================= */}
       {isQueueOpen && (
-        <div className="fixed inset-x-3 bottom-[calc(max(env(safe-area-inset-bottom,0px),0.5rem)+4.2rem)] md:inset-x-auto md:bottom-28 md:right-8 md:w-84 max-h-[65vh] md:max-h-96 bg-slate-900/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-[60] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between p-3.5 border-b border-white/10">
-            <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-              <ListVideo size={17} className="text-purple-400"/> Playing Next
-              {queue.length > 0 && <span className="text-[11px] text-slate-400 font-normal">({queue.length})</span>}
-            </h3>
-            <div className="flex items-center gap-2">
-              {queue.length > 1 && (
+        <>
+          {/* Mobile Backdrop Overlay */}
+          <div 
+            onClick={() => setIsQueueOpen(false)} 
+            className="md:hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-[55] animate-in fade-in duration-150" 
+          />
+
+          <div className="fixed inset-x-0 bottom-0 max-h-[80vh] md:max-h-96 md:bottom-28 md:right-8 md:inset-x-auto md:w-96 bg-slate-950/98 backdrop-blur-3xl border-t md:border border-slate-700/80 rounded-t-3xl md:rounded-2xl shadow-[0_15px_60px_rgba(0,0,0,0.9)] z-[60] flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 md:zoom-in-95 duration-150">
+            {/* Mobile swipe indicator */}
+            <div className="md:hidden pt-2 pb-1 flex justify-center">
+              <div className="w-12 h-1.5 rounded-full bg-slate-600" />
+            </div>
+
+            <div className="flex items-center justify-between p-3.5 border-b border-slate-800 bg-slate-900/80">
+              <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                <ListVideo size={18} className="text-purple-400"/> Playing Next
+                {queue.length > 0 && <span className="text-xs text-slate-300 font-normal">({queue.length})</span>}
+              </h3>
+              <div className="flex items-center gap-2">
+                {queue.length > 1 && (
+                  <button 
+                    onClick={clearQueue} 
+                    className="text-xs text-slate-300 hover:text-red-400 active:text-red-300 font-medium px-2.5 py-1 rounded-lg hover:bg-white/10 transition"
+                    title="Clear upcoming queue"
+                  >
+                    Clear
+                  </button>
+                )}
                 <button 
-                  onClick={clearQueue} 
-                  className="text-xs text-slate-400 hover:text-red-400 active:text-red-300 font-medium px-2 py-1 rounded-lg hover:bg-white/5 transition"
-                  title="Clear upcoming queue"
+                  onClick={() => setIsQueueOpen(false)} 
+                  className="p-1.5 rounded-lg text-slate-300 hover:text-white transition hover:bg-white/10"
+                  aria-label="Close Queue"
                 >
-                  Clear
+                  <X size={18} />
                 </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2.5 touch-scroll divide-y divide-white/5">
+              {queue.length === 0 ? (
+                <div className="text-center py-10">
+                  <Music size={28} className="text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-300 text-sm font-medium">Queue is empty</p>
+                  <p className="text-slate-500 text-xs mt-0.5">Add songs to play them next</p>
+                </div>
+              ) : (
+                queue.map((track, idx) => {
+                  const isCurrent = idx === currentIndex;
+                  return (
+                    <div 
+                      key={`${track.id || 'track'}-${idx}`} 
+                      onClick={() => skipToQueueIndex(idx)}
+                      className={`flex items-center justify-between p-2.5 rounded-xl group cursor-pointer transition-all ${
+                        isCurrent 
+                          ? 'bg-purple-900/40 border border-purple-400/50 shadow-md text-white' 
+                          : 'hover:bg-white/10 active:bg-white/15 text-slate-100'
+                      }`}
+                      title={isCurrent ? `Now playing "${track.title}"` : `Skip to "${track.title}"`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                        <div className="relative w-10 h-10 rounded-lg bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center border border-white/10 shadow-sm">
+                          {track.coverArt ? (
+                            <img 
+                              src={getCoverArtUrl(track.coverArt, getAuthParams(user))} 
+                              className="w-full h-full object-cover" 
+                              alt="" 
+                              loading="lazy" 
+                              onError={(e) => {
+                                if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                                  e.currentTarget.src = DEFAULT_COVER_ART;
+                                }
+                              }}
+                            />
+                          ) : (
+                            <Music size={16} className="text-slate-300" />
+                          )}
+                          {isCurrent ? (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                              <Volume2 size={16} className={`text-purple-300 ${isPlaying ? 'animate-pulse' : ''}`} />
+                            </div>
+                          ) : (
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <Play size={15} fill="currentColor" className="text-white ml-0.5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs sm:text-sm font-semibold truncate transition-colors ${
+                            isCurrent ? 'text-purple-200' : 'text-white group-hover:text-purple-300'
+                          }`}>
+                            {track.title}
+                          </p>
+                          <p className="text-[11px] sm:text-xs text-slate-300 truncate mt-0.5 font-medium">
+                            {track.artist || 'Unknown Artist'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {track.duration > 0 && (
+                          <span className="text-[11px] text-slate-300 font-mono mr-2 hidden sm:inline-block">
+                            {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
+                          </span>
+                        )}
+                        <div className="flex flex-col mr-1">
+                          <button 
+                            onClick={() => reorderQueue(idx, idx - 1)} 
+                            disabled={idx === 0} 
+                            className="text-slate-300 hover:text-white disabled:opacity-20 p-1 transition-colors"
+                            title="Move up in queue"
+                            aria-label="Move up"
+                          >
+                            <ChevronUp size={14}/>
+                          </button>
+                          <button 
+                            onClick={() => reorderQueue(idx, idx + 1)} 
+                            disabled={idx === queue.length - 1} 
+                            className="text-slate-300 hover:text-white disabled:opacity-20 p-1 transition-colors"
+                            title="Move down in queue"
+                            aria-label="Move down"
+                          >
+                            <ChevronDown size={14}/>
+                          </button>
+                        </div>
+                        <button 
+                          onClick={() => removeFromQueue(idx)} 
+                          className="text-slate-300 hover:text-red-400 active:scale-90 p-2 rounded-lg hover:bg-white/10 transition-colors"
+                          title="Remove from queue"
+                          aria-label="Remove from queue"
+                        >
+                          <Trash2 size={16}/>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
-              <button 
-                onClick={() => setIsQueueOpen(false)} 
-                className="p-1 rounded-lg text-slate-400 hover:text-white transition"
-                aria-label="Close Queue"
-              >
-                <X size={18} />
-              </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-2 touch-scroll">
-            {queue.length === 0 ? (
-              <p className="text-slate-400 text-xs text-center py-8">Queue is empty</p>
-            ) : (
-              queue.map((track, idx) => {
-                const isCurrent = idx === currentIndex;
-                return (
-                  <div 
-                    key={`${track.id || 'track'}-${idx}`} 
-                    onClick={() => skipToQueueIndex(idx)}
-                    className={`flex items-center justify-between p-2 rounded-xl group cursor-pointer transition-all ${
-                      isCurrent 
-                        ? 'bg-purple-500/20 border border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.15)]' 
-                        : 'hover:bg-white/10 active:bg-white/15'
-                    }`}
-                    title={isCurrent ? `Now playing "${track.title}"` : `Skip to "${track.title}"`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
-                      <div className="relative w-9 h-9 rounded-lg bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center border border-white/5">
-                        {track.coverArt ? (
-                          <img 
-                            src={getCoverArtUrl(track.coverArt, getAuthParams(user))} 
-                            className="w-full h-full object-cover" 
-                            alt="" 
-                            loading="lazy" 
-                            onError={(e) => {
-                              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                                e.currentTarget.src = DEFAULT_COVER_ART;
-                              }
-                            }}
-                          />
-                        ) : (
-                          <Music size={15} className="text-slate-400" />
-                        )}
-                        {isCurrent ? (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <Volume2 size={15} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} />
-                          </div>
-                        ) : (
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                            <Play size={14} fill="currentColor" className="text-white ml-0.5" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className={`text-xs font-medium truncate transition-colors ${
-                          isCurrent ? 'text-purple-300 font-semibold' : 'text-white group-hover:text-purple-300'
-                        }`}>
-                          {track.title}
-                        </p>
-                        <p className="text-[11px] text-slate-400 truncate">{track.artist}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
-                      {track.duration > 0 && (
-                        <span className="text-[10px] text-slate-400 font-mono mr-1.5 hidden sm:inline-block">
-                          {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
-                        </span>
-                      )}
-                      <div className="flex flex-col mr-1">
-                        <button 
-                          onClick={() => reorderQueue(idx, idx - 1)} 
-                          disabled={idx === 0} 
-                          className="text-slate-400 hover:text-white disabled:opacity-20 p-1 transition-colors"
-                          title="Move up in queue"
-                          aria-label="Move up"
-                        >
-                          <ChevronUp size={13}/>
-                        </button>
-                        <button 
-                          onClick={() => reorderQueue(idx, idx + 1)} 
-                          disabled={idx === queue.length - 1} 
-                          className="text-slate-400 hover:text-white disabled:opacity-20 p-1 transition-colors"
-                          title="Move down in queue"
-                          aria-label="Move down"
-                        >
-                          <ChevronDown size={13}/>
-                        </button>
-                      </div>
-                      <button 
-                        onClick={() => removeFromQueue(idx)} 
-                        className="text-slate-400 hover:text-red-400 active:scale-90 p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                        title="Remove from queue"
-                        aria-label="Remove from queue"
-                      >
-                        <Trash2 size={14}/>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
+        </>
       )}
     </>
   );

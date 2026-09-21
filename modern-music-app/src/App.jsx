@@ -10,6 +10,7 @@ import PlaylistDetails from './pages/PlaylistDetails';
 import AllAlbums from './pages/AllAlbums';
 import AllArtists from './pages/AllArtists';
 import AllSongs from './pages/AllSongs';
+import LikedSongsPage from './pages/LikedSongsPage';
 import Playlists from './pages/Playlists';
 import PublicPlaylists from './pages/PublicPlaylists';
 import Help from './pages/Help';
@@ -19,6 +20,7 @@ import Settings from './pages/Settings';
 import AdminSettings from './pages/AdminSettings';
 
 import MobileNav from './components/MobileNav';
+import ChatWidget from './components/ChatWidget';
 
 function ProtectedLayout() {
   const { user, loading } = useAuth();
@@ -44,6 +46,7 @@ function ProtectedLayout() {
             <Route path="/playlists/:id" element={<PlaylistDetails />} />
             <Route path="/albums" element={<AllAlbums />} />
             <Route path="/songs" element={<AllSongs />} />
+            <Route path="/liked" element={<LikedSongsPage />} />
             <Route path="/artists" element={<AllArtists />} />
             <Route path="/playlists" element={<Playlists />} />
             <Route path="/public-playlists" element={<PublicPlaylists />} />
@@ -56,6 +59,7 @@ function ProtectedLayout() {
         </main>
       </div>
       <StickyPlayer />
+      <ChatWidget />
       <MobileNav />
     </div>
   );

@@ -121,6 +121,13 @@ if (!$requester && !empty($_SESSION['role'])) {
         'role' => $_SESSION['role']
     ];
 }
+if (!$requester && !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
+    $requester = [
+        'id' => $_SESSION['user_id'] ?? 1,
+        'username' => $_SESSION['admin_user'] ?? 'admin',
+        'role' => 'admin'
+    ];
+}
 
 // Ensure requester is authenticated
 if (!$requester) {
@@ -145,11 +152,6 @@ $userId = filter_var($userIdInput, FILTER_VALIDATE_INT);
 
 $newRoleInput = strtolower(trim($data['new_role'] ?? $data['role'] ?? $_POST['new_role'] ?? $_POST['role'] ?? ''));
 
-// Normalize 'user' to 'member'
-if ($newRoleInput === 'user') {
-    $newRoleInput = 'member';
-}
-
 // Input validation
 if (!$userId || $userId <= 0) {
     http_response_code(400);
@@ -157,17 +159,17 @@ if (!$userId || $userId <= 0) {
     exit;
 }
 
-$allowedRoles = ['admin', 'member'];
+$allowedRoles = ['admin', 'member', 'user', 'standard'];
 if (!in_array($newRoleInput, $allowedRoles, true)) {
     http_response_code(400);
     echo json_encode([
         'status'  => 'error',
-        'message' => 'Invalid role specified. Permitted roles are: ' . implode(', ', $allowedRoles) . '.'
+        'message' => 'Invalid role specified. Permitted roles are: admin, user.'
     ]);
     exit;
 }
 
-$newRole = $newRoleInput;
+$newRole = ($newRoleInput === 'admin') ? 'admin' : 'user';
 
 // ─── 5. VERIFY TARGET USER & SAFEGUARDS ───
 $targetStmt = $pdo->prepare("SELECT id, username, role, password_hash FROM sys_users WHERE id = :id LIMIT 1");

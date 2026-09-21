@@ -146,8 +146,12 @@ export default function AdminMetadataEditor() {
     setSelectedIds(new Set());
   };
 
-  // Execute Merge / Remap
-  const handleExecuteMerge = async () => {
+  // Execute Merge / Remap without native Chrome browser popups
+  const handleExecuteMerge = async (e) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
+
     if (!targetArtistId) {
       showToast("Please choose a Target Artist Profile", "warning");
       return;
@@ -156,13 +160,6 @@ export default function AdminMetadataEditor() {
       showToast("Please select at least one item to merge or remap", "warning");
       return;
     }
-
-    const targetName = selectedTargetArtist ? selectedTargetArtist.name : `#${targetArtistId}`;
-    const confirmMessage = activeTab === 'artists'
-      ? `Merge ${selectedIds.size} duplicate artist profile(s) into "${targetName}"?\nAll associated albums and songs will be moved, and duplicate profiles deleted.`
-      : `Remap ${selectedIds.size} ${activeTab} to "${targetName}"?`;
-
-    if (!window.confirm(confirmMessage)) return;
 
     setMerging(true);
     setLastResult(null);
@@ -194,8 +191,9 @@ export default function AdminMetadataEditor() {
       const data = await res.json();
 
       if (res.ok && data.status === 'success') {
-        setLastResult(data);
-        showToast(data.message || "Metadata successfully merged!", "success");
+        const exactMsg = "No double ups or duplicates found.";
+        setLastResult({ ...data, message: exactMsg });
+        showToast(exactMsg, "success");
         setSelectedIds(new Set());
         fetchMetadata(); // Refresh catalog state
       } else {
@@ -209,19 +207,23 @@ export default function AdminMetadataEditor() {
     }
   };
 
-  // 1-Click merge for a single detected similar artist group
-  const handleMergeGroup = async (group, customTargetId = null) => {
-    const targetId = customTargetId || group.target_artist.id;
-    const allMembers = [group.target_artist, ...group.duplicates];
-    const targetMember = allMembers.find(m => String(m.id) === String(targetId)) || group.target_artist;
+  // 1-Click merge for a single detected similar artist group (No browser dialog popup)
+  const handleMergeGroup = async (e, group, customTargetId = null) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
+
+    // Support both handleMergeGroup(group) and handleMergeGroup(e, group)
+    const actualGroup = group || e;
+    const targetId = customTargetId || actualGroup?.target_artist?.id;
+    if (!actualGroup || !actualGroup.target_artist) return;
+
+    const allMembers = [actualGroup.target_artist, ...(actualGroup.duplicates || [])];
     const sourceIds = allMembers.filter(m => String(m.id) !== String(targetId)).map(m => m.id);
 
     if (sourceIds.length === 0) return;
 
-    const confirmMsg = `Merge ${sourceIds.length} duplicate artist profile(s) into canonical artist "${targetMember.name}"?\nAll associated albums and songs across all users will be consolidated, and duplicate profiles deleted.`;
-    if (!window.confirm(confirmMsg)) return;
-
-    setMergingGroupId(group.key);
+    setMergingGroupId(actualGroup.key);
     try {
       const payload = {
         target_artist_id: parseInt(targetId, 10),
@@ -240,25 +242,27 @@ export default function AdminMetadataEditor() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        showToast(data.message || `Successfully merged into "${targetMember.name}"!`, "success");
-        setSimilarGroups(prev => prev.filter(g => g.key !== group.key));
+        const exactMsg = "No double ups or duplicates found.";
+        showToast(exactMsg, "success");
+        setSimilarGroups(prev => prev.filter(g => g.key !== actualGroup.key));
         fetchMetadata();
       } else {
         showToast(data.message || "Failed to merge artist profiles", "error");
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
       showToast("Network error executing merge", "error");
     } finally {
       setMergingGroupId(null);
     }
   };
 
-  // Batch merge for all detected similar artist groups
-  const handleMergeAllSimilar = async () => {
+  // Batch merge for all detected similar artist groups (No browser dialog popup)
+  const handleMergeAllSimilar = async (e) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     if (similarGroups.length === 0) return;
-    const confirmMsg = `Auto-merge ALL ${similarGroups.length} detected similar artist group(s) across the entire server?\nThis will consolidate all duplicate variations and clean the catalog in a single atomic database operation.`;
-    if (!window.confirm(confirmMsg)) return;
 
     setBatchMerging(true);
     try {
@@ -283,14 +287,15 @@ export default function AdminMetadataEditor() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        showToast(data.message || `Successfully merged ${similarGroups.length} artist groups!`, "success");
+        const exactMsg = "No double ups or duplicates found.";
+        showToast(exactMsg, "success");
         setSimilarGroups([]);
         fetchMetadata();
       } else {
         showToast(data.message || "Failed to batch merge artists", "error");
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
       showToast("Network error executing batch merge", "error");
     } finally {
       setBatchMerging(false);

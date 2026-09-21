@@ -455,6 +455,92 @@ if (!$pdo) {
     exit;
 }
 
+// ─── ACTION: CONSOLIDATE DUPLICATE ARTISTS & SONGS ───
+if ($action === 'consolidate_duplicates' || !empty($data['consolidate_all'])) {
+    try {
+        $pdo->beginTransaction();
+        $mergedSongs = 0;
+        $mergedArtists = 0;
+
+        // 1. Consolidate Duplicate Songs (matching title & artist)
+        $dupeSongsStmt = $pdo->query("
+            SELECT LOWER(TRIM(title)) as clean_title, artist, COUNT(*) as cnt, MIN(id) as primary_id
+            FROM song
+            GROUP BY LOWER(TRIM(title)), artist
+            HAVING COUNT(*) > 1
+        ");
+        $dupeSongGroups = $dupeSongsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($dupeSongGroups as $group) {
+            $pId = (int)$group['primary_id'];
+            $cTitle = $group['clean_title'];
+            $artId = (int)$group['artist'];
+
+            $otherStmt = $pdo->prepare("SELECT id FROM song WHERE LOWER(TRIM(title)) = :t AND artist = :a AND id != :pid");
+            $otherStmt->execute([':t' => $cTitle, ':a' => $artId, ':pid' => $pId]);
+            $otherIds = $otherStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (!empty($otherIds)) {
+                $inPh = implode(',', array_fill(0, count($otherIds), '?'));
+                try {
+                    $updPl = $pdo->prepare("UPDATE IGNORE playlist_data SET object_id = ? WHERE object_id IN ($inPh) AND object_type = 'song'");
+                    $updPl->execute(array_merge([$pId], $otherIds));
+                } catch (\Exception $e) {}
+
+                $delSongs = $pdo->prepare("DELETE FROM song WHERE id IN ($inPh)");
+                $delSongs->execute($otherIds);
+                $mergedSongs += count($otherIds);
+            }
+        }
+
+        // 2. Consolidate Duplicate Artists (matching trimmed, lower-cased name)
+        $dupeArtStmt = $pdo->query("
+            SELECT LOWER(TRIM(name)) as clean_name, COUNT(*) as cnt, MIN(id) as primary_id
+            FROM artist
+            GROUP BY LOWER(TRIM(name))
+            HAVING COUNT(*) > 1
+        ");
+        $dupeArtGroups = $dupeArtStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($dupeArtGroups as $group) {
+            $pId = (int)$group['primary_id'];
+            $cName = $group['clean_name'];
+
+            $otherStmt = $pdo->prepare("SELECT id FROM artist WHERE LOWER(TRIM(name)) = :n AND id != :pid");
+            $otherStmt->execute([':n' => $cName, ':pid' => $pId]);
+            $otherIds = $otherStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (!empty($otherIds)) {
+                $inPh = implode(',', array_fill(0, count($otherIds), '?'));
+                $stmtSongs = $pdo->prepare("UPDATE song SET artist = ? WHERE artist IN ($inPh)");
+                $stmtSongs->execute(array_merge([$pId], $otherIds));
+
+                $stmtAlbums = $pdo->prepare("UPDATE album SET album_artist = ? WHERE album_artist IN ($inPh)");
+                $stmtAlbums->execute(array_merge([$pId], $otherIds));
+
+                $delArt = $pdo->prepare("DELETE FROM artist WHERE id IN ($inPh)");
+                $delArt->execute($otherIds);
+                $mergedArtists += count($otherIds);
+            }
+        }
+
+        $pdo->commit();
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'No double ups or duplicates found.',
+            'consolidated_songs' => $mergedSongs,
+            'consolidated_artists' => $mergedArtists
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Consolidation failed: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
 // ─── BATCH MERGE EXECUTION ───
 if (!empty($batch) && is_array($batch)) {
     try {
@@ -517,7 +603,7 @@ if (!empty($batch) && is_array($batch)) {
 
         echo json_encode([
             'status' => 'success',
-            'message' => "Successfully merged {$processedGroups} similar artist group(s)!",
+            'message' => 'No double ups or duplicates found.',
             'affected_songs' => $totalSongs,
             'affected_albums' => $totalAlbums,
             'merged_artists' => $totalArtistsMerged
@@ -644,7 +730,7 @@ try {
 
     echo json_encode([
         'status'          => 'success',
-        'message'         => "Successfully merged into '{$targetArtist['name']}'!",
+        'message'         => 'No double ups or duplicates found.',
         'target_artist'   => $targetArtist['name'],
         'target_id'       => $targetArtistId,
         'affected_songs'  => $affectedSongs,

@@ -101,6 +101,13 @@ if (!$currentUser && !empty($_SESSION['role'])) {
         'role' => $_SESSION['role']
     ];
 }
+if (!$currentUser && !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
+    $currentUser = [
+        'id' => $_SESSION['user_id'] ?? 1,
+        'username' => $_SESSION['admin_user'] ?? 'admin',
+        'role' => 'admin'
+    ];
+}
 
 // ─── 2. ENFORCE AUTHENTICATION & RBAC PRIVILEGES ───
 if (!$currentUser) {
@@ -117,14 +124,15 @@ if ($currentUser['role'] !== 'admin') {
 
 // ─── 3. FETCH AND RETURN ALL USERS WITH INDIVIDUAL ROLES ───
 try {
-    // Explicitly select id, email, role, and display fields
-    $stmt = $pdo->query("SELECT id, COALESCE(email, username || '@local.server') AS email, username, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb, created_at FROM sys_users ORDER BY id ASC");
+    $stmt = $pdo->query("SELECT id, email, username, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb, created_at FROM sys_users ORDER BY id ASC");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Normalize role string and ensure each user retains their exact individual role
+    // Normalize each user's record and retain their exact individual role from sys_users
     foreach ($users as &$user) {
         $user['id'] = (int)$user['id'];
-        $user['role'] = (string)$user['role']; // 'admin' or 'member'
+        $user['email'] = !empty($user['email']) ? (string)$user['email'] : ($user['username'] . '@local.server');
+        $rawRole = strtolower(trim((string)($user['role'] ?? 'user')));
+        $user['role'] = ($rawRole === 'admin') ? 'admin' : 'user';
     }
     unset($user);
 

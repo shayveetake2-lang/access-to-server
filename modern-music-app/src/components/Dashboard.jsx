@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getCoverArtUrl, fetchRecentlyAdded, DEFAULT_COVER_ART } from '../utils/api';
+import LikedSongsPlaylist from './LikedSongsPlaylist';
 
 const GENRE_CATEGORIES = [
   { id: 'all', label: 'All Genres' },
@@ -467,6 +468,9 @@ export default function Dashboard() {
               </div>
             </section>
           )}
+
+          {/* ❤️ Liked Songs — pinned below Album of the Week */}
+          <LikedSongsPlaylist />
 
           {/* 🕒 Recently Added Section (New Releases & New Songs) */}
           {(recentAlbums.length > 0 || recentSongs.length > 0) && (

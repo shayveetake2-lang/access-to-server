@@ -42,16 +42,17 @@ export function PlaylistModalProvider({ children }) {
     
     setIsCreating(true);
     try {
-      const auth = getSubsonicAuthParams(user);
+      // Force-fresh token: createPlaylist must always bind to the currently-logged-in user's DB profile
+      const auth = getSubsonicAuthParams(user, true);
       const res = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(createPlaylistName.trim())}&${auth}`));
       const data = await res.json();
       if (data?.["subsonic-response"]?.status === "ok") {
         const createdPlaylist = data["subsonic-response"]?.playlist;
         const newId = createdPlaylist?.id;
         if (newId) {
-          // Explicitly set public or private flag based on user selection in Subsonic API
+          // Explicitly set public or private flag — force-fresh auth to avoid token-binding to wrong user
           try {
-            await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&public=${isPublic ? 'true' : 'false'}&${auth}`));
+            await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&public=${isPublic ? 'true' : 'false'}&${getSubsonicAuthParams(user, true)}`));
           } catch (pe) {
             console.debug("Failed setting playlist visibility via Subsonic:", pe);
           }
@@ -97,10 +98,13 @@ export function PlaylistModalProvider({ children }) {
       if (data?.['subsonic-response']?.status === 'ok') {
         let allPlaylists = data['subsonic-response'].playlists?.playlist || [];
         allPlaylists = Array.isArray(allPlaylists) ? allPlaylists : [allPlaylists];
+        // Case-insensitive owner match — fixes cross-device sync bug where playlists were
+        // invisible unless public because the owner string casing didn't match
+        const usernameLower = (user.username || '').toLowerCase();
         const userPlaylists = allPlaylists.filter(p => 
           p.owner !== 'System' && 
-          !p.id.startsWith('400000') &&
-          (!p.owner || p.owner === '' || p.owner.toLowerCase() === user.username.toLowerCase())
+          !String(p.id).startsWith('400000') &&
+          (!p.owner || p.owner === '' || p.owner.toLowerCase() === usernameLower)
         );
         setPlaylists(userPlaylists.slice(0, 9));
       }
@@ -114,7 +118,8 @@ export function PlaylistModalProvider({ children }) {
   const addToPlaylist = async (playlistId) => {
     if (!user || !songIdToAdd) return;
     try {
-      const auth = getSubsonicAuthParams(user);
+      // Force-fresh auth for every add-to-playlist mutation
+      const auth = getSubsonicAuthParams(user, true);
       const res = await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${playlistId}&songIdToAdd=${songIdToAdd}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {

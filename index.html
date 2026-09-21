@@ -372,6 +372,104 @@
                         </div>
                     </div>
 
+                    <!-- ── PROMINENT QUICK LAUNCHERS (Plex Media Server & Aether Music Portal) ── -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Plex Media Server Quick Launcher Card -->
+                        <a href="https://app.plex.tv/desktop/#!/" target="_blank" rel="noopener noreferrer" class="p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-amber-950/20 border border-amber-500/30 hover:border-amber-400 shadow-xl shadow-amber-500/5 hover:shadow-amber-500/20 transition-all duration-300 group flex items-center justify-between">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shadow-md shrink-0">
+                                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-base font-bold text-white group-hover:text-amber-300 transition-colors truncate">Plex Media Server</h3>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">● Online</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 truncate mt-0.5">Stream Movies &amp; TV Shows · Port 32400</p>
+                                </div>
+                            </div>
+                            <div class="shrink-0 pl-3">
+                                <span class="px-3.5 py-2 rounded-xl bg-amber-500/20 group-hover:bg-amber-500 text-amber-300 group-hover:text-slate-950 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                                    Launch ↗
+                                </span>
+                            </div>
+                        </a>
+
+                        <!-- Aether Music Portal Quick Launcher Card -->
+                        <a href="modern-music-app/dist/" target="_blank" class="p-5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-slate-900/90 to-indigo-950/20 border border-purple-500/30 hover:border-purple-400 shadow-xl shadow-purple-500/5 hover:shadow-purple-500/20 transition-all duration-300 group flex items-center justify-between">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform shadow-md shrink-0">
+                                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-base font-bold text-white group-hover:text-purple-300 transition-colors truncate">Aether Music Portal</h3>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0">● Active SPA</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 truncate mt-0.5">High-Fidelity Audio Streaming · Subsonic API</p>
+                                </div>
+                            </div>
+                            <div class="shrink-0 pl-3">
+                                <span class="px-3.5 py-2 rounded-xl bg-purple-500/20 group-hover:bg-purple-500 text-purple-300 group-hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                                    Launch ↗
+                                </span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- ── RECENTLY ADDED SECTION ── -->
+                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Recently Added</h3>
+                                    <p class="text-[11px] text-slate-400">Latest media and albums synchronized to your server library</p>
+                                </div>
+                            </div>
+                            <button onclick="loadRecentlyAddedCatalog()" class="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium transition-colors" title="Refresh Recent Items">
+                                <svg id="recent-refresh-icon" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Refresh</span>
+                            </button>
+                        </div>
+                        <div id="recently-added-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+                            <div class="col-span-full py-8 text-center text-xs text-slate-400">
+                                <div class="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                Loading recently added items...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── FAVORITE ALBUMS AND ARTISTS DISPLAY SECTION ── -->
+                    <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40">
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Favorite Albums &amp; Artists</h3>
+                                        <span id="favorites-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">0 Items</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400">Saved items from your catalog stored in database</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+                                <button onclick="filterFavorites('all')" id="fav-filter-all" class="px-2.5 py-1 rounded-lg font-semibold bg-cyan-600 text-white shadow-sm transition-all">All</button>
+                                <button onclick="filterFavorites('album')" id="fav-filter-album" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition-all">Albums</button>
+                                <button onclick="filterFavorites('artist')" id="fav-filter-artist" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition-all">Artists</button>
+                            </div>
+                        </div>
+                        <div id="favorites-display-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+                            <div class="col-span-full py-8 text-center text-xs text-slate-400">
+                                No favorite albums or artists saved yet. Click the star button on any album to save it here!
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Grid of Dashboard Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
@@ -2061,9 +2159,9 @@
 
                     tbody.innerHTML = data.users.map(u => {
                         const isSelf = ((u.username && u.username.toLowerCase() === currentUsername.toLowerCase()) || (u.email && u.email.toLowerCase() === currentUsername.toLowerCase()));
-                        // DYNAMIC INJECTION: Bind to each specific user's role from payload, NOT the active viewer's session role
-                        const userRole = (u.role || 'member').toLowerCase();
-                        const isUserAdmin = (userRole === 'admin');
+                        // DYNAMIC INJECTION: Bind to each specific user's individual role from row data, NOT active session role
+                        const rawRole = (u.role || '').toLowerCase();
+                        const isUserAdmin = (rawRole === 'admin');
                         const displayName = u.username || u.email || `User #${u.id}`;
                         const displayEmail = u.email || `${displayName}@local.server`;
 
@@ -2085,12 +2183,12 @@
                             </td>
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2">
-                                    <span id="user-role-badge-${u.id}" class="px-2 py-0.5 rounded-full ${isUserAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold">
-                                        ${isUserAdmin ? '👑 admin' : '👤 member'}
+                                    <span id="user-role-badge-${u.id}" class="px-2.5 py-1 rounded-full ${isUserAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold">
+                                        ${isUserAdmin ? '👑 Admin' : '👤 Standard User'}
                                     </span>
                                     ${isViewerAdmin ? `
-                                    <button id="user-role-btn-${u.id}" onclick="demoteOrPromoteUser(${u.id})" class="px-2 py-1 rounded-lg text-[11px] font-semibold ${isUserAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'} transition-all" title="${isUserAdmin ? 'Demote to regular member' : 'Promote to administrator'}">
-                                        ${isUserAdmin ? 'Demote' : 'Make Admin 👑'}
+                                    <button id="user-role-btn-${u.id}" onclick="demoteOrPromoteUser(${u.id})" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold ${isUserAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-300 dark:border-slate-700' : 'bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-400 border border-indigo-500/30'} transition-all" title="${isUserAdmin ? 'Demote to Standard User' : 'Promote to Admin'}">
+                                        ${isUserAdmin ? 'Demote' : 'Promote'}
                                     </button>
                                     ` : ''}
                                 </div>
@@ -2136,9 +2234,10 @@
         async function demoteOrPromoteUser(userId) {
             const user = settingsUsersList.find(x => x.id === userId);
             if (!user) return;
-            const currentRole = (user.role || 'member').toLowerCase();
-            const newRole = (currentRole === 'admin') ? 'member' : 'admin';
-            const actionLabel = (newRole === 'member') ? 'Demote to member' : 'Promote to admin';
+            const currentRole = (user.role || '').toLowerCase();
+            const isCurrentlyAdmin = (currentRole === 'admin');
+            const newRole = isCurrentlyAdmin ? 'user' : 'admin';
+            const actionLabel = isCurrentlyAdmin ? 'Demote to Standard User' : 'Promote to Admin';
             const targetLabel = user.email || user.username || `User #${userId}`;
             
             if (!confirm(`Are you sure you want to ${actionLabel} for '${targetLabel}'?`)) return;
@@ -2146,7 +2245,7 @@
         }
 
         async function demoteUser(userId) {
-            await executeRoleUpdate(userId, 'member');
+            await executeRoleUpdate(userId, 'user');
         }
 
         async function executeRoleUpdate(userId, newRole) {
@@ -2181,16 +2280,16 @@
                     const badge = document.getElementById(`user-role-badge-${userId}`);
                     if (badge) {
                         const isAdmin = (newRole === 'admin');
-                        badge.className = `px-2 py-0.5 rounded-full ${isAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold`;
-                        badge.textContent = isAdmin ? '👑 admin' : '👤 member';
+                        badge.className = `px-2.5 py-1 rounded-full ${isAdmin ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-700/50'} text-[11px] font-semibold`;
+                        badge.textContent = isAdmin ? '👑 Admin' : '👤 Standard User';
                     }
 
                     if (btn) {
                         const isAdmin = (newRole === 'admin');
                         btn.disabled = false;
-                        btn.className = `px-2 py-1 rounded-lg text-[11px] font-semibold ${isAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'} transition-all`;
-                        btn.textContent = isAdmin ? 'Demote' : 'Make Admin 👑';
-                        btn.title = isAdmin ? 'Demote to regular member' : 'Promote to administrator';
+                        btn.className = `px-2.5 py-1 rounded-lg text-[11px] font-semibold ${isAdmin ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-300 dark:border-slate-700' : 'bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-400 border border-indigo-500/30'} transition-all`;
+                        btn.textContent = isAdmin ? 'Demote' : 'Promote';
+                        btn.title = isAdmin ? 'Demote to Standard User' : 'Promote to Admin';
                     }
 
                     showUserMgmtAlert(data.message || `Successfully updated role to '${newRole}'.`);
@@ -2611,6 +2710,204 @@
             }
         }
 
+        // ─── DASHBOARD RECENTLY ADDED & FAVORITES CONTROLLERS ───
+        let dashboardFavorites = [];
+        let currentFavoritesFilter = 'all';
+
+        async function loadRecentlyAddedCatalog() {
+            const grid = document.getElementById('recently-added-grid');
+            const icon = document.getElementById('recent-refresh-icon');
+            if (icon) icon.classList.add('animate-spin');
+
+            try {
+                const res = await fetch('api/favorites.php?action=get_recent&limit=8');
+                const data = await res.json();
+                if (data && data.status === 'success' && Array.isArray(data.items)) {
+                    renderRecentlyAddedGrid(data.items);
+                } else {
+                    if (grid) grid.innerHTML = '<div class="col-span-full py-6 text-center text-xs text-slate-400">No recent catalog items found.</div>';
+                }
+            } catch(e) {
+                console.error("Failed to load recent catalog:", e);
+                if (grid) grid.innerHTML = '<div class="col-span-full py-6 text-center text-xs text-amber-400/80">Could not connect to catalog service.</div>';
+            } finally {
+                if (icon) setTimeout(() => icon.classList.remove('animate-spin'), 300);
+            }
+        }
+
+        function renderRecentlyAddedGrid(items) {
+            const grid = document.getElementById('recently-added-grid');
+            if (!grid) return;
+
+            grid.innerHTML = items.map(item => {
+                const id = item.subsonic_id || item.id;
+                const title = item.title || 'Untitled Album';
+                const artist = item.artist || 'Various Artists';
+                const isFav = dashboardFavorites.some(f => String(f.item_id) === String(id));
+
+                return `
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 flex flex-col justify-between group hover:border-cyan-500/40 transition-all shadow-sm">
+                    <div class="relative w-full aspect-square rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden mb-2.5 flex items-center justify-center">
+                        <div class="w-full h-full bg-gradient-to-tr from-cyan-900/30 to-purple-900/30 flex items-center justify-center text-slate-500 font-bold text-2xl group-hover:scale-105 transition-transform duration-300">
+                            🎵
+                        </div>
+                        <button onclick="toggleFavoriteItem('${id}', 'album', '${escapeHtml(title).replace(/'/g, "\\'")}', '${escapeHtml(artist).replace(/'/g, "\\'")}', '')" 
+                                id="fav-btn-${id}" 
+                                class="absolute top-2 right-2 w-7 h-7 rounded-full ${isFav ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30' : 'bg-slate-950/70 text-slate-300 hover:text-amber-400 hover:bg-slate-950'} flex items-center justify-center transition-all cursor-pointer"
+                                title="${isFav ? 'Remove from Favorites' : 'Add to Favorites'}">
+                            <svg class="w-4 h-4" fill="${isFav ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div>
+                        <div class="font-bold text-xs text-slate-900 dark:text-white truncate" title="${escapeHtml(title)}">${escapeHtml(title)}</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5" title="${escapeHtml(artist)}">${escapeHtml(artist)}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        async function loadDashboardFavorites() {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            try {
+                const res = await fetch('api/favorites.php?action=list', {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                const data = await res.json();
+                if (data && data.status === 'success' && Array.isArray(data.favorites)) {
+                    dashboardFavorites = data.favorites;
+                    renderFavoritesDisplayGrid();
+                    // Re-render recently added to ensure star states match
+                    const recentsGrid = document.getElementById('recently-added-grid');
+                    if (recentsGrid && recentsGrid.children.length > 0) {
+                        dashboardFavorites.forEach(fav => {
+                            const btn = document.getElementById(`fav-btn-${fav.item_id}`);
+                            if (btn) {
+                                btn.className = "absolute top-2 right-2 w-7 h-7 rounded-full bg-amber-500 text-white shadow-md shadow-amber-500/30 flex items-center justify-center transition-all cursor-pointer";
+                                btn.title = "Remove from Favorites";
+                                btn.innerHTML = `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
+                            }
+                        });
+                    }
+                }
+            } catch(e) {
+                console.error("Failed to fetch favorites:", e);
+            }
+        }
+
+        function filterFavorites(type) {
+            currentFavoritesFilter = type;
+            const buttons = ['all', 'album', 'artist'];
+            buttons.forEach(b => {
+                const btn = document.getElementById(`fav-filter-${b}`);
+                if (btn) {
+                    if (b === type) {
+                        btn.className = 'px-2.5 py-1 rounded-lg font-semibold bg-cyan-600 text-white shadow-sm transition-all';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white transition-all';
+                    }
+                }
+            });
+            renderFavoritesDisplayGrid();
+        }
+
+        function renderFavoritesDisplayGrid() {
+            const grid = document.getElementById('favorites-display-grid');
+            const badge = document.getElementById('favorites-count-badge');
+            if (!grid) return;
+
+            let filtered = dashboardFavorites;
+            if (currentFavoritesFilter !== 'all') {
+                filtered = dashboardFavorites.filter(f => f.item_type === currentFavoritesFilter);
+            }
+
+            if (badge) {
+                badge.textContent = `${dashboardFavorites.length} ${dashboardFavorites.length === 1 ? 'Item' : 'Items'}`;
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-8 text-center text-xs text-slate-400">No favorite items saved in this category yet. Click the star button on any album to save it here!</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => {
+                const isAlbum = item.item_type === 'album';
+                return `
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 flex flex-col justify-between group hover:border-amber-500/40 transition-all shadow-sm">
+                    <div class="relative w-full aspect-square rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden mb-2.5 flex items-center justify-center">
+                        <div class="w-full h-full bg-gradient-to-tr from-amber-900/20 to-purple-900/20 flex items-center justify-center text-slate-400 font-bold text-2xl group-hover:scale-105 transition-transform duration-300">
+                            ${isAlbum ? '💿' : '🎤'}
+                        </div>
+                        <button onclick="toggleFavoriteItem('${item.item_id}', '${item.item_type}', '${escapeHtml(item.title).replace(/'/g, "\\'")}', '${escapeHtml(item.artist || '').replace(/'/g, "\\'")}', '')" 
+                                class="absolute top-2 right-2 w-7 h-7 rounded-full bg-amber-500 text-white shadow-md shadow-amber-500/30 hover:scale-110 flex items-center justify-center transition-all cursor-pointer"
+                                title="Remove from Favorites">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                        </button>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5 mb-0.5">
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-semibold ${isAlbum ? 'bg-cyan-500/10 text-cyan-400' : 'bg-purple-500/10 text-purple-400'}">${item.item_type}</span>
+                        </div>
+                        <div class="font-bold text-xs text-slate-900 dark:text-white truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5" title="${escapeHtml(item.artist || '')}">${escapeHtml(item.artist || 'Catalog Item')}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        async function toggleFavoriteItem(itemId, itemType, title, artist, coverArt) {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
+            const btn = document.getElementById(`fav-btn-${itemId}`);
+
+            try {
+                const res = await fetch('api/favorites.php?action=toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify({
+                        item_id: itemId,
+                        item_type: itemType || 'album',
+                        title: title,
+                        artist: artist || '',
+                        cover_art: coverArt || ''
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    if (data.favorited) {
+                        dashboardFavorites.unshift({
+                            item_id: itemId,
+                            item_type: itemType || 'album',
+                            title: title,
+                            artist: artist || '',
+                            cover_art: coverArt || ''
+                        });
+                        if (btn) {
+                            btn.className = "absolute top-2 right-2 w-7 h-7 rounded-full bg-amber-500 text-white shadow-md shadow-amber-500/30 flex items-center justify-center transition-all cursor-pointer";
+                            btn.title = "Remove from Favorites";
+                            btn.innerHTML = `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
+                        }
+                    } else {
+                        dashboardFavorites = dashboardFavorites.filter(f => String(f.item_id) !== String(itemId));
+                        if (btn) {
+                            btn.className = "absolute top-2 right-2 w-7 h-7 rounded-full bg-slate-950/70 text-slate-300 hover:text-amber-400 hover:bg-slate-950 flex items-center justify-center transition-all cursor-pointer";
+                            btn.title = "Add to Favorites";
+                            btn.innerHTML = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>`;
+                        }
+                    }
+                    renderFavoritesDisplayGrid();
+                }
+            } catch(e) {
+                console.error("Failed to toggle favorite:", e);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             fetchUnifiedStorage();
             const btnSsd = document.getElementById('btn-refresh-ssd');
@@ -2618,6 +2915,8 @@
             const btnUsb = document.getElementById('btn-refresh-usb');
             if (btnUsb) btnUsb.addEventListener('click', fetchUnifiedStorage);
             loadHostedSites();
+            loadRecentlyAddedCatalog();
+            loadDashboardFavorites();
             const hash = window.location.hash.replace('#', '');
             if (hash) {
                 switchTab(hash);

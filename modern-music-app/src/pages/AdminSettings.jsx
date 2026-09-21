@@ -3,6 +3,8 @@ import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database
 import { useAuth } from '../context/AuthContext';
 import { getAmpacheUrl } from '../utils/api';
 import AdminMetadataEditor from '../components/AdminMetadataEditor';
+import GenreManager from '../components/admin/GenreManager';
+import AdminContentAssigner from '../components/admin/AdminContentAssigner';
 
 export default function AdminSettings() {
   const { user: currentUser, getAuthParams } = useAuth();
@@ -115,12 +117,31 @@ export default function AdminSettings() {
             <Users size={14} />
             <span>User Accounts</span>
           </button>
+          <button
+            onClick={() => setAdminTab('content')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+              adminTab === 'content'
+                ? 'bg-purple-500 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Database size={14} />
+            <span>Content &amp; Genres</span>
+          </button>
         </div>
       </div>
 
       {/* Tab 1: Metadata Editor Component */}
       {adminTab === 'metadata' && (
         <AdminMetadataEditor />
+      )}
+
+      {/* Tab 3: Content & Genre Management */}
+      {adminTab === 'content' && (
+        <div className="space-y-6 animate-in fade-in">
+          <GenreManager />
+          <AdminContentAssigner user={currentUser} />
+        </div>
       )}
 
       {/* Tab 2: User Accounts Table */}

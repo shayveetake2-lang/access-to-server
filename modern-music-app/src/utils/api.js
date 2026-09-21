@@ -171,13 +171,15 @@ export function getMediaPortalUrl() {
  */
 
 export async function fetchSubsonicPlaylists(user = null) {
+  // Read operations: cached auth is fine
   const auth = getSubsonicAuthParams(user);
   const res = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
   return await res.json();
 }
 
 export async function createSubsonicPlaylist(name, songIds = [], isPublic = false, user = null) {
-  const auth = getSubsonicAuthParams(user);
+  // Write operations: always force fresh token so multi-device / multi-user calls don't collide
+  const auth = getSubsonicAuthParams(user, true);
   let url = getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(name)}&${auth}`);
   if (Array.isArray(songIds) && songIds.length > 0) {
     url += '&' + songIds.map(id => `songId=${encodeURIComponent(id)}`).join('&');
@@ -189,7 +191,7 @@ export async function createSubsonicPlaylist(name, songIds = [], isPublic = fals
 
   const createdId = data?.['subsonic-response']?.playlist?.id;
   if (createdId) {
-    // Explicitly set public / private visibility
+    // Explicitly set public / private visibility (also force-fresh for this write)
     try {
       await updateSubsonicPlaylist(createdId, { public: isPublic }, user);
     } catch (e) {
@@ -207,7 +209,8 @@ export async function createSubsonicPlaylist(name, songIds = [], isPublic = fals
 }
 
 export async function updateSubsonicPlaylist(playlistId, { name, public: isPublic, songIdToAdd, songIndexToRemove } = {}, user = null) {
-  const auth = getSubsonicAuthParams(user);
+  // Always force-fresh token for every playlist mutation to guarantee binding to the active user's DB profile
+  const auth = getSubsonicAuthParams(user, true);
   let url = getAmpacheUrl(`action=updatePlaylist&playlistId=${encodeURIComponent(playlistId)}&${auth}`);
   if (name !== undefined) url += `&name=${encodeURIComponent(name)}`;
   if (isPublic !== undefined) url += `&public=${isPublic ? 'true' : 'false'}`;
@@ -219,7 +222,8 @@ export async function updateSubsonicPlaylist(playlistId, { name, public: isPubli
 }
 
 export async function deleteSubsonicPlaylist(playlistId, user = null) {
-  const auth = getSubsonicAuthParams(user);
+  // Force-fresh token for deletions
+  const auth = getSubsonicAuthParams(user, true);
   const res = await fetch(getAmpacheUrl(`action=deletePlaylist&id=${encodeURIComponent(playlistId)}&${auth}`));
   return await res.json();
 }

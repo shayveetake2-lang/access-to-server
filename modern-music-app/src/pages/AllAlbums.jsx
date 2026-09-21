@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
 const GENRE_CATEGORIES = [
   { id: 'all', label: 'All Genres' },
@@ -185,6 +186,25 @@ export default function AllAlbums() {
     }
     return list;
   }, [filteredAlbums, sortBy]);
+
+  // Infinite scroll progressive batching for 10,000+ catalog performance
+  const [visibleLimit, setVisibleLimit] = useState(48);
+
+  useEffect(() => {
+    setVisibleLimit(48);
+  }, [searchQuery, selectedGenre, selectedDecade, selectedLetter, onlyWithCovers, sortBy]);
+
+  const visibleAlbums = useMemo(() => {
+    return sortedAlbums.slice(0, visibleLimit);
+  }, [sortedAlbums, visibleLimit]);
+
+  const hasMoreAlbums = visibleLimit < sortedAlbums.length;
+  const albumSentinelRef = useInfiniteScroll(
+    () => setVisibleLimit(prev => Math.min(sortedAlbums.length, prev + 48)),
+    hasMoreAlbums,
+    false,
+    '500px'
+  );
 
   // Group albums by genre showcases for Carousel mode
   const genreShowcases = useMemo(() => {
@@ -549,61 +569,71 @@ export default function AllAlbums() {
         </div>
       ) : (
         /* ▦ Mode 2: Full Responsive Grid View */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5">
-          {sortedAlbums.map(album => (
-            <div 
-              key={album.id}
-              onClick={() => navigate(`/albums/${album.id}`)}
-              className="group flex flex-col bg-slate-900/40 hover:bg-slate-800/60 p-2.5 sm:p-3 rounded-2xl transition-all border border-white/5 hover:border-purple-500/30 backdrop-blur-sm relative active:scale-[0.98] cursor-pointer"
-            >
-              {/* Square Cover Art */}
-              <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5">
-                <img 
-                  src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
-                  alt={album.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                      e.currentTarget.src = DEFAULT_COVER_ART;
-                    }
-                  }}
-                />
-                {/* Quick Play Overlay */}
-                <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
-                  <button 
-                    onClick={(e) => handlePlayAlbum(album, e)}
-                    disabled={playingAlbumId === album.id}
-                    className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:scale-105 active:scale-95"
-                    title="Play Album"
-                    aria-label="Play Album"
-                  >
-                    {playingAlbumId === album.id ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <Play fill="currentColor" size={16} className="ml-0.5" />
-                    )}
-                  </button>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5">
+            {visibleAlbums.map(album => (
+              <div 
+                key={album.id}
+                onClick={() => navigate(`/albums/${album.id}`)}
+                className="group flex flex-col bg-slate-900/40 hover:bg-slate-800/60 p-2.5 sm:p-3 rounded-2xl transition-all border border-white/5 hover:border-purple-500/30 backdrop-blur-sm relative active:scale-[0.98] cursor-pointer"
+              >
+                {/* Square Cover Art */}
+                <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5">
+                  <img 
+                    src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
+                    alt={album.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                        e.currentTarget.src = DEFAULT_COVER_ART;
+                      }
+                    }}
+                  />
+                  {/* Quick Play Overlay */}
+                  <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
+                    <button 
+                      onClick={(e) => handlePlayAlbum(album, e)}
+                      disabled={playingAlbumId === album.id}
+                      className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:scale-105 active:scale-95"
+                      title="Play Album"
+                      aria-label="Play Album"
+                    >
+                      {playingAlbumId === album.id ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Play fill="currentColor" size={16} className="ml-0.5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Title & Artist */}
-              <div className="px-0.5 min-w-0">
-                <h4 className="font-semibold text-slate-100 group-hover:text-purple-300 transition-colors text-xs sm:text-sm truncate leading-snug">
-                  {album.name}
-                </h4>
-                <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
-                  {album.artist}
-                </p>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1">
-                  {album.year && <span>{album.year}</span>}
-                  {album.year && album.songCount && <span>•</span>}
-                  {album.songCount && <span>{album.songCount} tracks</span>}
+                {/* Title & Artist */}
+                <div className="px-0.5 min-w-0">
+                  <h4 className="font-semibold text-slate-100 group-hover:text-purple-300 transition-colors text-xs sm:text-sm truncate leading-snug">
+                    {album.name}
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
+                    {album.artist}
+                  </p>
+                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1">
+                    {album.year && <span>{album.year}</span>}
+                    {album.year && album.songCount && <span>•</span>}
+                    {album.songCount && <span>{album.songCount} tracks</span>}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* Infinite Scroll Sentinel for 10k+ Album Collections */}
+          {hasMoreAlbums && (
+            <div ref={albumSentinelRef} className="py-8 flex justify-center items-center text-xs text-slate-400 gap-2.5">
+              <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+              <span>Loading more releases ({visibleAlbums.length} of {sortedAlbums.length})...</span>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>

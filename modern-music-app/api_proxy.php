@@ -214,6 +214,140 @@ if ($action === 'getTopSongs') {
     }
 }
 
+// ── Paginated Catalog Songs Endpoint (Hardware-Optimized for 10,000+ Library) ──
+if ($action === 'getLibrarySongs' || $action === 'getAllSongs') {
+    $offset = max(0, intval($_GET['offset'] ?? ($input['offset'] ?? 0)));
+    $limit = intval($_GET['limit'] ?? ($input['limit'] ?? 50));
+    if ($limit < 1 || $limit > 200) $limit = 50;
+
+    $query = trim($_GET['query'] ?? ($input['query'] ?? ''));
+    $sort = strtolower(trim($_GET['sort'] ?? ($input['sort'] ?? 'title_asc')));
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    try {
+        $where = "s.enabled = 1";
+        $params = [];
+
+        if (!empty($query)) {
+            $where .= " AND (s.title LIKE :q OR art.name LIKE :q OR alb.name LIKE :q)";
+            $params[':q'] = '%' . $query . '%';
+        }
+
+        switch ($sort) {
+            case 'title_desc':
+                $orderBy = "s.title DESC, s.id DESC";
+                break;
+            case 'artist_asc':
+                $orderBy = "art.name ASC, s.title ASC";
+                break;
+            case 'artist_desc':
+                $orderBy = "art.name DESC, s.title ASC";
+                break;
+            case 'album_asc':
+                $orderBy = "alb.name ASC, s.track ASC";
+                break;
+            case 'duration_desc':
+                $orderBy = "s.time DESC";
+                break;
+            case 'duration_asc':
+                $orderBy = "s.time ASC";
+                break;
+            case 'plays_desc':
+                $orderBy = "s.total_count DESC, s.id DESC";
+                break;
+            case 'newest':
+                $orderBy = "s.id DESC";
+                break;
+            case 'title_asc':
+            default:
+                $orderBy = "s.title ASC, s.id ASC";
+                break;
+        }
+
+        $countSql = "
+            SELECT COUNT(*)
+            FROM song s
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album alb ON s.album = alb.id
+            WHERE {$where}
+        ";
+        $countStmt = $pdo->prepare($countSql);
+        foreach ($params as $k => $v) {
+            $countStmt->bindValue($k, $v);
+        }
+        $countStmt->execute();
+        $total = (int)$countStmt->fetchColumn();
+
+        $sql = "
+            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                   s.total_count as playCount,
+                   art.name as artist, art.id as artistId,
+                   alb.name as album, alb.id as albumId
+            FROM song s
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album alb ON s.album = alb.id
+            WHERE {$where}
+            ORDER BY {$orderBy}
+            LIMIT :lim OFFSET :off
+        ";
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $songs = [];
+        foreach ($rows as $r) {
+            $subId = (string)(300000000 + (int)$r['id']);
+            $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
+            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+            $songs[] = [
+                'id' => $subId,
+                'parent' => $subAlbId,
+                'title' => $r['title'] ?: 'Unknown Track',
+                'isDir' => false,
+                'isVideo' => false,
+                'type' => 'music',
+                'albumId' => $subAlbId,
+                'album' => $r['album'] ?: 'Unknown Album',
+                'artistId' => $subArtId,
+                'artist' => $r['artist'] ?: 'Unknown Artist',
+                'coverArt' => 'al-' . $subAlbId,
+                'duration' => (int)$r['duration'],
+                'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
+                'track' => (int)$r['track'],
+                'size' => (int)$r['size'],
+                'playCount' => (int)$r['playCount'],
+                'contentType' => 'audio/mpeg',
+                'suffix' => 'mp3'
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'ok',
+            'offset' => $offset,
+            'limit' => $limit,
+            'total' => $total,
+            'hasMore' => ($offset + count($songs)) < $total,
+            'songs' => $songs
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
 // ── Playback Stream Logging Endpoint (Cross-User Daily Play Tracker) ─────────
 if ($action === 'recordPlay' || $action === 'scrobble') {
     $rawSongId = $_GET['id'] ?? ($input['id'] ?? ($_GET['songId'] ?? ($input['songId'] ?? 0)));
