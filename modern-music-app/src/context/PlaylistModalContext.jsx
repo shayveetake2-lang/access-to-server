@@ -96,14 +96,15 @@ export function PlaylistModalProvider({ children }) {
       const res = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        let allPlaylists = data['subsonic-response'].playlists?.playlist || [];
-        allPlaylists = Array.isArray(allPlaylists) ? allPlaylists : [allPlaylists];
+        const rawPlaylists = data['subsonic-response'].playlists?.playlist;
+        const allPlaylists = Array.isArray(rawPlaylists) ? rawPlaylists : (rawPlaylists ? [rawPlaylists] : []);
         // Case-insensitive owner match — fixes cross-device sync bug where playlists were
         // invisible unless public because the owner string casing didn't match
         const usernameLower = (user.username || '').toLowerCase();
         const userPlaylists = allPlaylists.filter(p => 
+          p &&
           p.owner !== 'System' && 
-          !String(p.id).startsWith('400000') &&
+          (p.id ? !String(p.id).startsWith('400000') : true) &&
           (!p.owner || p.owner === '' || p.owner.toLowerCase() === usernameLower)
         );
         setPlaylists(userPlaylists.slice(0, 9));

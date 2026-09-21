@@ -5,7 +5,7 @@ import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getMediaPortalUrl } from '../utils/api';
+import { getMediaPortalUrl, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 
 export default function TopBar() {
   const [query, setQuery] = useState('');
@@ -34,10 +34,10 @@ export default function TopBar() {
       }
       setLoading(true);
       try {
-        const response = await fetch(`/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(query)}&songCount=5&albumCount=5&artistCount=5&${getAuthParams(user)}`);
+        const response = await fetch(getAmpacheUrl(`action=search3&query=${encodeURIComponent(query)}&songCount=5&albumCount=5&artistCount=5&${getAuthParams(user)}`));
         const data = await response.json();
         if (data?.['subsonic-response']?.status === 'ok') {
-          setResults(data['subsonic-response'].searchResult3);
+          setResults(data['subsonic-response'].searchResult3 || {});
           setShowDropdown(true);
         }
       } catch (err) {
@@ -132,17 +132,26 @@ export default function TopBar() {
         </div>
 
         {/* Dropdown Results */}
-        {showDropdown && results && (
-          <div className="absolute top-full mt-2 w-full bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto z-50">
-            {!results.song && !results.album && !results.artist ? (
-              <div className="p-4 text-center text-slate-400 text-sm">No results found for "{query}"</div>
-            ) : (
-              <div className="py-2">
+        {showDropdown && results && (() => {
+          const rawSongs = results.song;
+          const songs = Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : []);
+          const rawAlbums = results.album;
+          const albums = Array.isArray(rawAlbums) ? rawAlbums : (rawAlbums ? [rawAlbums] : []);
+          const rawArtists = results.artist;
+          const artists = Array.isArray(rawArtists) ? rawArtists : (rawArtists ? [rawArtists] : []);
+          const hasResults = songs.length > 0 || albums.length > 0 || artists.length > 0;
+
+          return (
+            <div className="absolute top-full mt-2 w-full bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto z-50">
+              {!hasResults ? (
+                <div className="p-4 text-center text-slate-400 text-sm">No results found for "{query}"</div>
+              ) : (
+                <div className="py-2">
                   {/* Songs */}
-                  {results.song && results.song.length > 0 && (
+                  {songs.length > 0 && (
                     <div className="mb-2">
                       <div className="px-4 py-1 text-xs font-semibold text-purple-400 uppercase tracking-wider bg-white/5">Songs</div>
-                      {results.song.map(song => {
+                      {songs.map(song => {
                         const isCurrent = currentTrack?.id === song.id;
                         return (
                           <div 
@@ -154,7 +163,12 @@ export default function TopBar() {
                           >
                              <div className="flex items-center gap-3 min-w-0 flex-1">
                                <div className="relative w-10 h-10 rounded-lg bg-slate-800 shrink-0 overflow-hidden border border-white/5 flex items-center justify-center">
-                                 <img src={`/ampache/public/rest/index.php?action=getCoverArt&id=${song.coverArt}&${getAuthParams(user)}`} className="w-full h-full object-cover" alt="" />
+                                 <img 
+                                   src={getCoverArtUrl(song.coverArt || song.id)} 
+                                   className="w-full h-full object-cover" 
+                                   alt="" 
+                                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_COVER_ART; }}
+                                 />
                                  {isCurrent && (
                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                      <Volume2 size={14} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} />
@@ -202,12 +216,17 @@ export default function TopBar() {
                   )}
 
                   {/* Albums */}
-                  {results.album && results.album.length > 0 && (
+                  {albums.length > 0 && (
                     <div className="mb-2">
                       <div className="px-4 py-1 text-xs font-semibold text-purple-400 uppercase tracking-wider bg-white/5">Albums</div>
-                      {results.album.map(album => (
+                      {albums.map(album => (
                         <Link to={`/albums/${album.id}`} key={album.id} onClick={handleResultClick} className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition-colors group">
-                           <img src={`/ampache/public/rest/index.php?action=getCoverArt&id=${album.coverArt}&${getAuthParams(user)}`} className="w-10 h-10 rounded bg-slate-800 object-cover shrink-0" alt="" />
+                           <img 
+                             src={getCoverArtUrl(album.coverArt || album.id)} 
+                             className="w-10 h-10 rounded bg-slate-800 object-cover shrink-0" 
+                             alt="" 
+                             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_COVER_ART; }}
+                           />
                            <div className="min-w-0 flex-1">
                              <div className="text-sm font-medium text-slate-200 truncate group-hover:text-purple-400 transition-colors">{album.name}</div>
                              <div className="text-xs text-slate-400 truncate">{album.artist}</div>
@@ -218,10 +237,10 @@ export default function TopBar() {
                   )}
 
                   {/* Artists */}
-                  {results.artist && results.artist.length > 0 && (
+                  {artists.length > 0 && (
                     <div className="mb-2">
                       <div className="px-4 py-1 text-xs font-semibold text-purple-400 uppercase tracking-wider bg-white/5">Artists</div>
-                      {results.artist.map(artist => (
+                      {artists.map(artist => (
                         <Link to={`/artists/${artist.id}`} key={artist.id} onClick={handleResultClick} className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition-colors group">
                            <div className="min-w-0 flex-1">
                              <div className="text-sm font-medium text-slate-200 truncate group-hover:text-purple-400 transition-colors">{artist.name}</div>
@@ -230,10 +249,11 @@ export default function TopBar() {
                       ))}
                     </div>
                   )}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* User Profile Actions */}

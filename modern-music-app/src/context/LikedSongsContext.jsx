@@ -55,10 +55,10 @@ export function LikedSongsProvider({ children }) {
       const res = await fetch(getAmpacheUrl(`action=getStarred2&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        const raw = data['subsonic-response']?.starred2?.song || [];
-        const songs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+        const raw = data['subsonic-response']?.starred2?.song;
+        const songs = (Array.isArray(raw) ? raw : (raw ? [raw] : [])).filter(Boolean);
         setLikedSongs(songs);
-        setLikedIds(new Set(songs.map(s => String(s.id))));
+        setLikedIds(new Set(songs.filter(s => s && s.id).map(s => String(s.id))));
       }
     } catch (err) {
       console.debug('fetchStarred error:', err);

@@ -69,8 +69,8 @@ export default function Dashboard() {
           try {
             const albumData = await albumRes.value.json();
             if (albumData?.['subsonic-response']?.status === 'ok') {
-              const raw = albumData['subsonic-response'].albumList?.album || [];
-              loadedAlbums = Array.isArray(raw) ? raw : [raw];
+              const raw = albumData['subsonic-response'].albumList?.album;
+              loadedAlbums = Array.isArray(raw) ? raw : (raw ? [raw] : []);
             }
           } catch (e) {
             console.debug("Album list parse note:", e);
@@ -83,7 +83,7 @@ export default function Dashboard() {
             const newestRes = await fetch(getAmpacheUrl(`action=getAlbumList2&type=newest&size=16&${getAuthParams(user)}`));
             const newestData = await newestRes.json();
             if (newestData?.['subsonic-response']?.status === 'ok') {
-              const rawN = newestData['subsonic-response']?.albumList2?.album || newestData['subsonic-response']?.albumList?.album || [];
+              const rawN = newestData['subsonic-response']?.albumList2?.album || newestData['subsonic-response']?.albumList?.album;
               recAlbums = Array.isArray(rawN) ? rawN : (rawN ? [rawN] : []);
             }
           } catch (ne) {
@@ -102,11 +102,12 @@ export default function Dashboard() {
           try {
             const playlistData = await playlistRes.value.json();
             if (playlistData?.['subsonic-response']?.status === 'ok') {
-              const rawPl = playlistData['subsonic-response'].playlists?.playlist || [];
-              const arr = Array.isArray(rawPl) ? rawPl : [rawPl];
+              const rawPl = playlistData['subsonic-response'].playlists?.playlist;
+              const arr = Array.isArray(rawPl) ? rawPl : (rawPl ? [rawPl] : []);
               loadedPlaylists = arr.filter(p => 
+                p &&
                 p.owner !== 'System' && 
-                !p.id.startsWith('400000') && 
+                (p.id ? !String(p.id).startsWith('400000') : true) && 
                 (p.public === 'true' || p.public === true)
               );
             }
@@ -316,8 +317,8 @@ export default function Dashboard() {
       const res = await fetch(getAmpacheUrl(`action=getPlaylist&id=${playlist.id}&${getAuthParams(user)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        const rawEntries = data['subsonic-response']?.playlist?.entry || [];
-        const tracks = Array.isArray(rawEntries) ? rawEntries : [rawEntries];
+        const rawEntries = data['subsonic-response']?.playlist?.entry;
+        const tracks = Array.isArray(rawEntries) ? rawEntries : (rawEntries ? [rawEntries] : []);
         if (tracks.length > 0) {
           playQueue(tracks, 0);
           showToast(`▶ Playing "${playlist.name}"`, 'success');

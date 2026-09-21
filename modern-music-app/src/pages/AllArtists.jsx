@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Search, Tag, Users, Sparkles } from 'lucide-react';
 import { mergeArtists } from '../utils/artistHelper';
+import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 
 export default function AllArtists() {
   const [rawArtists, setRawArtists] = useState([]);
@@ -23,22 +24,25 @@ export default function AllArtists() {
         const auth = getAuthParams(user);
         // Fetch artists and albums in parallel to extract genres and album associations
         const [artistsRes, albumsRes] = await Promise.all([
-          fetch(`/ampache/public/rest/index.php?action=getArtists&${auth}`).then(r => r.json()).catch(() => null),
-          fetch(`/ampache/public/rest/index.php?action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}`).then(r => r.json()).catch(() => null)
+          fetch(getAmpacheUrl(`action=getArtists&${auth}`)).then(r => r.json()).catch(() => null),
+          fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}`)).then(r => r.json()).catch(() => null)
         ]);
 
         if (artistsRes?.['subsonic-response']?.status === 'ok') {
           const index = artistsRes['subsonic-response'].artists?.index || [];
           let all = [];
           index.forEach(idx => {
-            if (idx.artist) all = [...all, ...idx.artist];
+            if (idx.artist) {
+              const artList = Array.isArray(idx.artist) ? idx.artist : [idx.artist];
+              all = [...all, ...artList];
+            }
           });
           setRawArtists(all);
         }
 
         if (albumsRes?.['subsonic-response']?.status === 'ok') {
           const albumList = albumsRes['subsonic-response'].albumList?.album || [];
-          setRawAlbums(albumList);
+          setRawAlbums(Array.isArray(albumList) ? albumList : (albumList ? [albumList] : []));
         }
       } catch (err) {
         console.error("Failed to load artists:", err);
@@ -310,10 +314,15 @@ function ArtistCard({ artist, user, getAuthParams }) {
       <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 mb-3 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform overflow-hidden border-2 border-white/10 group-hover:border-purple-500/40">
         {artist.coverArt ? (
           <img
-            src={`/ampache/public/rest/index.php?action=getCoverArt&id=${artist.coverArt}&${getAuthParams(user)}`}
+            src={getCoverArtUrl(artist.coverArt, getAuthParams(user))}
             className="w-full h-full object-cover"
             alt={artist.name}
             loading="lazy"
+            onError={(e) => {
+              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                e.currentTarget.src = DEFAULT_COVER_ART;
+              }
+            }}
           />
         ) : (
           <User size={28} className="text-white/50" />

@@ -25,13 +25,14 @@ export default function PublicPlaylists() {
       const response = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await response.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        let allPlaylists = data['subsonic-response'].playlists?.playlist || [];
-        allPlaylists = Array.isArray(allPlaylists) ? allPlaylists : [allPlaylists];
+        const rawPlaylists = data['subsonic-response'].playlists?.playlist;
+        const allPlaylists = Array.isArray(rawPlaylists) ? rawPlaylists : (rawPlaylists ? [rawPlaylists] : []);
         
         // Only public playlists from users (exclude system smartlists)
         const publicList = allPlaylists.filter(p => 
+          p &&
           p.owner !== 'System' && 
-          !p.id.startsWith('400000') && 
+          (p.id ? !String(p.id).startsWith('400000') : true) && 
           (p.public === 'true' || p.public === true)
         );
         setPlaylists(publicList);
@@ -53,8 +54,10 @@ export default function PublicPlaylists() {
     if (!searchQuery.trim()) return playlists;
     const q = searchQuery.toLowerCase().trim();
     return playlists.filter(p => 
-      (p.name && p.name.toLowerCase().includes(q)) ||
-      (p.owner && p.owner.toLowerCase().includes(q))
+      p && (
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.owner && p.owner.toLowerCase().includes(q))
+      )
     );
   }, [playlists, searchQuery]);
 
@@ -69,8 +72,8 @@ export default function PublicPlaylists() {
       const res = await fetch(getAmpacheUrl(`action=getPlaylist&id=${playlist.id}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        const rawEntries = data['subsonic-response']?.playlist?.entry || [];
-        const tracks = Array.isArray(rawEntries) ? rawEntries : [rawEntries];
+        const rawEntries = data['subsonic-response']?.playlist?.entry;
+        const tracks = Array.isArray(rawEntries) ? rawEntries : (rawEntries ? [rawEntries] : []);
         if (tracks.length > 0) {
           playQueue(tracks, 0);
           showToast(`▶ Playing "${playlist.name}"`, 'success');

@@ -20,13 +20,14 @@ export default function Playlists() {
       const response = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await response.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        let allPlaylists = data['subsonic-response'].playlists?.playlist || [];
-        allPlaylists = Array.isArray(allPlaylists) ? allPlaylists : [allPlaylists];
+        const rawPlaylists = data['subsonic-response'].playlists?.playlist;
+        const allPlaylists = Array.isArray(rawPlaylists) ? rawPlaylists : (rawPlaylists ? [rawPlaylists] : []);
         
         // Filter out read-only System (Smart) playlists and ensure only playlists owned by user
         const userPlaylists = allPlaylists.filter(p => 
+          p &&
           p.owner !== 'System' && 
-          !p.id.startsWith('400000') && 
+          (p.id ? !String(p.id).startsWith('400000') : true) && 
           (!p.owner || p.owner === '' || (user?.username && p.owner.toLowerCase() === user.username.toLowerCase()))
         );
         setPlaylists(userPlaylists.slice(0, 9));

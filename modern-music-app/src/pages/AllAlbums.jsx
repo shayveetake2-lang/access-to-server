@@ -61,8 +61,8 @@ export default function AllAlbums() {
         const response = await fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${getAuthParams(user)}`));
         const data = await response.json();
         if (data?.['subsonic-response']?.status === 'ok') {
-          const raw = data['subsonic-response'].albumList?.album || [];
-          setAlbums(Array.isArray(raw) ? raw : [raw]);
+          const raw = data['subsonic-response'].albumList?.album;
+          setAlbums(Array.isArray(raw) ? raw : (raw ? [raw] : []));
         }
       } catch (err) {
         console.error("Browse fetch error:", err);
@@ -86,8 +86,8 @@ export default function AllAlbums() {
       const res = await fetch(getAmpacheUrl(`action=getAlbum&id=${album.id}&${getAuthParams(user)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        const rawSongs = data['subsonic-response']?.album?.song || [];
-        const songs = Array.isArray(rawSongs) ? rawSongs : [rawSongs];
+        const rawSongs = data['subsonic-response']?.album?.song;
+        const songs = Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : []);
         if (songs.length > 0) {
           playQueue(songs, 0);
           showToast(`▶ Playing album "${album.name}"`, 'success');

@@ -5,7 +5,7 @@ import { Play, Clock, Plus, ListPlus, Volume2, Shuffle, Flame, TrendingUp, Spark
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getApiProxyUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { getApiProxyUrl, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
 const SORT_OPTIONS = [
@@ -85,12 +85,12 @@ export default function AllSongs() {
         try {
           const auth = getAuthParams(user);
           const subUrl = debouncedQuery
-            ? `/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(debouncedQuery)}&songOffset=${offset}&songCount=${limit}&${auth}`
-            : `/ampache/public/rest/index.php?action=getRandomSongs&size=${limit}&${auth}`;
+            ? getAmpacheUrl(`action=search3&query=${encodeURIComponent(debouncedQuery)}&songOffset=${offset}&songCount=${limit}&${auth}`)
+            : getAmpacheUrl(`action=getRandomSongs&size=${limit}&${auth}`);
           const subRes = await fetch(subUrl);
           const subData = await subRes.json();
-          const raw = subData?.['subsonic-response']?.searchResult3?.song || subData?.['subsonic-response']?.randomSongs?.song || [];
-          fetchedSongs = Array.isArray(raw) ? raw : [raw];
+          const raw = subData?.['subsonic-response']?.searchResult3?.song || subData?.['subsonic-response']?.randomSongs?.song;
+          fetchedSongs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
           totalCount = fetchedSongs.length;
           hasMore = fetchedSongs.length >= limit;
         } catch (se) {
@@ -145,11 +145,11 @@ export default function AllSongs() {
       }
 
       if (loadedSongs.length === 0) {
-        const response = await fetch(`/ampache/public/rest/index.php?action=getRandomSongs&size=100&${getAuthParams(user)}`);
+        const response = await fetch(getAmpacheUrl(`action=getRandomSongs&size=100&${getAuthParams(user)}`));
         const data = await response.json();
         if (data?.['subsonic-response']?.status === 'ok') {
-          const raw = data['subsonic-response'].randomSongs?.song || [];
-          loadedSongs = Array.isArray(raw) ? raw : [raw];
+          const raw = data['subsonic-response'].randomSongs?.song;
+          loadedSongs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
           loadedSongs.sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
         }
       }

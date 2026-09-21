@@ -5,7 +5,7 @@ import { User, Disc, Play, Shuffle, Clock, Plus, ListPlus, Volume2, ChevronDown,
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getCoverArtUrl } from '../utils/api';
+import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 import { extractPrimaryArtistName, normalizeArtistKey } from '../utils/artistHelper';
 
 export default function ArtistDetails() {
@@ -32,7 +32,7 @@ export default function ArtistDetails() {
       try {
         const auth = getAuthParams(user);
         // 1. Fetch main artist details
-        const res = await fetch(`/ampache/public/rest/index.php?action=getArtist&id=${id}&${auth}`);
+        const res = await fetch(getAmpacheUrl(`action=getArtist&id=${id}&${auth}`));
         const data = await res.json();
 
         if (data?.['subsonic-response']?.status !== 'ok' || !data['subsonic-response']?.artist) {
@@ -53,7 +53,7 @@ export default function ArtistDetails() {
         // 2. Discover any featured/similar artist entries in the catalog to merge
         let aliasArtistIds = [];
         try {
-          const allArtistsRes = await fetch(`/ampache/public/rest/index.php?action=getArtists&${auth}`);
+          const allArtistsRes = await fetch(getAmpacheUrl(`action=getArtists&${auth}`));
           const allArtistsData = await allArtistsRes.json();
           if (allArtistsData?.['subsonic-response']?.status === 'ok') {
             const index = allArtistsData['subsonic-response'].artists?.index || [];
@@ -74,20 +74,23 @@ export default function ArtistDetails() {
 
         if (isMounted) setMergedAliasCount(aliasArtistIds.length);
 
-        // 3. Collect albums from main artist + any alias artists
-        let combinedAlbums = [...(mainArtist.album || [])];
+        // 3. Collect albums from main artist + any alias artists (guaranteeing array)
+        const rawMainAlbums = mainArtist.album || [];
+        let combinedAlbums = Array.isArray(rawMainAlbums) ? [...rawMainAlbums] : (rawMainAlbums ? [rawMainAlbums] : []);
 
         if (aliasArtistIds.length > 0) {
           try {
             const aliasFetches = aliasArtistIds.map(aliasId => 
-              fetch(`/ampache/public/rest/index.php?action=getArtist&id=${aliasId}&${auth}`)
+              fetch(getAmpacheUrl(`action=getArtist&id=${aliasId}&${auth}`))
                 .then(r => r.json())
                 .catch(() => null)
             );
             const aliasResponses = await Promise.all(aliasFetches);
             aliasResponses.forEach(aliasRes => {
               if (aliasRes?.['subsonic-response']?.status === 'ok' && aliasRes['subsonic-response']?.artist?.album) {
-                combinedAlbums = [...combinedAlbums, ...aliasRes['subsonic-response'].artist.album];
+                const rawAlias = aliasRes['subsonic-response'].artist.album;
+                const aliasList = Array.isArray(rawAlias) ? rawAlias : (rawAlias ? [rawAlias] : []);
+                combinedAlbums = [...combinedAlbums, ...aliasList];
               }
             });
           } catch (e) {
@@ -109,7 +112,7 @@ export default function ArtistDetails() {
         // 4. Fetch Top Songs from getTopSongs endpoint
         let fetchedTopSongs = [];
         try {
-          const topRes = await fetch(`/ampache/public/rest/index.php?action=getTopSongs&artist=${encodeURIComponent(mainArtist.name)}&count=15&${auth}`);
+          const topRes = await fetch(getAmpacheUrl(`action=getTopSongs&artist=${encodeURIComponent(mainArtist.name)}&count=15&${auth}`));
           const topData = await topRes.json();
           if (topData?.['subsonic-response']?.status === 'ok' && topData['subsonic-response']?.topSongs?.song) {
             const songs = topData['subsonic-response'].topSongs.song;
@@ -124,7 +127,7 @@ export default function ArtistDetails() {
         let collectedAlbumSongs = [];
         try {
           const albumTracksFetches = uniqueAlbums.map(album =>
-            fetch(`/ampache/public/rest/index.php?action=getAlbum&id=${album.id}&${auth}`)
+            fetch(getAmpacheUrl(`action=getAlbum&id=${album.id}&${auth}`))
               .then(r => r.json())
               .catch(() => null)
           );
@@ -241,9 +244,14 @@ export default function ArtistDetails() {
           <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.6)] shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white/10 relative group">
             {artist.coverArt ? (
               <img
-                src={`/ampache/public/rest/index.php?action=getCoverArt&id=${artist.coverArt}&${getAuthParams(user)}`}
+                src={getCoverArtUrl(artist.coverArt, getAuthParams(user))}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 alt={artist.name}
+                onError={(e) => {
+                  if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                    e.currentTarget.src = DEFAULT_COVER_ART;
+                  }
+                }}
               />
             ) : (
               <User size={56} className="text-white/50" />
@@ -365,10 +373,15 @@ export default function ArtistDetails() {
                       <td className="px-4 py-3 min-w-0">
                         <div className="flex items-center gap-3 min-w-0">
                           <img
-                            src={`/ampache/public/rest/index.php?action=getCoverArt&id=${song.coverArt}&${getAuthParams(user)}`}
+                            src={getCoverArtUrl(song.coverArt || song.parent, getAuthParams(user))}
                             className="w-10 h-10 rounded-lg bg-slate-800 object-cover shrink-0 border border-white/5 shadow-sm"
                             alt=""
                             loading="lazy"
+                            onError={(e) => {
+                              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                                e.currentTarget.src = DEFAULT_COVER_ART;
+                              }
+                            }}
                           />
                           <div className="min-w-0 flex-1">
                             <div className={`font-medium transition-colors truncate ${
@@ -453,10 +466,15 @@ export default function ArtistDetails() {
               >
                 <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5">
                   <img
-                    src={`/ampache/public/rest/index.php?action=getCoverArt&id=${album.coverArt}&${getAuthParams(user)}`}
+                    src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))}
                     alt={album.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
+                    onError={(e) => {
+                      if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                        e.currentTarget.src = DEFAULT_COVER_ART;
+                      }
+                    }}
                   />
                   <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
                     <button
