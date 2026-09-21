@@ -33,6 +33,10 @@ export default function PlaylistDetails() {
   };
 
   useEffect(() => {
+    if (id === 'liked') {
+      navigate('/liked', { replace: true });
+      return;
+    }
     if (user) {
       fetchPlaylistDetails();
     }
@@ -75,8 +79,30 @@ export default function PlaylistDetails() {
     }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>;
-  if (!playlist) return <div className="text-white text-center py-20">Playlist not found.</div>;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs text-slate-400">Loading playlist...</p>
+      </div>
+    );
+  }
+
+  if (!playlist) {
+    return (
+      <div className="text-center py-20 bg-slate-900/40 rounded-3xl border border-white/5 p-6 max-w-md mx-auto my-8">
+        <ListMusic size={44} className="mx-auto text-slate-500 mb-3" />
+        <h3 className="text-lg font-semibold text-white mb-1.5">Playlist Not Found</h3>
+        <p className="text-xs text-slate-400 mb-5">This playlist could not be loaded or was removed.</p>
+        <button 
+          onClick={() => navigate('/playlists')} 
+          className="bg-purple-500 hover:bg-purple-400 text-white px-5 py-2.5 rounded-full text-xs font-semibold transition-all shadow-lg active:scale-95"
+        >
+          View All Playlists
+        </button>
+      </div>
+    );
+  }
 
   // Convert single object to array if only 1 song is returned by XML to JSON converter
   const tracks = Array.isArray(playlist.entry) ? playlist.entry : (playlist.entry ? [playlist.entry] : []);
@@ -246,10 +272,12 @@ export default function PlaylistDetails() {
           <div className="p-8 text-center text-slate-400 text-xs">This playlist is empty.</div>
         ) : (
           tracks.map((song, index) => {
+            if (!song) return null;
             const isCurrent = currentTrack?.id === song.id;
+            const dur = Number(song.duration) || 0;
             return (
               <div 
-                key={`${song.id}-${index}`} 
+                key={`${song.id || 'track'}-${index}`} 
                 onClick={() => playFromTrack(index)} 
                 className={`flex items-center justify-between p-2 rounded-xl transition-colors cursor-pointer group ${
                   isCurrent ? 'bg-purple-500/15 border border-purple-500/30' : 'hover:bg-white/5 active:bg-white/10'
@@ -278,14 +306,14 @@ export default function PlaylistDetails() {
                     <h4 className={`text-xs font-semibold truncate transition-colors leading-snug ${
                       isCurrent ? 'text-purple-400 font-bold' : 'text-white group-hover:text-purple-400'
                     }`}>
-                      {song.title}
+                      {song.title || 'Untitled Track'}
                     </h4>
-                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{song.artist}{song.album ? ` • ${song.album}` : ''}</p>
+                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{song.artist || 'Unknown Artist'}{song.album ? ` • ${song.album}` : ''}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span className="text-[11px] text-slate-400 font-mono">
-                    {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
+                    {Math.floor(dur / 60)}:{(dur % 60).toString().padStart(2, '0')}
                   </span>
                   <button 
                     onClick={(e) => {
@@ -335,11 +363,13 @@ export default function PlaylistDetails() {
           </thead>
           <tbody className="divide-y divide-white/5 text-sm">
             {tracks.map((song, index) => {
+              if (!song) return null;
               const isCurrent = currentTrack?.id === song.id;
+              const dur = Number(song.duration) || 0;
               return (
                 <tr 
                   onClick={() => playFromTrack(index)} 
-                  key={`${song.id}-${index}`} 
+                  key={`${song.id || 'track'}-${index}`} 
                   className={`transition-colors group cursor-pointer ${
                     isCurrent ? 'bg-purple-500/10 text-purple-300' : 'text-slate-300 hover:bg-white/5'
                   }`}
@@ -364,19 +394,19 @@ export default function PlaylistDetails() {
                         <div className={`font-medium transition-colors truncate ${
                           isCurrent ? 'text-purple-300 font-semibold' : 'text-white group-hover:text-purple-400'
                         }`}>
-                          {song.title}
+                          {song.title || 'Untitled Track'}
                         </div>
                         <div className="text-xs text-slate-400 truncate lg:hidden mt-0.5">
-                          {song.artist}{song.album ? ` • ${song.album}` : ''}
+                          {song.artist || 'Unknown Artist'}{song.album ? ` • ${song.album}` : ''}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-300 truncate hidden lg:table-cell">{song.artist}</td>
-                  <td className="px-4 py-3 text-slate-400 truncate hidden xl:table-cell">{song.album}</td>
+                  <td className="px-4 py-3 text-slate-300 truncate hidden lg:table-cell">{song.artist || 'Unknown Artist'}</td>
+                  <td className="px-4 py-3 text-slate-400 truncate hidden xl:table-cell">{song.album || '—'}</td>
                   <td className="px-4 sm:px-6 py-3 text-right w-36 sm:w-44 shrink-0">
                     <div className="flex items-center justify-end gap-1.5 font-mono text-xs">
-                      <span className="text-slate-400 mr-1 text-[11px] sm:text-xs">{Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}</span>
+                      <span className="text-slate-400 mr-1 text-[11px] sm:text-xs">{Math.floor(dur / 60)}:{(dur % 60).toString().padStart(2, '0')}</span>
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();

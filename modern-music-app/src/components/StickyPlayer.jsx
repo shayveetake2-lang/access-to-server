@@ -197,6 +197,25 @@ export default function StickyPlayer() {
     seek(pos * duration);
   };
 
+  const artistId = getArtistId(currentTrack);
+  const albumId = getAlbumId(currentTrack);
+
+  const handleNavigateArtist = (e) => {
+    e?.stopPropagation?.();
+    if (artistId) {
+      setIsExpanded(false);
+      navigate(`/artists/${artistId}`);
+    }
+  };
+
+  const handleNavigateAlbum = (e) => {
+    e?.stopPropagation?.();
+    if (albumId) {
+      setIsExpanded(false);
+      navigate(`/albums/${albumId}`);
+    }
+  };
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (

@@ -21,6 +21,7 @@ import AdminSettings from './pages/AdminSettings';
 
 import MobileNav from './components/MobileNav';
 import ChatWidget from './components/ChatWidget';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function ProtectedLayout() {
   const { user, loading } = useAuth();
@@ -39,26 +40,30 @@ function ProtectedLayout() {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto touch-scroll px-3.5 py-4 sm:px-6 sm:py-6 md:p-8 relative pb-52 md:pb-32">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/albums/:id" element={<AlbumDetails />} />
-            <Route path="/artists/:id" element={<ArtistDetails />} />
-            <Route path="/playlists/:id" element={<PlaylistDetails />} />
-            <Route path="/albums" element={<AllAlbums />} />
-            <Route path="/songs" element={<AllSongs />} />
-            <Route path="/liked" element={<LikedSongsPage />} />
-            <Route path="/artists" element={<AllArtists />} />
-            <Route path="/playlists" element={<Playlists />} />
-            <Route path="/public-playlists" element={<PublicPlaylists />} />
-            <Route path="/help" element={<Help />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/admin" element={<AdminSettings />} />
-            <Route path="/admin/metadata" element={<AdminSettings />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/albums/:id" element={<AlbumDetails />} />
+              <Route path="/artists/:id" element={<ArtistDetails />} />
+              <Route path="/playlists/:id" element={<PlaylistDetails />} />
+              <Route path="/albums" element={<AllAlbums />} />
+              <Route path="/songs" element={<AllSongs />} />
+              <Route path="/liked" element={<LikedSongsPage />} />
+              <Route path="/artists" element={<AllArtists />} />
+              <Route path="/playlists" element={<Playlists />} />
+              <Route path="/public-playlists" element={<PublicPlaylists />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/admin" element={<AdminSettings />} />
+              <Route path="/admin/metadata" element={<AdminSettings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
       </div>
-      <StickyPlayer />
+      <ErrorBoundary fallback={null}>
+        <StickyPlayer />
+      </ErrorBoundary>
       <ChatWidget />
       <MobileNav />
     </div>
@@ -67,13 +72,15 @@ function ProtectedLayout() {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/*" element={<ProtectedLayout />} />
-      </Routes>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/*" element={<ProtectedLayout />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
