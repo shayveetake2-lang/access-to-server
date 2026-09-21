@@ -110,9 +110,11 @@ export function PlayerProvider({ children }) {
       audio.removeEventListener('canplay', onCanPlay);
       audio.removeEventListener('error', onCanPlayError);
       isReconnectingRef.current = false;
-      console.warn('[Aether Audio] Reconnect failed, retrying in 3s without dropping track...');
-      clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = setTimeout(reconnectStream, 3000);
+      console.warn('[Aether Audio] Reconnect failed — attaching canplay listener to retry without timer (screen-off safe)...');
+      // Do NOT use setTimeout here — mobile OS freezes JS timers when screen is off.
+      // Instead attach a one-shot canplay listener: the audio element will fire it
+      // as soon as the Mac's transcode buffer delivers enough data.
+      audio.addEventListener('canplay', reconnectStream, { once: true });
     };
 
     audio.addEventListener('canplay', onCanPlay, { once: true });
@@ -169,12 +171,21 @@ export function PlayerProvider({ children }) {
     if (cur > 0) {
       lastKnownTimeRef.current = cur;
     }
+    // Do NOT use setTimeout — mobile OS suspends JS timers when screen is locked.
+    // Attach a canplay listener so the audio element self-heals when the transcode
+    // buffer on the 2011 Mac catches up, without needing a JS timer to fire.
     clearTimeout(reconnectTimerRef.current);
-    reconnectTimerRef.current = setTimeout(reconnectStream, 1200);
+    if (audio) {
+      audio.addEventListener('canplay', reconnectStream, { once: true });
+    } else {
+      reconnectStream();
+    }
   };
 
   /**
-   * 'stalled' handler: Do NOT advance track. Debounce and reconnect if stalled persistently.
+   * 'stalled' handler: Do NOT advance track. Do NOT use setTimeout (suspended on screen-off).
+   * Instead, attach a canplay listener — the audio element will self-signal when the
+   * Mac's transcode buffer is ready, even with the phone screen locked.
    */
   const handleStalled = () => {
     const audio = audioRef.current;
@@ -189,7 +200,10 @@ export function PlayerProvider({ children }) {
 
     if (stalledCountRef.current >= 2) {
       clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = setTimeout(reconnectStream, 2000);
+      // Screen-off safe: drive reconnect from native audio canplay event, not a JS timer.
+      // Remove any duplicate listener before adding to avoid double-firing.
+      audio.removeEventListener('canplay', reconnectStream);
+      audio.addEventListener('canplay', reconnectStream, { once: true });
     }
   };
 
@@ -272,7 +286,9 @@ export function PlayerProvider({ children }) {
     prefetchBufferRef.current = { audio, track, index };
   };
 
-  // Lock-screen / Media Session integration for iOS Safari and mobile browsers
+  // Lock-screen / Media Session integration for iOS Safari and mobile browsers.
+  // Setting playbackState keeps the OS audio process alive when the screen is off —
+  // without it the browser is eligible for background process termination.
   useEffect(() => {
     if (typeof window !== 'undefined' && 'mediaSession' in navigator && currentTrack) {
       try {
@@ -281,19 +297,28 @@ export function PlayerProvider({ children }) {
           title: currentTrack.title || 'Unknown Track',
           artist: currentTrack.artist || 'Unknown Artist',
           album: currentTrack.album || 'Aether Audio',
-          artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: 'image/jpeg' }] : []
+          artwork: coverUrl ? [
+            { src: coverUrl, sizes: '96x96',   type: 'image/jpeg' },
+            { src: coverUrl, sizes: '256x256',  type: 'image/jpeg' },
+            { src: coverUrl, sizes: '512x512',  type: 'image/jpeg' }
+          ] : []
         });
+
+        // Sync OS lock-screen play/pause indicator immediately
+        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
 
         navigator.mediaSession.setActionHandler('play', () => {
           if (audioRef.current) {
             audioRef.current.play().catch(() => {});
             setIsPlaying(true);
+            navigator.mediaSession.playbackState = 'playing';
           }
         });
         navigator.mediaSession.setActionHandler('pause', () => {
           if (audioRef.current) {
             audioRef.current.pause();
             setIsPlaying(false);
+            navigator.mediaSession.playbackState = 'paused';
           }
         });
         navigator.mediaSession.setActionHandler('previoustrack', () => {
@@ -302,11 +327,25 @@ export function PlayerProvider({ children }) {
         navigator.mediaSession.setActionHandler('nexttrack', () => {
           playNext();
         });
+        // Seek handlers keep the iOS/Android audio daemon from throttling the process
+        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+          if (audioRef.current) {
+            audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - (details.seekOffset || 10));
+          }
+        });
+        navigator.mediaSession.setActionHandler('seekforward', (details) => {
+          if (audioRef.current) {
+            audioRef.current.currentTime = Math.min(
+              audioRef.current.duration || Infinity,
+              audioRef.current.currentTime + (details.seekOffset || 10)
+            );
+          }
+        });
       } catch (err) {
         console.debug('MediaSession error:', err);
       }
     }
-  }, [currentTrack, user]);
+  }, [currentTrack, isPlaying, user]);
 
   const loadTrack = (track) => {
     if (!track || !user) return;

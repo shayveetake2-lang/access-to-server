@@ -92,7 +92,9 @@ export function PlaylistModalProvider({ children }) {
     if (!user) return;
     setLoading(true);
     try {
-      const auth = getSubsonicAuthParams(user);
+      // Force-fresh token on every modal open: mobile browsers cache-bust credentials
+      // differently and a stale token returns an empty playlist array for the wrong user.
+      const auth = getSubsonicAuthParams(user, true);
       const res = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
