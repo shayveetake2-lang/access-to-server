@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Moon, Sun, Mail, Music, HelpCircle } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(true);
+  const { showToast } = useToast();
   
   useEffect(() => {
-    // Just a UI toggle for now
     const stored = localStorage.getItem('aether_theme');
     if (stored === 'light') {
       setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
     }
   }, []);
 
@@ -21,7 +25,7 @@ export default function Settings() {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    alert("Theme saved! Note: Light mode CSS requires further Tailwind configuration. Stay tuned!");
+    showToast(`Theme updated to ${newMode ? 'Dark' : 'Light'} Mode!`, 'success');
   };
 
   return (

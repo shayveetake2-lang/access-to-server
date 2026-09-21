@@ -25,27 +25,39 @@ function getProxyEnv($key, $default = null) {
     return $default;
 }
 
+require_once __DIR__ . '/../config/config.php';
+
 function getProxyPdo() {
     static $pdo = null;
     if ($pdo !== null) return $pdo;
 
-    $hosts = ['127.0.0.1', '10.247.192.231'];
-    $creds = [
-        ['ampache_user', 'password'],
-        ['root', 'root']
+    $host = defined('AMPACHE_DB_HOST') ? AMPACHE_DB_HOST : getProxyEnv('AMPACHE_DB_HOST', '127.0.0.1');
+    $port = defined('AMPACHE_DB_PORT') ? AMPACHE_DB_PORT : getProxyEnv('AMPACHE_DB_PORT', '8889');
+    $dbname = defined('AMPACHE_DB_NAME') ? AMPACHE_DB_NAME : getProxyEnv('AMPACHE_DB_NAME', 'ampache');
+    $user = defined('AMPACHE_DB_USER') ? AMPACHE_DB_USER : getProxyEnv('AMPACHE_DB_USER', 'ampache_user');
+    $pass = defined('AMPACHE_DB_PASS') ? AMPACHE_DB_PASS : getProxyEnv('AMPACHE_DB_PASS', 'password');
+
+    $hosts = array_unique([$host, '127.0.0.1', 'localhost']);
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT => 2
     ];
 
     foreach ($hosts as $h) {
-        foreach ($creds as $c) {
-            try {
-                $pdo = new PDO("mysql:host={$h};port=8889;dbname=ampache;charset=utf8mb4", $c[0], $c[1], [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_TIMEOUT => 2
-                ]);
-                return $pdo;
-            } catch (\Exception $e) {}
-        }
+        try {
+            $pdo = new PDO("mysql:host={$h};port={$port};dbname={$dbname};charset=utf8mb4", $user, $pass, $options);
+            return $pdo;
+        } catch (\Exception $e) {}
     }
+
+    $socket = '/Applications/MAMP/tmp/mysql/mysql.sock';
+    if (file_exists($socket)) {
+        try {
+            $pdo = new PDO("mysql:unix_socket={$socket};dbname={$dbname};charset=utf8mb4", $user, $pass, $options);
+            return $pdo;
+        } catch (\Exception $e) {}
+    }
+
     return null;
 }
 
@@ -96,6 +108,45 @@ if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibil
             'subsonicId' => (string)($cleanId + 800000000),
             'public' => $isPublic,
             'type' => $typeStr
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── User Role Toggle Endpoint (Guaranteed Ampache Database Persistence) ─────
+if ($action === 'updateUserRole') {
+    $targetUsername = trim($_POST['username'] ?? ($_GET['username'] ?? ($input['username'] ?? '')));
+    $isAdminVal = $_POST['adminRole'] ?? ($_GET['adminRole'] ?? ($input['adminRole'] ?? null));
+
+    if (empty($targetUsername)) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Username parameter required.']);
+        exit;
+    }
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $isAdmin = ($isAdminVal === true || $isAdminVal === 'true' || $isAdminVal === 1 || $isAdminVal === '1');
+    $accessLevel = $isAdmin ? 100 : 25; // 100 = admin, 25 = standard user in Ampache
+
+    try {
+        $stmt = $pdo->prepare("UPDATE user SET access = :access WHERE username = :username");
+        $stmt->execute([':access' => $accessLevel, ':username' => $targetUsername]);
+
+        echo json_encode([
+            'status' => 'ok',
+            'username' => $targetUsername,
+            'adminRole' => $isAdmin,
+            'access' => $accessLevel
         ]);
         exit;
     } catch (\Exception $e) {

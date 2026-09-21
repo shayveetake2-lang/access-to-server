@@ -13,38 +13,45 @@ export default function Playlists() {
   const { openCreatePlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
 
-  const fetchPlaylists = async () => {
+  const fetchPlaylists = async (isMounted = true) => {
     if (!user) return;
     try {
       const auth = getSubsonicAuthParams(user);
       const response = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await response.json();
-      if (data?.['subsonic-response']?.status === 'ok') {
-        const rawPlaylists = data['subsonic-response'].playlists?.playlist;
-        const allPlaylists = Array.isArray(rawPlaylists) ? rawPlaylists : (rawPlaylists ? [rawPlaylists] : []);
-        
-        // Filter out read-only System (Smart) playlists and ensure only playlists owned by user
-        const userPlaylists = allPlaylists.filter(p => 
-          p &&
-          p.owner !== 'System' && 
-          (p.id ? !String(p.id).startsWith('400000') : true) && 
-          (!p.owner || p.owner === '' || (user?.username && p.owner.toLowerCase() === user.username.toLowerCase()))
-        );
-        setPlaylists(userPlaylists.slice(0, 9));
-      } else {
-        setPlaylists([]);
+      if (isMounted) {
+        if (data?.['subsonic-response']?.status === 'ok') {
+          const rawPlaylists = data['subsonic-response'].playlists?.playlist;
+          const allPlaylists = Array.isArray(rawPlaylists) ? rawPlaylists : (rawPlaylists ? [rawPlaylists] : []);
+          
+          // Filter out read-only System (Smart) playlists and ensure only playlists owned by user
+          const userPlaylists = allPlaylists.filter(p => 
+            p &&
+            p.owner !== 'System' && 
+            (p.id ? !String(p.id).startsWith('400000') : true) && 
+            (!p.owner || p.owner === '' || (user?.username && p.owner.toLowerCase() === user.username.toLowerCase()))
+          );
+          setPlaylists(userPlaylists.slice(0, 9));
+        } else {
+          setPlaylists([]);
+        }
       }
     } catch (err) {
       console.error(err);
+      if (isMounted) setPlaylists([]);
     } finally {
-      setLoading(false);
+      if (isMounted) setLoading(false);
     }
   };
 
   useEffect(() => {
+    let isMounted = true;
     if (user) {
-      fetchPlaylists();
+      fetchPlaylists(isMounted);
     }
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   const handleCreatePlaylist = () => {

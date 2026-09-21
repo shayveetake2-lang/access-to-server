@@ -17,38 +17,32 @@ function getAmpacheMySQLConnection() {
     static $ampachePdo = null;
     if ($ampachePdo !== null) return $ampachePdo;
 
-    $hosts = ['127.0.0.1', 'localhost', '10.247.192.231'];
-    $creds = [
-        ['ampache_user', 'password'],
-        ['root', 'root'],
-        ['root', '']
+    $host = defined('AMPACHE_DB_HOST') ? AMPACHE_DB_HOST : '127.0.0.1';
+    $port = defined('AMPACHE_DB_PORT') ? AMPACHE_DB_PORT : '8889';
+    $dbname = defined('AMPACHE_DB_NAME') ? AMPACHE_DB_NAME : 'ampache';
+    $user = defined('AMPACHE_DB_USER') ? AMPACHE_DB_USER : 'ampache_user';
+    $pass = defined('AMPACHE_DB_PASS') ? AMPACHE_DB_PASS : 'password';
+
+    $hosts = array_unique([$host, '127.0.0.1', 'localhost']);
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT => 2
     ];
 
     foreach ($hosts as $h) {
-        foreach ($creds as $c) {
-            try {
-                $ampachePdo = new PDO("mysql:host={$h};port=8889;dbname=ampache;charset=utf8mb4", $c[0], $c[1], [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_TIMEOUT => 2
-                ]);
-                return $ampachePdo;
-            } catch (\Exception $e) {}
-        }
+        try {
+            $ampachePdo = new PDO("mysql:host={$h};port={$port};dbname={$dbname};charset=utf8mb4", $user, $pass, $options);
+            return $ampachePdo;
+        } catch (\Exception $e) {}
     }
 
     $socket = '/Applications/MAMP/tmp/mysql/mysql.sock';
     if (file_exists($socket)) {
-        foreach ($creds as $c) {
-            try {
-                $ampachePdo = new PDO("mysql:unix_socket={$socket};dbname=ampache;charset=utf8mb4", $c[0], $c[1], [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_TIMEOUT => 2
-                ]);
-                return $ampachePdo;
-            } catch (\Exception $e) {}
-        }
+        try {
+            $ampachePdo = new PDO("mysql:unix_socket={$socket};dbname={$dbname};charset=utf8mb4", $user, $pass, $options);
+            return $ampachePdo;
+        } catch (\Exception $e) {}
     }
 
     return null;

@@ -1,12 +1,12 @@
-import { Home, Disc, Mic2, Music, ListMusic } from 'lucide-react';
+import { Home, Disc, Music, Heart, ListMusic } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 export default function MobileNav() {
   const tabs = [
     { label: 'Home', path: '/', icon: Home },
     { label: 'Albums', path: '/albums', icon: Disc },
-    { label: 'Artists', path: '/artists', icon: Mic2 },
     { label: 'Songs', path: '/songs', icon: Music },
+    { label: 'Liked', path: '/liked', icon: Heart },
     { label: 'Playlists', path: '/playlists', icon: ListMusic },
   ];
 

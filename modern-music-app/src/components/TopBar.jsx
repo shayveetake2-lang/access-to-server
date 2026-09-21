@@ -1,11 +1,11 @@
-import { Search, User, LogOut, ArrowLeft, Globe, Settings as SettingsIcon, ListPlus, Plus, Volume2 } from 'lucide-react';
+import { Search, User, LogOut, ArrowLeft, Globe, Settings as SettingsIcon, ShieldAlert, ListPlus, Plus, Volume2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getMediaPortalUrl, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { getMediaPortalUrl, searchSubsonic, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 
 export default function TopBar() {
   const [query, setQuery] = useState('');
@@ -20,7 +20,7 @@ export default function TopBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
-  const { user, logout, getAuthParams } = useAuth();
+  const { user, logout } = useAuth();
   const { openAddToPlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
   
@@ -34,12 +34,9 @@ export default function TopBar() {
       }
       setLoading(true);
       try {
-        const response = await fetch(getAmpacheUrl(`action=search3&query=${encodeURIComponent(query)}&songCount=5&albumCount=5&artistCount=5&${getAuthParams(user)}`));
-        const data = await response.json();
-        if (data?.['subsonic-response']?.status === 'ok') {
-          setResults(data['subsonic-response'].searchResult3 || {});
-          setShowDropdown(true);
-        }
+        const data = await searchSubsonic(query, user);
+        setResults(data);
+        setShowDropdown(true);
       } catch (err) {
         console.error(err);
       } finally {

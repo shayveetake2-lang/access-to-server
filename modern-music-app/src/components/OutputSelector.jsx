@@ -8,7 +8,7 @@ import { usePlayer } from '../context/PlayerContext';
  * utilizing standard W3C Media Capture and Streams API & Audio Output Devices API (setSinkId),
  * with fallback support for Apple AirPlay (WebKitPlaybackTargetAvailability).
  */
-export default function OutputSelector({ compact = false, align = 'right' }) {
+export default function OutputSelector({ compact = false }) {
   const { audioRef } = usePlayer();
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(() => {
@@ -232,7 +232,7 @@ export default function OutputSelector({ compact = false, align = 'right' }) {
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 rounded-xl transition-all select-none ${
           compact
-            ? 'p-2 text-slate-300 hover:text-white hover:bg-white/10 active:scale-95'
+            ? 'w-12 h-12 text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 flex items-center justify-center'
             : 'px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700/80 border border-white/10 text-slate-200 text-xs font-medium shadow-sm hover:border-purple-500/40'
         }`}
         title={`Audio Output: ${activeMeta.name} (${activeMeta.type})`}
@@ -257,9 +257,7 @@ export default function OutputSelector({ compact = false, align = 'right' }) {
       {/* Interactive Dropdown Menu */}
       {isOpen && (
         <div
-          className={`absolute bottom-full mb-3 z-50 w-72 sm:w-80 rounded-2xl bg-slate-950/98 backdrop-blur-2xl border border-white/15 p-2.5 shadow-[0_15px_40px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150 ${
-            align === 'left' ? 'left-0' : 'right-0'
-          }`}
+          className="absolute bottom-full right-0 mb-2 z-50 w-[min(20rem,calc(100vw-1rem))] rounded-2xl bg-slate-950/98 backdrop-blur-2xl border border-white/15 p-2.5 shadow-[0_15px_40px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-2.5 py-2 border-b border-white/10 mb-1.5">
@@ -278,7 +276,7 @@ export default function OutputSelector({ compact = false, align = 'right' }) {
               <button
                 type="button"
                 onClick={handleTriggerAirPlay}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 active:scale-98 text-white transition-all text-xs font-semibold"
+                className="w-full min-h-12 flex items-center justify-between px-3 py-2 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 active:scale-98 text-white transition-all text-xs font-semibold"
               >
                 <div className="flex items-center gap-2">
                   <Cast size={16} className="text-indigo-300" />
@@ -301,7 +299,7 @@ export default function OutputSelector({ compact = false, align = 'right' }) {
                   key={device.deviceId || `device-${idx}`}
                   type="button"
                   onClick={() => handleSelectDevice(device.deviceId)}
-                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${
+                  className={`w-full min-h-12 flex items-center justify-between p-2 rounded-xl text-left transition-all ${
                     isSelected
                       ? 'bg-purple-500/25 border border-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.2)]'
                       : 'hover:bg-white/10 active:bg-white/15'
@@ -337,7 +335,7 @@ export default function OutputSelector({ compact = false, align = 'right' }) {
               <button
                 type="button"
                 onClick={requestDeviceLabels}
-                className="w-full py-1 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition-colors border border-white/5"
+                className="w-full min-h-12 py-1 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition-colors border border-white/5"
               >
                 <Sparkles size={12} className="text-amber-400" />
                 <span>Show Full Device Names</span>

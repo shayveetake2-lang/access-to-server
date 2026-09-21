@@ -32,6 +32,15 @@ export default function AdminMetadataEditor() {
 
   const isAdmin = user?.role === 'admin' || user?.isAdmin === true || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase());
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   // 1. Fetch initial artists list and potential duplicates
   const fetchMetadata = async () => {
     if (!isAdmin) return;
@@ -41,7 +50,7 @@ export default function AdminMetadataEditor() {
       const auth = getAuthParams(user);
       const authQ = user?.username ? `&u=${encodeURIComponent(user.username)}` : '';
       const resArtists = await fetch(`${getMergeMetadataUrl()}?action=search_artists&limit=150${authQ}`, {
-        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '') }
+        headers: getAuthHeaders()
       });
       const dataArtists = await resArtists.json();
       if (dataArtists?.status === 'success') {
@@ -51,7 +60,7 @@ export default function AdminMetadataEditor() {
       // Fetch duplicate & fuzzy similar artist groups
       try {
         const resDupes = await fetch(`${getMergeMetadataUrl()}?action=find_similar_artists${authQ}`, {
-          headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '') }
+          headers: getAuthHeaders()
         });
         const dataDupes = await resDupes.json();
         if (dataDupes?.status === 'success') {
@@ -181,10 +190,7 @@ export default function AdminMetadataEditor() {
 
       const res = await fetch(getMergeMetadataUrl(), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '')
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
 
@@ -234,10 +240,7 @@ export default function AdminMetadataEditor() {
 
       const res = await fetch(getMergeMetadataUrl(), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '')
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -279,10 +282,7 @@ export default function AdminMetadataEditor() {
 
       const res = await fetch(getMergeMetadataUrl(), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || '')
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
       const data = await res.json();

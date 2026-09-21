@@ -169,7 +169,7 @@ if (!in_array($newRoleInput, $allowedRoles, true)) {
     exit;
 }
 
-$newRole = ($newRoleInput === 'admin') ? 'admin' : 'user';
+$newRole = ($newRoleInput === 'admin') ? 'admin' : 'member';
 
 // ─── 5. VERIFY TARGET USER & SAFEGUARDS ───
 $targetStmt = $pdo->prepare("SELECT id, username, role, password_hash FROM sys_users WHERE id = :id LIMIT 1");

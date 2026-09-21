@@ -119,14 +119,62 @@ export function getStreamUrl(trackId, authParams = '') {
   return `${getBaseUrl()}/ampache/public/rest/index.php?action=stream&id=${trackId}&${auth}`;
 }
 
+function getSearchVariants(query) {
+  const words = query.toLowerCase().split(/\s+/).filter(word => word.length >= 2);
+  const variants = new Set([query]);
+
+  words.forEach(word => {
+    variants.add(`${word}*`);
+    if (word.length >= 4) {
+      for (let index = 0; index < word.length; index += 1) {
+        variants.add(`${word.slice(0, index)}${word.slice(index + 1)}*`);
+      }
+    }
+  });
+
+  return [...variants].slice(0, 18);
+}
+
+export async function searchSubsonic(query, user = null) {
+  const trimmedQuery = query.trim();
+  if (trimmedQuery.length < 2) return {};
+
+  const auth = getSubsonicAuthParams(user, true);
+  const variants = getSearchVariants(trimmedQuery);
+  const responses = await Promise.allSettled(variants.map(variant => (
+    fetch(getAmpacheUrl(`action=search3&query=${encodeURIComponent(variant)}&songCount=5&albumCount=5&artistCount=5&${auth}&_t=${Date.now()}`), { cache: 'no-store' })
+      .then(response => response.json())
+  )));
+  const merged = { song: [], album: [], artist: [] };
+  const seen = { song: new Set(), album: new Set(), artist: new Set() };
+
+  responses.forEach(result => {
+    if (result.status !== 'fulfilled') return;
+    const found = result.value?.['subsonic-response']?.searchResult3 || {};
+    Object.keys(merged).forEach(type => {
+      const items = Array.isArray(found[type]) ? found[type] : (found[type] ? [found[type]] : []);
+      items.forEach(item => {
+        const key = String(item.id || `${type}-${item.name || item.title}`);
+        if (!seen[type].has(key) && merged[type].length < 5) {
+          seen[type].add(key);
+          merged[type].push(item);
+        }
+      });
+    });
+  });
+
+  return merged;
+}
+
 export function getApiProxyUrl() {
   return `${getBaseUrl()}/modern-music-app/api_proxy.php`;
 }
 
 export async function fetchRecentlyAdded(user = null, limits = { songLimit: 20, albumLimit: 16 }) {
+  const cacheBust = `_t=${Date.now()}`;
   // Try proxy first for fastest response
   try {
-    const res = await fetch(`${getApiProxyUrl()}?action=getRecentlyAdded&songLimit=${limits.songLimit}&albumLimit=${limits.albumLimit}`);
+    const res = await fetch(`${getApiProxyUrl()}?action=getRecentlyAdded&songLimit=${limits.songLimit}&albumLimit=${limits.albumLimit}&${cacheBust}`, { cache: 'no-store' });
     const data = await res.json();
     if (data?.status === 'ok' && (Array.isArray(data.recentAlbums) || Array.isArray(data.recentSongs))) {
       return {
@@ -142,7 +190,7 @@ export async function fetchRecentlyAdded(user = null, limits = { songLimit: 20, 
   const auth = getSubsonicAuthParams(user);
   let recentAlbums = [];
   try {
-    const res = await fetch(getAmpacheUrl(`action=getAlbumList2&type=newest&size=${limits.albumLimit}&${auth}`));
+    const res = await fetch(getAmpacheUrl(`action=getAlbumList2&type=newest&size=${limits.albumLimit}&${auth}&${cacheBust}`), { cache: 'no-store' });
     const data = await res.json();
     if (data?.['subsonic-response']?.status === 'ok') {
       const raw = data['subsonic-response']?.albumList2?.album || data['subsonic-response']?.albumList?.album || [];
@@ -156,6 +204,71 @@ export async function fetchRecentlyAdded(user = null, limits = { songLimit: 20, 
     recentAlbums,
     recentSongs: []
   };
+}
+
+export async function fetchFeaturedLibrary(user = null) {
+  const auth = getSubsonicAuthParams(user);
+  const cacheBust = `_t=${Date.now()}`;
+  const responses = await Promise.allSettled([
+    fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json()),
+    fetch(getAmpacheUrl(`action=getArtists&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json()),
+    fetch(getAmpacheUrl(`action=search3&query=%2A&songCount=200&albumCount=0&artistCount=0&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json())
+  ]);
+  const albumsData = responses[0].status === 'fulfilled' ? responses[0].value : {};
+  const artistsData = responses[1].status === 'fulfilled' ? responses[1].value : {};
+  const songsData = responses[2].status === 'fulfilled' ? responses[2].value : {};
+  const albums = albumsData?.['subsonic-response']?.albumList?.album || [];
+  const artists = artistsData?.['subsonic-response']?.artists?.index || [];
+  let songs = songsData?.['subsonic-response']?.searchResult3?.song || [];
+  if (!songs.length) {
+    try {
+      const fallback = await fetch(getAmpacheUrl(`action=getRandomSongs&size=200&${auth}&${cacheBust}`), { cache: 'no-store' });
+      const fallbackData = await fallback.json();
+      songs = fallbackData?.['subsonic-response']?.randomSongs?.song || [];
+    } catch (error) {
+      console.debug('Featured song fallback unavailable:', error);
+    }
+  }
+  return {
+    albums: Array.isArray(albums) ? albums : [albums].filter(Boolean),
+    artists: Array.isArray(artists) ? artists.flatMap(group => group.artist || []) : [],
+    songs: Array.isArray(songs) ? songs : [songs].filter(Boolean)
+  };
+}
+
+/**
+ * Fetches the active user's starred (favorite) albums and artists directly
+ * from the Ampache backend via the Subsonic getStarred2 endpoint.
+ */
+export async function fetchStarredAlbumsAndArtists(user = null) {
+  const auth = getSubsonicAuthParams(user, true);
+  const res = await fetch(getAmpacheUrl(`action=getStarred2&${auth}`));
+  const data = await res.json();
+
+  if (data?.['subsonic-response']?.status !== 'ok') {
+    return { albums: [], artists: [] };
+  }
+
+  const starred2 = data['subsonic-response']?.starred2 || {};
+  const rawAlbums = starred2.album;
+  const rawArtists = starred2.artist;
+
+  return {
+    albums: Array.isArray(rawAlbums) ? rawAlbums : (rawAlbums ? [rawAlbums] : []),
+    artists: Array.isArray(rawArtists) ? rawArtists : (rawArtists ? [rawArtists] : [])
+  };
+}
+
+export async function toggleStarredItem({ albumId, artistId, songId } = {}, starred, user = null) {
+  const auth = getSubsonicAuthParams(user, true);
+  const action = starred ? 'unstar' : 'star';
+  let url = getAmpacheUrl(`action=${action}&${auth}`);
+  if (songId) url += `&id=${encodeURIComponent(songId)}`;
+  if (albumId) url += `&albumId=${encodeURIComponent(albumId)}`;
+  if (artistId) url += `&artistId=${encodeURIComponent(artistId)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data?.['subsonic-response']?.status === 'ok';
 }
 
 export function getMergeMetadataUrl() {

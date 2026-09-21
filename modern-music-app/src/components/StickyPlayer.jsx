@@ -225,7 +225,7 @@ export default function StickyPlayer() {
       {/* ========================================================================= */}
       <div 
         onClick={() => setIsExpanded(true)}
-        className="md:hidden fixed bottom-[calc(max(env(safe-area-inset-bottom,0px),0.5rem)+4.0rem)] left-2.5 right-2.5 h-14 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl flex items-center justify-between px-3 shadow-[0_8px_30px_rgba(0,0,0,0.7)] z-40 cursor-pointer select-none active:scale-[0.99] transition-transform overflow-hidden"
+        className="md:hidden fixed bottom-[calc(max(env(safe-area-inset-bottom,0px),0.5rem)+4.0rem)] left-2.5 right-2.5 min-h-[80px] bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl flex items-center justify-between px-3 shadow-[0_8px_30px_rgba(0,0,0,0.7)] z-40 cursor-pointer select-none active:scale-[0.99] transition-transform overflow-hidden"
       >
         {/* Top hairline progress bar */}
         <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-white/10">
@@ -279,10 +279,10 @@ export default function StickyPlayer() {
 
         {/* Action Buttons: Like + Add to Playlist + Play/Pause & Next Button */}
         <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <HeartButton song={currentTrack} size={18} compact className="p-2 rounded-full hover:bg-white/5" />
+          <HeartButton song={currentTrack} size={18} compact className="w-12 h-12 rounded-full hover:bg-white/5 flex items-center justify-center" />
           <button 
             onClick={() => openAddToPlaylistModal(currentTrack.id)} 
-            className="p-2 text-slate-300 hover:text-purple-300 active:scale-90 transition-all rounded-full hover:bg-white/5"
+            className="w-12 h-12 text-slate-300 hover:text-purple-300 active:scale-90 transition-all rounded-full hover:bg-white/5 flex items-center justify-center"
             title="Add to Playlist"
             aria-label="Add to Playlist"
           >
@@ -290,14 +290,14 @@ export default function StickyPlayer() {
           </button>
           <button 
             onClick={togglePlay} 
-            className="w-9 h-9 rounded-full bg-purple-500 active:bg-purple-400 text-white flex items-center justify-center shadow-md active:scale-95 transition-all"
+            className="w-12 h-12 rounded-full bg-purple-500 active:bg-purple-400 text-white flex items-center justify-center shadow-md active:scale-95 transition-all"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? <Pause size={17} /> : <Play size={17} className="ml-0.5" />}
           </button>
           <button 
             onClick={handleSkipNext} 
-            className="p-2 text-slate-400 hover:text-white active:scale-90 transition-all"
+            className="w-12 h-12 text-slate-400 hover:text-white active:scale-90 transition-all flex items-center justify-center"
             aria-label="Next track"
           >
             <SkipForward size={19} />
@@ -315,7 +315,7 @@ export default function StickyPlayer() {
           <div className="flex items-center justify-between py-2">
             <button 
               onClick={() => setIsExpanded(false)}
-              className="p-2 -ml-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all"
+              className="w-12 h-12 -ml-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all flex items-center justify-center"
               aria-label="Close player view"
             >
               <ChevronDown size={28} />
@@ -336,7 +336,7 @@ export default function StickyPlayer() {
               <OutputSelector compact align="right" />
               <button 
                 onClick={() => setIsQueueOpen(!isQueueOpen)}
-                className="p-2 -mr-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all"
+                className="w-12 h-12 -mr-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all flex items-center justify-center"
                 aria-label="Toggle Queue"
               >
                 <ListVideo size={22} className={isQueueOpen ? 'text-purple-400' : ''} />
@@ -396,10 +396,10 @@ export default function StickyPlayer() {
 
               {/* Like + Add to Playlist buttons directly injected into Mobile View */}
               <div className="flex items-center gap-2 shrink-0">
-                <HeartButton song={currentTrack} size={22} className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-rose-500/20 border border-white/10 shadow-md flex items-center justify-center" />
+                <HeartButton song={currentTrack} size={22} className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-rose-500/20 border border-white/10 shadow-md flex items-center justify-center" />
                 <button 
                   onClick={() => openAddToPlaylistModal(currentTrack.id)} 
-                  className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-purple-500/30 active:bg-purple-500/50 text-slate-200 hover:text-purple-300 active:scale-95 flex items-center justify-center transition-all shrink-0 border border-white/10 shadow-md"
+                  className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-purple-500/30 active:bg-purple-500/50 text-slate-200 hover:text-purple-300 active:scale-95 flex items-center justify-center transition-all shrink-0 border border-white/10 shadow-md"
                   title="Add to Playlist"
                   aria-label="Add to Playlist"
                 >
@@ -431,14 +431,14 @@ export default function StickyPlayer() {
             <div className="flex items-center justify-between px-2 pt-1">
               <button 
                 onClick={toggleShuffle} 
-                className={`p-2.5 rounded-full transition-colors active:scale-90 ${isShuffle ? 'text-purple-400' : 'text-slate-400'}`}
+                className={`w-12 h-12 rounded-full transition-colors active:scale-90 flex items-center justify-center ${isShuffle ? 'text-purple-400' : 'text-slate-400'}`}
                 aria-label="Toggle Shuffle"
               >
                 <Shuffle size={20} />
               </button>
               <button 
                 onClick={playPrev} 
-                className="p-2 text-slate-300 active:scale-90 transition-transform"
+                className="w-12 h-12 text-slate-300 active:scale-90 transition-transform flex items-center justify-center"
                 aria-label="Previous Track"
               >
                 <SkipBack size={26} fill="currentColor" />
@@ -452,14 +452,14 @@ export default function StickyPlayer() {
               </button>
               <button 
                 onClick={handleSkipNext} 
-                className="p-2 text-slate-300 active:scale-90 transition-transform"
+                className="w-12 h-12 text-slate-300 active:scale-90 transition-transform flex items-center justify-center"
                 aria-label="Next Track"
               >
                 <SkipForward size={26} fill="currentColor" />
               </button>
               <button 
                 onClick={toggleRepeat} 
-                className={`p-2.5 rounded-full transition-colors active:scale-90 ${repeatMode !== 'off' ? 'text-purple-400' : 'text-slate-400'}`}
+                className={`w-12 h-12 rounded-full transition-colors active:scale-90 flex items-center justify-center ${repeatMode !== 'off' ? 'text-purple-400' : 'text-slate-400'}`}
                 aria-label="Toggle Repeat"
               >
                 {repeatMode === 'one' ? <Repeat1 size={20} /> : <Repeat size={20} />}
@@ -599,7 +599,7 @@ export default function StickyPlayer() {
         {/* Actions (Right): Output Selector + Queue Button + Interactive Volume Control */}
         <div className="flex items-center justify-end gap-2.5 w-1/3 min-w-[260px]">
           {/* Audio Output Destination Selector Component */}
-          <OutputSelector align="right" />
+          <OutputSelector compact align="right" />
 
           {/* Queue Button */}
           <button 

@@ -18,36 +18,43 @@ export default function PublicPlaylists() {
   const [savingId, setSavingId] = useState(null);
   const [playingId, setPlayingId] = useState(null);
 
-  const fetchPublicPlaylists = async () => {
+  const fetchPublicPlaylists = async (isMounted = true) => {
     if (!user) return;
     try {
       const auth = getSubsonicAuthParams(user);
       const response = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await response.json();
-      if (data?.['subsonic-response']?.status === 'ok') {
-        const rawPlaylists = data['subsonic-response'].playlists?.playlist;
-        const allPlaylists = Array.isArray(rawPlaylists) ? rawPlaylists : (rawPlaylists ? [rawPlaylists] : []);
-        
-        // Only public playlists from users (exclude system smartlists)
-        const publicList = allPlaylists.filter(p => 
-          p &&
-          p.owner !== 'System' && 
-          (p.id ? !String(p.id).startsWith('400000') : true) && 
-          (p.public === 'true' || p.public === true)
-        );
-        setPlaylists(publicList);
-      } else {
-        setPlaylists([]);
+      if (isMounted) {
+        if (data?.['subsonic-response']?.status === 'ok') {
+          const rawPlaylists = data['subsonic-response'].playlists?.playlist;
+          const allPlaylists = Array.isArray(rawPlaylists) ? rawPlaylists : (rawPlaylists ? [rawPlaylists] : []);
+          
+          // Only public playlists from users (exclude system smartlists)
+          const publicList = allPlaylists.filter(p => 
+            p &&
+            p.owner !== 'System' && 
+            (p.id ? !String(p.id).startsWith('400000') : true) && 
+            (p.public === 'true' || p.public === true)
+          );
+          setPlaylists(publicList);
+        } else {
+          setPlaylists([]);
+        }
       }
     } catch (err) {
       console.error("Failed fetching public playlists:", err);
+      if (isMounted) setPlaylists([]);
     } finally {
-      setLoading(false);
+      if (isMounted) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPublicPlaylists();
+    let isMounted = true;
+    fetchPublicPlaylists(isMounted);
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   const filteredPlaylists = useMemo(() => {

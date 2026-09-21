@@ -19,6 +19,7 @@ export default function AllArtists() {
   const [selectedGenre, setSelectedGenre] = useState('All');
 
   useEffect(() => {
+    let isMounted = true;
     const fetchData = async () => {
       try {
         const auth = getAuthParams(user);
@@ -28,30 +29,35 @@ export default function AllArtists() {
           fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}`)).then(r => r.json()).catch(() => null)
         ]);
 
-        if (artistsRes?.['subsonic-response']?.status === 'ok') {
-          const index = artistsRes['subsonic-response'].artists?.index || [];
-          let all = [];
-          index.forEach(idx => {
-            if (idx.artist) {
-              const artList = Array.isArray(idx.artist) ? idx.artist : [idx.artist];
-              all = [...all, ...artList];
-            }
-          });
-          setRawArtists(all);
-        }
+        if (isMounted) {
+          if (artistsRes?.['subsonic-response']?.status === 'ok') {
+            const index = artistsRes['subsonic-response'].artists?.index || [];
+            let all = [];
+            index.forEach(idx => {
+              if (idx.artist) {
+                const artList = Array.isArray(idx.artist) ? idx.artist : [idx.artist];
+                all = [...all, ...artList];
+              }
+            });
+            setRawArtists(all);
+          }
 
-        if (albumsRes?.['subsonic-response']?.status === 'ok') {
-          const albumList = albumsRes['subsonic-response'].albumList?.album || [];
-          setRawAlbums(Array.isArray(albumList) ? albumList : (albumList ? [albumList] : []));
+          if (albumsRes?.['subsonic-response']?.status === 'ok') {
+            const albumList = albumsRes['subsonic-response'].albumList?.album || [];
+            setRawAlbums(Array.isArray(albumList) ? albumList : (albumList ? [albumList] : []));
+          }
         }
       } catch (err) {
         console.error("Failed to load artists:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchData();
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   // Merge similar & featured artists into canonical profiles

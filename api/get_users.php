@@ -131,8 +131,8 @@ try {
     foreach ($users as &$user) {
         $user['id'] = (int)$user['id'];
         $user['email'] = !empty($user['email']) ? (string)$user['email'] : ($user['username'] . '@local.server');
-        $rawRole = strtolower(trim((string)($user['role'] ?? 'user')));
-        $user['role'] = ($rawRole === 'admin') ? 'admin' : 'user';
+        $rawRole = strtolower(trim((string)($user['role'] ?? 'member')));
+        $user['role'] = ($rawRole === 'admin') ? 'admin' : 'member';
     }
     unset($user);
 

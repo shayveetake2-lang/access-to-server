@@ -1,25 +1,33 @@
-import { useState, useEffect } from 'react';
-import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database, X, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getAmpacheUrl } from '../utils/api';
+import { useToast } from '../context/ToastContext';
+import { getAmpacheUrl, getApiProxyUrl } from '../utils/api';
 import AdminMetadataEditor from '../components/AdminMetadataEditor';
 import GenreManager from '../components/admin/GenreManager';
 import AdminContentAssigner from '../components/admin/AdminContentAssigner';
 
 export default function AdminSettings() {
   const { user: currentUser, getAuthParams } = useAuth();
+  const { showToast } = useToast();
   const [adminTab, setAdminTab] = useState('metadata'); // 'metadata' | 'users'
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchUsers = async () => {
+  // Password reset modal state
+  const [resetModalUser, setResetModalUser] = useState(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch(getAmpacheUrl(`action=getUsers&${getAuthParams(currentUser)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
         const u = data['subsonic-response'].users?.user || [];
-        // Ensure it's an array if only 1 user returned
         setUsers(Array.isArray(u) ? u : [u]);
       } else {
         setError("Failed to load users. Ensure you have Admin privileges.");
@@ -29,28 +37,38 @@ export default function AdminSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, getAuthParams]);
 
   useEffect(() => {
     if (adminTab === 'users') {
       fetchUsers();
     }
-  }, [currentUser, adminTab]);
+  }, [adminTab, fetchUsers]);
 
-  const handleResetPassword = async (username) => {
-    const newPass = prompt(`Enter new password for ${username}:`);
-    if (!newPass) return;
+  const handleOpenResetPassword = (username) => {
+    setResetModalUser(username);
+    setNewPasswordInput('');
+  };
 
+  const handleConfirmResetPassword = async (e) => {
+    e.preventDefault();
+    if (!resetModalUser || !newPasswordInput.trim()) return;
+
+    setIsResetting(true);
     try {
-      const res = await fetch(getAmpacheUrl(`action=updateUser&username=${encodeURIComponent(username)}&password=${encodeURIComponent(newPass)}&${getAuthParams(currentUser)}`));
+      const res = await fetch(getAmpacheUrl(`action=updateUser&username=${encodeURIComponent(resetModalUser)}&password=${encodeURIComponent(newPasswordInput.trim())}&${getAuthParams(currentUser)}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        alert(`Password for ${username} has been reset successfully!`);
+        showToast(`Password for ${resetModalUser} reset successfully!`, 'success');
+        setResetModalUser(null);
+        setNewPasswordInput('');
       } else {
-        alert("Failed to reset password.");
+        showToast("Failed to reset password.", 'error');
       }
     } catch (err) {
-      alert("Network error.");
+      showToast("Network error resetting password.", 'error');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -61,16 +79,28 @@ export default function AdminSettings() {
 
     try {
       const newRole = !isAdmin ? 'true' : 'false';
+      
+      // 1. Subsonic API Update
       const res = await fetch(getAmpacheUrl(`action=updateUser&username=${encodeURIComponent(u.username)}&adminRole=${newRole}&${getAuthParams(currentUser)}`));
       const data = await res.json();
+
+      // 2. Direct Ampache DB Persistence Proxy
+      try {
+        await fetch(`${getApiProxyUrl()}?action=updateUserRole&username=${encodeURIComponent(u.username)}&adminRole=${newRole}`, {
+          method: 'POST'
+        });
+      } catch (pe) {
+        console.debug("Role proxy sync:", pe);
+      }
+
       if (data?.['subsonic-response']?.status === 'ok') {
-        alert(`${u.username} role updated!`);
+        showToast(`${u.username} role updated to ${!isAdmin ? 'Admin' : 'Standard User'}!`, 'success');
         fetchUsers();
       } else {
-        alert("Failed to update role.");
+        showToast("Failed to update user role.", 'error');
       }
     } catch (err) {
-      alert("Network error.");
+      showToast("Network error updating role.", 'error');
     }
   };
 
@@ -190,7 +220,7 @@ export default function AdminSettings() {
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button 
-                        onClick={() => handleResetPassword(u.username)}
+                        onClick={() => handleOpenResetPassword(u.username)}
                         className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
                         title="Reset Password"
                       >
@@ -211,6 +241,56 @@ export default function AdminSettings() {
             </table>
           </div>
         )}
+      </div>
+    )}
+
+    {/* Reset Password Glassmorphic Modal */}
+    {resetModalUser && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in">
+        <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-white font-bold text-lg">
+              <KeyRound size={20} className="text-purple-400" />
+              <span>Reset Password</span>
+            </div>
+            <button
+              onClick={() => setResetModalUser(null)}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <p className="text-xs text-slate-400">
+            Set a new account password for <strong className="text-purple-300">{resetModalUser}</strong>.
+          </p>
+          <form onSubmit={handleConfirmResetPassword} className="space-y-4">
+            <input
+              type="password"
+              placeholder="Enter new password"
+              value={newPasswordInput}
+              onChange={(e) => setNewPasswordInput(e.target.value)}
+              className="w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              required
+              autoFocus
+            />
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setResetModalUser(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-xl hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isResetting || !newPasswordInput.trim()}
+                className="px-5 py-2 text-xs font-semibold bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-xl shadow-lg transition-all"
+              >
+                {isResetting ? 'Saving...' : 'Save Password'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     )}
   </div>

@@ -1,13 +1,45 @@
 <?php
 // /config/config.php — Secure Centralized Database & Environment Configuration
 
-// Database Credentials (Override defaults using environment variables if set)
-define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
-define('DB_NAME', getenv('DB_NAME') ?: 'access_db');
-define('DB_USER', getenv('DB_USER') ?: 'server_app');
-define('DB_PASS', getenv('DB_PASS') ?: '');
+if (!function_exists('getEnvValue')) {
+    function getEnvValue($key, $default = '') {
+        $val = getenv($key);
+        if ($val !== false && $val !== '') return $val;
+        static $envCache = null;
+        if ($envCache === null) {
+            $envCache = [];
+            $envFile = dirname(__DIR__) . '/.env';
+            if (file_exists($envFile)) {
+                $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (strpos($line, '#') === 0) continue;
+                    if (strpos($line, '=') !== false) {
+                        list($name, $value) = explode('=', $line, 2);
+                        $envCache[trim($name)] = trim($value, " \"'");
+                    }
+                }
+            }
+        }
+        return $envCache[$key] ?? $default;
+    }
+}
+
+// Database Credentials (Override defaults using environment variables or .env if set)
+define('DB_HOST', getEnvValue('DB_HOST', '127.0.0.1'));
+define('DB_PORT', getEnvValue('DB_PORT', '8889'));
+define('DB_NAME', getEnvValue('DB_NAME', 'access_db'));
+define('DB_USER', getEnvValue('DB_USER', 'server_app'));
+define('DB_PASS', getEnvValue('DB_PASS', ''));
 define('DB_CHARSET', 'utf8mb4');
-define('DB_SQLITE_PATH', getenv('DB_SQLITE_PATH') ?: (dirname(__DIR__) . '/storage/access_db.sqlite'));
+define('DB_SQLITE_PATH', getEnvValue('DB_SQLITE_PATH', (dirname(__DIR__) . '/storage/access_db.sqlite')));
+
+// Ampache Music Database Configuration
+define('AMPACHE_DB_HOST', getEnvValue('AMPACHE_DB_HOST', DB_HOST));
+define('AMPACHE_DB_PORT', getEnvValue('AMPACHE_DB_PORT', DB_PORT));
+define('AMPACHE_DB_NAME', getEnvValue('AMPACHE_DB_NAME', 'ampache'));
+define('AMPACHE_DB_USER', getEnvValue('AMPACHE_DB_USER', 'ampache_user'));
+define('AMPACHE_DB_PASS', getEnvValue('AMPACHE_DB_PASS', 'password'));
 
 /**
  * SQLite PDO extension wrapper to ensure compatibility with MySQL DDL statements

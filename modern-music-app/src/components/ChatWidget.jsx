@@ -1,7 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, Sparkles, Wrench, RefreshCw, Server, Database, Globe, Film } from 'lucide-react';
+import { getBaseUrl } from '../utils/api';
 
-const API_ENDPOINT = 'http://10.247.192.231:5005/api/chat';
+function getCandidateChatEndpoints() {
+  const base = getBaseUrl();
+  const host = (typeof window !== 'undefined' && window.location.hostname) ? window.location.hostname : '10.247.192.231';
+  const endpoints = [`${base}/api/chat.php`];
+  if (host && host !== 'localhost') {
+    endpoints.push(`http://${host}:5005/api/chat`);
+  }
+  endpoints.push('http://10.247.192.231:5005/api/chat');
+  return Array.from(new Set(endpoints));
+}
 
 const QUICK_ACTIONS = [
   { label: '!fixplex', desc: 'Fix Plex', icon: Film, command: '!fixplex' },
@@ -51,53 +61,67 @@ export default function ChatWidget() {
     setInput('');
     setLoading(true);
 
-    try {
-      const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          message: text,
-          prompt: text,
-          history: messages.map(m => ({ role: m.role, content: m.content }))
-        })
-      });
+    const endpoints = getCandidateChatEndpoints();
+    let replyContent = null;
+    let lastError = null;
 
-      if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status}`);
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            message: text,
+            prompt: text,
+            history: messages.map(m => ({ role: m.role, content: m.content }))
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        replyContent = 
+          data.response || 
+          data.reply || 
+          data.answer ||
+          data.message || 
+          data.content || 
+          (typeof data === 'string' ? data : JSON.stringify(data));
+
+        if (replyContent) {
+          break; // Success!
+        }
+      } catch (err) {
+        lastError = err;
+        console.debug(`[Aether ChatWidget] Candidate ${endpoint} failed:`, err);
       }
+    }
 
-      const data = await response.json();
-      const replyContent = 
-        data.response || 
-        data.reply || 
-        data.message || 
-        data.content || 
-        (typeof data === 'string' ? data : JSON.stringify(data));
-
+    if (replyContent) {
       const botMessage = {
         id: `bot-${Date.now()}`,
         role: 'assistant',
         content: replyContent,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-
       setMessages(prev => [...prev, botMessage]);
-    } catch (err) {
-      console.warn('[Aether ChatWidget] API call notice:', err);
+    } else {
       const errorMessage = {
         id: `err-${Date.now()}`,
         role: 'assistant',
         isError: true,
-        content: `⚠️ Could not reach Aether AI at 10.247.192.231:5005 (${err.message}). Ensure the Python bot/API server is running.`,
+        content: `⚠️ Could not reach Aether AI (${lastError?.message || 'Connection failed'}). Ensure the server web service or Python bot is running.`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   const handleKeyDown = (e) => {
@@ -112,7 +136,7 @@ export default function ChatWidget() {
       {/* Floating Action Button (FAB) — sits above the sticky bottom player */}
       <button
         onClick={() => setIsOpen(prev => !prev)}
-        className="fixed bottom-24 sm:bottom-28 right-4 sm:right-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 text-white shadow-[0_0_24px_rgba(168,85,247,0.55)] hover:shadow-[0_0_36px_rgba(168,85,247,0.8)] flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 border border-purple-400/30 group"
+        className="fixed bottom-[120px] sm:bottom-32 right-4 sm:right-6 z-[70] w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 text-white shadow-[0_0_24px_rgba(168,85,247,0.55)] hover:shadow-[0_0_36px_rgba(168,85,247,0.8)] flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 border border-purple-400/30 group"
         title={isOpen ? "Close Aether AI" : "Chat with Aether AI"}
         aria-label="Toggle Aether AI Chat"
       >
@@ -128,7 +152,7 @@ export default function ChatWidget() {
 
       {/* Glassmorphic Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-40 sm:bottom-44 right-3 sm:right-6 z-40 w-[calc(100vw-1.5rem)] sm:w-96 max-w-sm h-[480px] sm:h-[530px] rounded-3xl bg-slate-950/90 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed bottom-[180px] sm:bottom-48 right-3 sm:right-6 z-[70] w-[calc(100vw-1.5rem)] sm:w-96 max-w-sm h-[480px] sm:h-[530px] rounded-3xl bg-slate-950/90 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           
           {/* Header */}
           <div className="p-3.5 sm:p-4 border-b border-white/10 bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-indigo-950/40 flex items-center justify-between shrink-0">
@@ -145,7 +169,7 @@ export default function ChatWidget() {
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  <span>10.247.192.231:5005</span>
+                  <span>{typeof window !== 'undefined' ? (window.location.hostname || 'Local Server') : 'Server'}:5005</span>
                 </div>
               </div>
             </div>

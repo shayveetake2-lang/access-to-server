@@ -196,9 +196,9 @@ foreach ($history as $turn) {
 $messages[] = ['role' => 'user', 'content' => $userMessage];
 
 $payload = json_encode([
-    'model' => 'openai/gpt-oss-20b',
+    'model' => getEnvVar('GROQ_MODEL', 'llama-3.1-8b-instant'),
     'messages' => $messages,
-    'temperature' => 0.1,
+    'temperature' => 0.2,
     'max_tokens' => 2000,
     'response_format' => ['type' => 'json_object']
 ]);

@@ -1,4 +1,4 @@
-import { Home, Search, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, Volume2, Globe } from 'lucide-react';
+import { Home, Search, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, Volume2, Globe, Heart } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
@@ -13,6 +13,7 @@ export default function Sidebar() {
     { icon: <Search size={19} />, label: 'Browse', path: '/albums' },
     { icon: <Mic2 size={19} />, label: 'Artists', path: '/artists' },
     { icon: <Library size={19} />, label: 'Top 100 Songs', path: '/songs' },
+    { icon: <Heart size={19} className="text-rose-400" />, label: 'Liked Songs', path: '/liked' },
     { icon: <ListMusic size={19} />, label: 'My Playlists', path: '/playlists' },
     { icon: <Globe size={19} />, label: 'Public Playlists', path: '/public-playlists' },
     { icon: <Settings size={19} />, label: 'Settings', path: '/settings' },
