@@ -37,6 +37,16 @@ export function PlayerProvider({ children }) {
     } catch (e) {}
   };
 
+  // Marks an <audio> element to trigger the native iOS AirPlay / Bluetooth routing
+  // sheet, and enables WebKit's legacy AirPlay attribute for older Safari builds.
+  const configureAudioElement = (audio) => {
+    if (!audio) return audio;
+    audio.setAttribute('x-webkit-airplay', 'allow');
+    audio.setAttribute('playsinline', '');
+    audio.crossOrigin = 'anonymous';
+    return audio;
+  };
+
   const updateProgress = () => {
     if (audioRef.current) {
       const cur = audioRef.current.currentTime;
@@ -58,9 +68,15 @@ export function PlayerProvider({ children }) {
   const stalledCountRef      = useRef(0);
   const currentTrackRef      = useRef(null);
   const userRef              = useRef(null);
+  // Mirrors of queue/currentIndex state, always current even inside stale closures
+  // (e.g. the audio 'ended' handler, or back-to-back addToQueue calls).
+  const queueRef             = useRef([]);
+  const currentIndexRef      = useRef(-1);
 
   useEffect(() => { currentTrackRef.current = currentTrack; }, [currentTrack]);
   useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { queueRef.current = queue; }, [queue]);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
 
   /**
    * Reconnect: retains currentTime, recreates Subsonic stream URL,
@@ -243,7 +259,7 @@ export function PlayerProvider({ children }) {
 
   useEffect(() => {
     if (!audioRef.current) {
-      audioRef.current = new Audio();
+      audioRef.current = configureAudioElement(new Audio());
       audioRef.current.volume = volume;
     }
 
@@ -265,7 +281,7 @@ export function PlayerProvider({ children }) {
       oldAudio.src = '';
     }
 
-    audioRef.current = newAudio;
+    audioRef.current = configureAudioElement(newAudio);
     audioRef.current.volume = volume;
     attachAudioListeners(audioRef.current);
 
@@ -351,7 +367,7 @@ export function PlayerProvider({ children }) {
     if (!track || !user) return;
     setCurrentTrack(track);
     if (!audioRef.current) {
-      audioRef.current = new Audio();
+      audioRef.current = configureAudioElement(new Audio());
       audioRef.current.volume = volume;
       attachAudioListeners(audioRef.current);
     }
@@ -382,7 +398,11 @@ export function PlayerProvider({ children }) {
   };
 
   const playNext = () => {
-    if (queue.length === 0) return;
+    // Always read the latest queue/index via refs, never the render-closure state,
+    // so a track added moments earlier is never skipped or lost.
+    const activeQueue = queueRef.current;
+    const activeIndex = currentIndexRef.current;
+    if (activeQueue.length === 0) return;
     
     if (repeatMode === 'one') {
       if (audioRef.current) {
@@ -394,10 +414,10 @@ export function PlayerProvider({ children }) {
 
     let nextIndex;
     if (isShuffled) {
-      nextIndex = Math.floor(Math.random() * queue.length);
+      nextIndex = Math.floor(Math.random() * activeQueue.length);
     } else {
-      nextIndex = currentIndex + 1;
-      if (nextIndex >= queue.length) {
+      nextIndex = activeIndex + 1;
+      if (nextIndex >= activeQueue.length) {
         if (repeatMode === 'all') {
           nextIndex = 0;
         } else {
@@ -407,7 +427,7 @@ export function PlayerProvider({ children }) {
       }
     }
     
-    const nextTrack = queue[nextIndex];
+    const nextTrack = activeQueue[nextIndex];
     if (!nextTrack) return;
 
     // Zero-latency instant swap if pre-fetched buffer matches next track
@@ -427,24 +447,26 @@ export function PlayerProvider({ children }) {
   playNextRef.current = playNext;
 
   const playPrevious = () => {
-    if (queue.length === 0) return;
+    const activeQueue = queueRef.current;
+    const activeIndex = currentIndexRef.current;
+    if (activeQueue.length === 0) return;
     
     if (audioRef.current.currentTime > 3) {
       audioRef.current.currentTime = 0;
       return;
     }
 
-    let prevIndex = currentIndex - 1;
+    let prevIndex = activeIndex - 1;
     if (prevIndex < 0) {
       if (repeatMode === 'all') {
-        prevIndex = queue.length - 1;
+        prevIndex = activeQueue.length - 1;
       } else {
         prevIndex = 0;
       }
     }
 
     setCurrentIndex(prevIndex);
-    loadTrack(queue[prevIndex]);
+    loadTrack(activeQueue[prevIndex]);
   };
 
   const seek = (time) => {
@@ -463,51 +485,78 @@ export function PlayerProvider({ children }) {
   };
 
   const addToQueue = (track) => {
-    if (!currentTrack || queue.length === 0) {
+    // Functional update reads the latest queue snapshot even if addToQueue is
+    // called multiple times before React re-renders, preventing lost inserts.
+    if (!currentTrackRef.current || queueRef.current.length === 0) {
       playQueue([track], 0);
-    } else {
-      const newQueue = [...queue];
-      const insertIndex = currentIndex + 1;
-      newQueue.splice(insertIndex, 0, track);
-      setQueue(newQueue);
+      return;
     }
+    setQueue(prevQueue => {
+      const newQueue = [...prevQueue];
+      const insertIndex = currentIndexRef.current + 1;
+      newQueue.splice(insertIndex, 0, track);
+      return newQueue;
+    });
   };
 
   const removeFromQueue = (index) => {
-    if (index === currentIndex) {
-      playNext();
-    }
-    const newQueue = [...queue];
-    newQueue.splice(index, 1);
-    setQueue(newQueue);
-    if (index < currentIndex) {
-      setCurrentIndex(currentIndex - 1);
+    const activeIndex = currentIndexRef.current;
+    const activeQueue = queueRef.current;
+    if (index < 0 || index >= activeQueue.length) return;
+
+    const isRemovingCurrent = index === activeIndex;
+    // Whatever sits right after the removed track shifts down into its slot,
+    // so `activeIndex` stays numerically correct once the splice below runs.
+    const upcomingTrack = isRemovingCurrent ? activeQueue[index + 1] : null;
+
+    setQueue(prevQueue => {
+      const newQueue = [...prevQueue];
+      newQueue.splice(index, 1);
+      return newQueue;
+    });
+
+    if (isRemovingCurrent) {
+      if (upcomingTrack) {
+        loadTrack(upcomingTrack);
+      } else if (repeatMode === 'all' && activeQueue.length > 1) {
+        setCurrentIndex(0);
+        loadTrack(activeQueue[0]);
+      } else {
+        setIsPlaying(false);
+        setCurrentIndex(Math.max(0, index - 1));
+      }
+    } else if (index < activeIndex) {
+      setCurrentIndex(activeIndex - 1);
     }
   };
 
   const reorderQueue = (startIndex, endIndex) => {
-    const result = Array.from(queue);
-    const [removed] = result.splice(startIndex, 1);
-    result.splice(endIndex, 0, removed);
+    const activeIndex = currentIndexRef.current;
 
-    if (startIndex === currentIndex) {
+    if (startIndex === activeIndex) {
       setCurrentIndex(endIndex);
-    } else if (startIndex < currentIndex && endIndex >= currentIndex) {
-      setCurrentIndex(currentIndex - 1);
-    } else if (startIndex > currentIndex && endIndex <= currentIndex) {
-      setCurrentIndex(currentIndex + 1);
+    } else if (startIndex < activeIndex && endIndex >= activeIndex) {
+      setCurrentIndex(activeIndex - 1);
+    } else if (startIndex > activeIndex && endIndex <= activeIndex) {
+      setCurrentIndex(activeIndex + 1);
     }
 
-    setQueue(result);
+    setQueue(prevQueue => {
+      const result = Array.from(prevQueue);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      return result;
+    });
   };
 
   const clearQueue = () => {
-    if (currentTrack) {
-      setQueue([currentTrack]);
+    if (currentTrackRef.current) {
+      setQueue([currentTrackRef.current]);
       setCurrentIndex(0);
     } else {
       setQueue([]);
       setCurrentIndex(-1);
+
     }
   };
 
@@ -599,6 +648,7 @@ export function PlayerProvider({ children }) {
         clearQueue,
         skipToQueueIndex,
         audioRef,
+        configureAudioElement,
         swapAudio,
         setPrefetchBuffer
       }}

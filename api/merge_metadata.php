@@ -193,39 +193,37 @@ if (!$requester && !empty($_SESSION['role'])) {
 $subsonicUser = $data['u'] ?? $_GET['u'] ?? $_POST['u'] ?? null;
 if (!$requester && $subsonicUser) {
     $cleanUser = strtolower(trim($subsonicUser));
-    if ($cleanUser === 'admin' || $cleanUser === 'musicadmin') {
-        $requester = [
-            'id' => 1,
-            'username' => $subsonicUser,
-            'role' => 'admin'
-        ];
-    } else {
-        // Check sys_users for admin role
-        if ($sysPdo) {
-            $stmt = $sysPdo->prepare("SELECT id, username, role FROM sys_users WHERE LOWER(username) = :u AND role = 'admin' LIMIT 1");
-            $stmt->execute([':u' => $cleanUser]);
-            $u = $stmt->fetch();
-            if ($u) {
-                $requester = $u;
-            }
+
+    // SECURITY: previously usernames literally equal to "admin"/"musicadmin" were
+    // granted admin here with NO password/token verification — a trivial auth
+    // bypass (`u=admin` in the POST body was enough). Every caller, including
+    // those usernames, must now pass one of the real DB-verified checks below.
+
+    // Check sys_users for admin role
+    if ($sysPdo) {
+        $stmt = $sysPdo->prepare("SELECT id, username, role FROM sys_users WHERE LOWER(username) = :u AND role = 'admin' LIMIT 1");
+        $stmt->execute([':u' => $cleanUser]);
+        $u = $stmt->fetch();
+        if ($u) {
+            $requester = $u;
         }
-        // Also check Ampache user table (access >= 75 indicates admin or catalog manager)
-        if (!$requester) {
-            $ampPdo = getAmpacheMySQLConnection();
-            if ($ampPdo) {
-                try {
-                    $stmt = $ampPdo->prepare("SELECT id, username, access FROM user WHERE LOWER(username) = :u AND access >= 75 LIMIT 1");
-                    $stmt->execute([':u' => $cleanUser]);
-                    $u = $stmt->fetch();
-                    if ($u) {
-                        $requester = [
-                            'id' => $u['id'],
-                            'username' => $u['username'],
-                            'role' => 'admin'
-                        ];
-                    }
-                } catch (\Exception $e) {}
-            }
+    }
+    // Also check Ampache user table (access >= 75 indicates admin or catalog manager)
+    if (!$requester) {
+        $ampPdo = getAmpacheMySQLConnection();
+        if ($ampPdo) {
+            try {
+                $stmt = $ampPdo->prepare("SELECT id, username, access FROM user WHERE LOWER(username) = :u AND access >= 75 LIMIT 1");
+                $stmt->execute([':u' => $cleanUser]);
+                $u = $stmt->fetch();
+                if ($u) {
+                    $requester = [
+                        'id' => $u['id'],
+                        'username' => $u['username'],
+                        'role' => 'admin'
+                    ];
+                }
+            } catch (\Exception $e) {}
         }
     }
 }

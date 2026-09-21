@@ -7,6 +7,7 @@ import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 import HeartButton from '../components/HeartButton';
+import StarButton from '../components/StarButton';
 
 export default function AlbumDetails() {
   const { id } = useParams();
@@ -137,7 +138,7 @@ export default function AlbumDetails() {
           <Play fill="currentColor" size={22} className="ml-0.5" />
         </button>
         {songs[0] && (
-          <HeartButton song={songs[0]} size={20} className="w-10 h-10 rounded-full border border-white/15 hover:border-white/30 flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all" />
+          <StarButton type="album" id={album.id} initialStarred={!!album.starred} size={20} className="w-10 h-10 rounded-full border border-white/15 hover:border-white/30 flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all" />
         )}
       </div>
 

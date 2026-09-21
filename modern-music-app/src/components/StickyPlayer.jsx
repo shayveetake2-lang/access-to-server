@@ -5,7 +5,7 @@ import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { getCoverArtUrl, getStreamUrl, getSubsonicAuthParams, DEFAULT_COVER_ART } from '../utils/api';
-import OutputSelector from './OutputSelector';
+import OutputMenu from './OutputSelector';
 import HeartButton from './HeartButton';
 
 const getArtistId = (track) => {
@@ -35,9 +35,129 @@ export default function StickyPlayer() {
     skipToQueueIndex,
     togglePlay, playNext, playPrevious: playPrev, toggleShuffle, toggleRepeat, seek,
     volume, setVolume,
-    swapAudio, setPrefetchBuffer
+    swapAudio, setPrefetchBuffer, configureAudioElement, audioRef
   } = usePlayer();
   const prevVolumeRef = useRef(volume || 0.8);
+
+  // ── Web Audio Loudness Normalizer ──────────────────────────────────────────
+  // Routes the <audio> element through a DynamicsCompressorNode (+ makeup gain
+  // + safety limiter) so the 10k+ song library plays back at a consistent
+  // perceived volume regardless of how the source files were originally mastered.
+  const audioContextRef   = useRef(null);
+  const compressorRef     = useRef(null);
+  const makeupGainRef     = useRef(null);
+  const limiterRef        = useRef(null);
+  const sourceNodeRef     = useRef(null);
+  const hookedAudioElRef  = useRef(null);
+
+  const setupNormalizerGraph = () => {
+    const audioEl = audioRef?.current;
+    if (!audioEl) return;
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return; // Web Audio unsupported — falls back to native <audio> output
+
+    if (!audioContextRef.current) {
+      const ctx = new AudioContextClass();
+
+      // Stage 1: leveling compressor — aggressively narrows the dynamic range so
+      // quiet passages and loud passages end up much closer in output level.
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-50, ctx.currentTime);
+      compressor.knee.setValueAtTime(30, ctx.currentTime);
+      compressor.ratio.setValueAtTime(12, ctx.currentTime);
+      compressor.attack.setValueAtTime(0.003, ctx.currentTime);
+      compressor.release.setValueAtTime(0.25, ctx.currentTime);
+
+      // Stage 2: makeup gain — since the compressor pulls the whole signal down,
+      // boost it back up so quiet tracks are actually audible at a normal level.
+      const makeupGain = ctx.createGain();
+      makeupGain.gain.setValueAtTime(1.6, ctx.currentTime);
+
+      // Stage 3: brick-wall safety limiter — prevents makeup gain from clipping
+      // on already-loud, poorly-mastered tracks.
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.setValueAtTime(-3, ctx.currentTime);
+      limiter.knee.setValueAtTime(0, ctx.currentTime);
+      limiter.ratio.setValueAtTime(20, ctx.currentTime);
+      limiter.attack.setValueAtTime(0.001, ctx.currentTime);
+      limiter.release.setValueAtTime(0.1, ctx.currentTime);
+
+      compressor.connect(makeupGain);
+      makeupGain.connect(limiter);
+      limiter.connect(ctx.destination);
+
+      audioContextRef.current = ctx;
+      compressorRef.current = compressor;
+      makeupGainRef.current = makeupGain;
+      limiterRef.current = limiter;
+    }
+
+    // Re-bind whenever the active <audio> element instance changes (e.g. the
+    // zero-latency prefetch-buffer swap creates a brand new HTMLAudioElement).
+    if (hookedAudioElRef.current !== audioEl) {
+      try {
+        // Disconnect the previous element's source node first so swapped-out
+        // <audio> elements (and their nodes) don't linger and leak memory.
+        if (sourceNodeRef.current) {
+          sourceNodeRef.current.disconnect();
+          sourceNodeRef.current = null;
+        }
+        const source = audioContextRef.current.createMediaElementSource(audioEl);
+        source.connect(compressorRef.current);
+        sourceNodeRef.current = source;
+        hookedAudioElRef.current = audioEl;
+      } catch (err) {
+        // Thrown if a source node already exists for this exact element (e.g. React
+        // Strict Mode double-invoke in dev) — safe to ignore, graph is already bound.
+        console.debug('[Aether Audio] Normalizer graph already bound for this element:', err);
+      }
+    }
+
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => {});
+    }
+  };
+
+  // (Re)attach the normalizer graph whenever the active track/audio element changes
+  useEffect(() => {
+    setupNormalizerGraph();
+  }, [currentTrack?.id]);
+
+  // Browser autoplay policies require the AudioContext to resume from a real user
+  // gesture — wire up one-time listeners that resume it on the first interaction.
+  useEffect(() => {
+    const resumeOnGesture = () => {
+      setupNormalizerGraph();
+      const ctx = audioContextRef.current;
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+    };
+    const gestureEvents = ['pointerdown', 'keydown', 'touchstart'];
+    gestureEvents.forEach(evt => window.addEventListener(evt, resumeOnGesture, { passive: true }));
+    return () => {
+      gestureEvents.forEach(evt => window.removeEventListener(evt, resumeOnGesture));
+    };
+  }, []);
+
+  // Tear down the Web Audio graph on unmount so nodes/context don't leak
+  // (StickyPlayer is normally persistent, but this guards HMR/route teardown).
+  useEffect(() => {
+    return () => {
+      try {
+        sourceNodeRef.current?.disconnect();
+        compressorRef.current?.disconnect();
+        makeupGainRef.current?.disconnect();
+        limiterRef.current?.disconnect();
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close().catch(() => {});
+        }
+      } catch (err) {
+        console.debug('[Aether Audio] Normalizer graph teardown notice:', err);
+      }
+    };
+  }, []);
 
   // Hidden in-memory Audio prefetch buffer refs
   const prefetchAudioRef = useRef(null);
@@ -88,7 +208,7 @@ export default function StickyPlayer() {
         }
 
         const streamUrl = getStreamUrl(nextTrack.id, getSubsonicAuthParams(user));
-        const prefetchAudio = new Audio();
+        const prefetchAudio = configureAudioElement ? configureAudioElement(new Audio()) : new Audio();
         prefetchAudio.preload = 'auto';
         prefetchAudio.src = streamUrl;
 
@@ -333,7 +453,7 @@ export default function StickyPlayer() {
 
             <div className="flex items-center gap-1">
               {/* Mobile Output Destination Selector */}
-              <OutputSelector compact align="right" />
+              <OutputMenu compact align="right" />
               <button 
                 onClick={() => setIsQueueOpen(!isQueueOpen)}
                 className="w-12 h-12 -mr-2 rounded-full text-slate-300 hover:text-white active:scale-90 transition-all flex items-center justify-center"
@@ -599,7 +719,7 @@ export default function StickyPlayer() {
         {/* Actions (Right): Output Selector + Queue Button + Interactive Volume Control */}
         <div className="flex items-center justify-end gap-2.5 w-1/3 min-w-[260px]">
           {/* Audio Output Destination Selector Component */}
-          <OutputSelector compact align="right" />
+          <OutputMenu compact align="right" />
 
           {/* Queue Button */}
           <button 

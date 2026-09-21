@@ -3,12 +3,12 @@ import { Volume2, Headphones, Radio, Tv, Laptop, Smartphone, Speaker, Check, Che
 import { usePlayer } from '../context/PlayerContext';
 
 /**
- * OutputSelector Component
+ * OutputMenu Component
  * Provides visual indication and interactive switching for audio playback destinations
  * utilizing standard W3C Media Capture and Streams API & Audio Output Devices API (setSinkId),
- * with fallback support for Apple AirPlay (WebKitPlaybackTargetAvailability).
+ * with fallback support for Apple AirPlay (WebKitPlaybackTargetAvailability / x-webkit-airplay).
  */
-export default function OutputSelector({ compact = false }) {
+export default function OutputMenu({ compact = false }) {
   const { audioRef } = usePlayer();
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(() => {
@@ -127,6 +127,11 @@ export default function OutputSelector({ compact = false }) {
     // Check Apple AirPlay WebKit availability
     if (window.WebKitPlaybackTargetAvailabilityEvent || 'webkitCurrentPlaybackTargetIsWireless' in testAudio) {
       setHasAirPlay(true);
+    }
+
+    // Ensure the live <audio> element always exposes the WebKit AirPlay fallback attribute
+    if (audioRef?.current) {
+      audioRef.current.setAttribute('x-webkit-airplay', 'allow');
     }
 
     refreshDevices();

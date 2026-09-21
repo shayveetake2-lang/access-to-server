@@ -1,4 +1,5 @@
 import md5 from './md5';
+import { dedupeSongs } from './dedupeSongs';
 
 // modern-music-app/src/utils/api.js — Environment-aware API & Asset Path Resolver
 
@@ -162,6 +163,8 @@ export async function searchSubsonic(query, user = null) {
       });
     });
   });
+
+  merged.song = dedupeSongs(merged.song);
 
   return merged;
 }

@@ -6,6 +6,7 @@ import { getAmpacheUrl, getApiProxyUrl } from '../utils/api';
 import AdminMetadataEditor from '../components/AdminMetadataEditor';
 import GenreManager from '../components/admin/GenreManager';
 import AdminContentAssigner from '../components/admin/AdminContentAssigner';
+import OrphanedMedia from '../components/admin/OrphanedMedia';
 
 export default function AdminSettings() {
   const { user: currentUser, getAuthParams } = useAuth();
@@ -170,6 +171,7 @@ export default function AdminSettings() {
       {adminTab === 'content' && (
         <div className="space-y-6 animate-in fade-in">
           <GenreManager />
+          <OrphanedMedia />
           <AdminContentAssigner user={currentUser} />
         </div>
       )}

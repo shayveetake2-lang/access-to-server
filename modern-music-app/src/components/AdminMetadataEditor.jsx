@@ -2,17 +2,18 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   Users, Music, Disc, GitMerge, Search, CheckSquare, Square, 
   AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, ArrowRight,
-  Filter, Sparkles, Database
+  Filter, Sparkles, Database, UserPlus, Unlink, Link2, Loader2, Pencil, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getMergeMetadataUrl, getAmpacheUrl } from '../utils/api';
+import { adminPost } from './admin/adminApi';
 
 export default function AdminMetadataEditor() {
   const { user, getAuthParams } = useAuth();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('smart_merge'); // 'smart_merge' | 'artists' | 'albums' | 'songs'
+  const [activeTab, setActiveTab] = useState('smart_merge'); // 'smart_merge' | 'artists' | 'albums' | 'songs' | 'create_artist'
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [songs, setSongs] = useState([]);
@@ -29,6 +30,17 @@ export default function AdminMetadataEditor() {
   const [mergingGroupId, setMergingGroupId] = useState(null);
   const [batchMerging, setBatchMerging] = useState(false);
   const [lastResult, setLastResult] = useState(null);
+  const [unlinking, setUnlinking] = useState(false);
+
+  // Create Custom Artist tab state
+  const [newArtistName, setNewArtistName] = useState('');
+  const [creatingArtist, setCreatingArtist] = useState(false);
+  const [newlyCreatedArtist, setNewlyCreatedArtist] = useState(null);
+  const [linkSongIds, setLinkSongIds] = useState(new Set());
+  const [linkSongSearch, setLinkSongSearch] = useState('');
+  const [linkingSongs, setLinkingSongs] = useState(false);
+  const [linkResult, setLinkResult] = useState(null);
+
 
   const isAdmin = user?.role === 'admin' || user?.isAdmin === true || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase());
 
@@ -78,7 +90,7 @@ export default function AdminMetadataEditor() {
       }
 
       // Fetch songs for song mode
-      if (activeTab === 'songs') {
+      if (activeTab === 'songs' || activeTab === 'create_artist') {
         const resSongs = await fetch(getAmpacheUrl(`action=getRandomSongs&size=100&${auth}`));
         const dataSongs = await resSongs.json();
         const songList = dataSongs?.['subsonic-response']?.randomSongs?.song || [];
@@ -97,6 +109,9 @@ export default function AdminMetadataEditor() {
     fetchMetadata();
     setSelectedIds(new Set());
     setLastResult(null);
+    setNewlyCreatedArtist(null);
+    setLinkSongIds(new Set());
+    setLinkResult(null);
   }, [activeTab, isAdmin]);
 
   // Target artist candidates matching search query
@@ -302,6 +317,146 @@ export default function AdminMetadataEditor() {
     }
   };
 
+  // Detach selected albums/songs from their artist (route to "Unknown Artist")
+  const handleUnlinkFromArtist = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (activeTab !== 'songs' && activeTab !== 'albums') return;
+    if (selectedIds.size === 0) {
+      showToast("Select at least one item to unlink", "warning");
+      return;
+    }
+
+    setUnlinking(true);
+    try {
+      const type = activeTab === 'songs' ? 'song' : 'album';
+      const res = await adminPost('unlinkMedia', { type, ids: Array.from(selectedIds) });
+      showToast(res.message || `${type}(s) unlinked from artist`, "success");
+      setSelectedIds(new Set());
+      fetchMetadata();
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Failed to unlink from artist", "error");
+    } finally {
+      setUnlinking(false);
+    }
+  };
+
+  // Create a brand new custom artist row directly in the Ampache `artist` table
+  const handleCreateArtist = async (e) => {
+    e.preventDefault();
+    if (!newArtistName.trim()) return;
+    setCreatingArtist(true);
+    try {
+      const res = await adminPost('createArtist', { name: newArtistName.trim() });
+      setNewlyCreatedArtist({ id: res.id, name: newArtistName.trim() });
+      showToast(res.message || "Artist created", "success");
+      setNewArtistName('');
+    } catch (err) {
+      showToast(err.message || "Failed to create artist", "error");
+    } finally {
+      setCreatingArtist(false);
+    }
+  };
+
+  // Link the selected existing songs to the newly created custom artist
+  const handleLinkSongsToNewArtist = async (e) => {
+    e.preventDefault();
+    if (!newlyCreatedArtist || linkSongIds.size === 0) return;
+    setLinkingSongs(true);
+    setLinkResult(null);
+    try {
+      const res = await adminPost('linkSongsToArtist', {
+        songIds: Array.from(linkSongIds),
+        artistId: newlyCreatedArtist.id,
+      });
+      setLinkResult({ success: true, message: res.message });
+      showToast(res.message || "Songs linked", "success");
+      setLinkSongIds(new Set());
+    } catch (err) {
+      setLinkResult({ success: false, message: err.message });
+      showToast(err.message || "Failed to link songs", "error");
+    } finally {
+      setLinkingSongs(false);
+    }
+  };
+
+  const linkSongCandidates = useMemo(() => {
+    if (!linkSongSearch.trim()) return songs;
+    const q = linkSongSearch.toLowerCase().trim();
+    return songs.filter(s => 
+      (s.title && s.title.toLowerCase().includes(q)) || 
+      (s.artist && s.artist.toLowerCase().includes(q))
+    );
+  }, [songs, linkSongSearch]);
+
+  const toggleLinkSong = (id) => {
+    setLinkSongIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  // Jumps to the manual merge panel with this artist/album pre-selected as the merge target
+  const handleOpenInMerger = (item, e) => {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (activeTab === 'albums') {
+      const artistId = item.artistId || item.artist_id;
+      if (!artistId) {
+        showToast("This album has no linked artist to merge into", "warning");
+        return;
+      }
+      setTargetArtistId(String(artistId));
+      setTargetArtistSearch(item.artist || '');
+    } else {
+      setTargetArtistId(String(item.id));
+      setTargetArtistSearch(item.name || '');
+    }
+    setActiveTab('artists');
+    setSelectedIds(new Set());
+    showToast(`"${item.name || item.title}" set as merge target`, "success");
+  };
+
+  // Inline rename state for song titles / album names
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
+  const [savingRename, setSavingRename] = useState(false);
+
+  const startEditing = (item, e) => {
+    e.stopPropagation();
+    setEditingItemId(item.id);
+    setEditingValue(item.title || item.name || '');
+  };
+
+  const cancelEditing = (e) => {
+    if (e) e.stopPropagation();
+    setEditingItemId(null);
+    setEditingValue('');
+  };
+
+  const handleSaveRename = async (item, e) => {
+    if (e) e.stopPropagation();
+    const value = editingValue.trim();
+    if (!value) return;
+    setSavingRename(true);
+    try {
+      const type = activeTab === 'songs' ? 'song' : 'album';
+      const res = await adminPost('renameMedia', { type, id: item.id, value });
+      showToast(res.message || 'Renamed successfully', 'success');
+      if (type === 'song') {
+        setSongs(prev => prev.map(s => s.id === item.id ? { ...s, title: value } : s));
+      } else {
+        setAlbums(prev => prev.map(a => a.id === item.id ? { ...a, title: value, name: value } : a));
+      }
+      setEditingItemId(null);
+      setEditingValue('');
+    } catch (err) {
+      showToast(err.message || 'Rename failed', 'error');
+    } finally {
+      setSavingRename(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="p-8 rounded-2xl bg-red-950/20 border border-red-500/20 text-center max-w-lg mx-auto mt-12">
@@ -410,9 +565,155 @@ export default function AdminMetadataEditor() {
           <Music size={16} />
           <span>Remap Individual Songs</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('create_artist')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all ${
+            activeTab === 'create_artist'
+              ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+              : 'bg-slate-900/60 text-slate-400 hover:text-white border border-white/5'
+          }`}
+        >
+          <UserPlus size={16} />
+          <span>Create Custom Artist</span>
+        </button>
       </div>
 
-      {activeTab === 'smart_merge' ? (
+      {activeTab === 'create_artist' ? (
+        /* Create Custom Artist & Link Songs View */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          <div className="lg:col-span-5 bg-slate-900/70 border border-white/10 rounded-2xl p-4 sm:p-5 space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-purple-300 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
+                <UserPlus size={13} />
+                <span>Step 1: Create Artist Profile</span>
+              </label>
+              <p className="text-xs text-slate-400 mb-3">
+                Inserts a brand new row directly into the Ampache <code>artist</code> table.
+              </p>
+              <form onSubmit={handleCreateArtist} className="space-y-3">
+                <input
+                  value={newArtistName}
+                  onChange={(e) => setNewArtistName(e.target.value)}
+                  placeholder="e.g. My Custom Compilation Artist"
+                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+                  maxLength={255}
+                />
+                <button
+                  type="submit"
+                  disabled={creatingArtist || !newArtistName.trim()}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-40 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all active:scale-[0.98]"
+                >
+                  {creatingArtist ? <Loader2 size={15} className="animate-spin" /> : <UserPlus size={15} />}
+                  <span>Create Artist</span>
+                </button>
+              </form>
+            </div>
+
+            {newlyCreatedArtist && (
+              <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/30">
+                <div className="text-xs text-purple-300 font-semibold mb-1 flex items-center gap-1">
+                  <CheckCircle2 size={14} /> Active Custom Artist
+                </div>
+                <div className="text-base font-bold text-white truncate">{newlyCreatedArtist.name}</div>
+                <div className="text-xs text-slate-400 mt-0.5">Database ID: {newlyCreatedArtist.id}</div>
+              </div>
+            )}
+
+            {newlyCreatedArtist && (
+              <div className="pt-2 border-t border-white/5 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-300 font-medium">
+                  <span>Songs to link:</span>
+                  <span className="font-mono text-purple-400 font-bold">{linkSongIds.size}</span>
+                </div>
+                <button
+                  onClick={handleLinkSongsToNewArtist}
+                  disabled={linkingSongs || linkSongIds.size === 0}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-40 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all active:scale-[0.98]"
+                >
+                  {linkingSongs ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>Linking Songs...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link2 size={17} />
+                      <span>Link Selected Songs</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {linkResult && (
+              <div className={`p-3.5 rounded-xl text-xs space-y-1 ${linkResult.success ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-200' : 'bg-red-500/10 border border-red-500/30 text-red-300'}`}>
+                {linkResult.message}
+              </div>
+            )}
+          </div>
+
+          <div className="lg:col-span-7 bg-slate-900/70 border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col min-h-[480px]">
+            <div className="mb-3">
+              <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider block">
+                Step 2: Select Songs to Link
+              </span>
+              <p className="text-xs text-slate-400">
+                {newlyCreatedArtist ? `Choose songs to attach to "${newlyCreatedArtist.name}".` : 'Create an artist above first, then choose songs to attach.'}
+              </p>
+            </div>
+
+            <div className="relative mb-3">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Filter songs by title or artist..."
+                value={linkSongSearch}
+                onChange={(e) => setLinkSongSearch(e.target.value)}
+                className="w-full bg-slate-950 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto max-h-[420px] divide-y divide-white/5 border border-white/5 rounded-xl bg-slate-950/60 p-1">
+              {loading ? (
+                <div className="p-12 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                  Loading songs...
+                </div>
+              ) : linkSongCandidates.length === 0 ? (
+                <div className="p-12 text-center text-slate-500 text-xs">No songs found matching your filter.</div>
+              ) : (
+                linkSongCandidates.map((song) => {
+                  const isSelected = linkSongIds.has(song.id);
+                  return (
+                    <div
+                      key={song.id}
+                      onClick={() => toggleLinkSong(song.id)}
+                      className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all ${isSelected ? 'bg-purple-500/20 border border-purple-500/30 shadow-sm' : 'hover:bg-white/5'}`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                        <button type="button" className="text-purple-400 shrink-0">
+                          {isSelected ? <CheckSquare size={16} /> : <Square size={16} className="text-slate-600" />}
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-semibold truncate ${isSelected ? 'text-purple-300' : 'text-slate-200'}`}>{song.title}</p>
+                          <p className="text-[11px] text-slate-400 truncate">Artist: {song.artist || 'Unknown'} • Album: {song.album || 'Unknown'}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-500 shrink-0">ID: {song.id}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Showing {linkSongCandidates.length} songs</span>
+              <span className="font-semibold text-purple-400">{linkSongIds.size} selected</span>
+            </div>
+          </div>
+        </div>
+      ) : activeTab === 'smart_merge' ? (
         /* Smart Similar Artists View */
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/80 border border-white/10">
@@ -606,6 +907,27 @@ export default function AdminMetadataEditor() {
                 </>
               )}
             </button>
+
+            {(activeTab === 'songs' || activeTab === 'albums') && (
+              <button
+                onClick={handleUnlinkFromArtist}
+                disabled={unlinking || selectedIds.size === 0}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-red-950/40 border border-red-500/20 disabled:opacity-40 text-red-300 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                title="Detach selected items from their current artist profile (routes to Unknown Artist)"
+              >
+                {unlinking ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-300 rounded-full animate-spin"></div>
+                    <span>Unlinking...</span>
+                  </>
+                ) : (
+                  <>
+                    <Unlink size={15} />
+                    <span>Unlink from Artist</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Live Result Feedback */}
@@ -705,9 +1027,51 @@ export default function AdminMetadataEditor() {
                       </button>
 
                       <div className="min-w-0 flex-1">
-                        <p className={`text-xs font-semibold truncate ${isSelected ? 'text-purple-300' : 'text-slate-200'}`}>
-                          {item.name || item.title}
-                        </p>
+                        {editingItemId === item.id ? (
+                          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              autoFocus
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveRename(item, e);
+                                if (e.key === 'Escape') cancelEditing(e);
+                              }}
+                              className="flex-1 min-w-0 bg-slate-900 border border-purple-500/40 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-400"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => handleSaveRename(item, e)}
+                              disabled={savingRename || !editingValue.trim()}
+                              className="text-emerald-400 hover:text-emerald-300 disabled:opacity-40 shrink-0"
+                              title="Save"
+                            >
+                              <CheckCircle2 size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEditing}
+                              className="text-slate-500 hover:text-slate-300 shrink-0"
+                              title="Cancel"
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                        ) : (
+                          <p className={`text-xs font-semibold truncate flex items-center gap-1.5 group/title ${isSelected ? 'text-purple-300' : 'text-slate-200'}`}>
+                            <span className="truncate">{item.name || item.title}</span>
+                            {(activeTab === 'songs' || activeTab === 'albums') && (
+                              <button
+                                type="button"
+                                onClick={(e) => startEditing(item, e)}
+                                className="opacity-0 group-hover/title:opacity-100 text-slate-500 hover:text-purple-300 shrink-0 transition-opacity"
+                                title={`Rename ${activeTab === 'songs' ? 'song title' : 'album name'}`}
+                              >
+                                <Pencil size={12} />
+                              </button>
+                            )}
+                          </p>
+                        )}
                         <p className="text-[11px] text-slate-400 truncate">
                           {activeTab === 'artists' && (
                             <span>{item.song_count || 0} songs • {item.album_count || 0} albums</span>
@@ -727,6 +1091,17 @@ export default function AdminMetadataEditor() {
                         <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold">
                           Target
                         </span>
+                      )}
+                      {(activeTab === 'artists' || activeTab === 'albums') && !isTarget && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenInMerger(item, e)}
+                          className="text-[10px] px-2 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 font-semibold flex items-center gap-1 transition"
+                          title="Set as merge target and jump to Manual Artist Merge"
+                        >
+                          <GitMerge size={11} />
+                          <span className="hidden sm:inline">Open in Merger</span>
+                        </button>
                       )}
                       <span className="text-[10px] font-mono text-slate-500">ID: {item.id}</span>
                     </div>

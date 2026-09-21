@@ -5,7 +5,7 @@ import { adminPost } from './adminApi';
 /**
  * GenreManager — lets any logged-in user:
  *  1. Create a new custom genre tag in the Ampache DB
- *  2. Assign a genre to a comma-separated list of song or album IDs
+ *  2. Assign a genre to songs, albums, and/or artists via the tag_map table
  */
 export default function GenreManager() {
   const [tab, setTab] = useState('create'); // 'create' | 'assign'
@@ -19,6 +19,7 @@ export default function GenreManager() {
   const [assignGenre, setAssignGenre] = useState('');
   const [songIdsRaw, setSongIdsRaw] = useState('');
   const [albumIdsRaw, setAlbumIdsRaw] = useState('');
+  const [artistIdsRaw, setArtistIdsRaw] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [assignResult, setAssignResult] = useState(null);
 
@@ -47,19 +48,21 @@ export default function GenreManager() {
   const handleAssign = async (e) => {
     e.preventDefault();
     if (!assignGenre.trim()) return;
-    const songIds  = parseIds(songIdsRaw);
-    const albumIds = parseIds(albumIdsRaw);
-    if (songIds.length === 0 && albumIds.length === 0) {
-      setAssignResult({ success: false, message: 'Enter at least one song ID or album ID.' });
+    const songIds   = parseIds(songIdsRaw);
+    const albumIds  = parseIds(albumIdsRaw);
+    const artistIds = parseIds(artistIdsRaw);
+    if (songIds.length === 0 && albumIds.length === 0 && artistIds.length === 0) {
+      setAssignResult({ success: false, message: 'Enter at least one song, album, or artist ID.' });
       return;
     }
     setAssigning(true);
     setAssignResult(null);
     try {
-      const res = await adminPost('assignGenre', { genre: assignGenre.trim(), songIds, albumIds });
-      setAssignResult({ success: true, message: `${res.message} (${res.rowsAffected} row(s) updated)` });
+      const res = await adminPost('assignGenre', { genre: assignGenre.trim(), songIds, albumIds, artistIds });
+      setAssignResult({ success: true, message: `${res.message} (${res.rowsAffected} link(s) created)` });
       setSongIdsRaw('');
       setAlbumIdsRaw('');
+      setArtistIdsRaw('');
     } catch (err) {
       setAssignResult({ success: false, message: err.message });
     } finally {
@@ -156,6 +159,16 @@ export default function GenreManager() {
                 value={albumIdsRaw}
                 onChange={e => setAlbumIdsRaw(e.target.value)}
                 placeholder="200000005, 200000012..."
+                rows={2}
+                className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors resize-none font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Artist IDs <span className="text-slate-500 font-normal">(optional)</span></label>
+              <textarea
+                value={artistIdsRaw}
+                onChange={e => setArtistIdsRaw(e.target.value)}
+                placeholder="100000007, 100000012..."
                 rows={2}
                 className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors resize-none font-mono"
               />

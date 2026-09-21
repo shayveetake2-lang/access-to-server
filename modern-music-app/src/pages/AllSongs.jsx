@@ -6,6 +6,7 @@ import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
 import { getApiProxyUrl, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { createDedupeIndex, dedupeAppend } from '../utils/dedupeSongs';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
 const SORT_OPTIONS = [
@@ -26,6 +27,9 @@ export default function AllSongs() {
   // Library Infinite Scroll State (Handles 10k+ Songs)
   const [librarySongs, setLibrarySongs] = useState([]);
   const [libraryTotal, setLibraryTotal] = useState(0);
+  // Persistent O(1)-lookup dedupe index, reused across paginated fetches so
+  // duplicate detection stays O(n) total instead of re-scanning on every page.
+  const dedupeIndexRef = useRef(createDedupeIndex());
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [sortBy, setSortBy] = useState('title_asc');
@@ -98,7 +102,10 @@ export default function AllSongs() {
         }
       }
 
-      setLibrarySongs(prev => reset ? fetchedSongs : [...prev, ...fetchedSongs]);
+      setLibrarySongs(prev => {
+        if (reset) dedupeIndexRef.current = createDedupeIndex();
+        return dedupeAppend(reset ? [] : prev, fetchedSongs, dedupeIndexRef.current);
+      });
       setLibraryTotal(totalCount);
       setHasMoreLibrary(hasMore);
     } catch (err) {

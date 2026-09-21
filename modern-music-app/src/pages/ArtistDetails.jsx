@@ -7,6 +7,7 @@ import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 import { extractPrimaryArtistName, normalizeArtistKey } from '../utils/artistHelper';
+import StarButton from '../components/StarButton';
 
 export default function ArtistDetails() {
   const { id } = useParams();
@@ -302,6 +303,14 @@ export default function ArtistDetails() {
               >
                 <Shuffle size={16} className="text-purple-400" /> Shuffle All Songs
               </button>
+
+              <StarButton
+                type="artist"
+                id={artist.id}
+                initialStarred={!!artist.starred}
+                size={20}
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-white/15 hover:border-white/30 flex items-center justify-center shrink-0"
+              />
             </div>
           </div>
         </div>
