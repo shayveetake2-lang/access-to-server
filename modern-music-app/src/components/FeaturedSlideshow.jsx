@@ -111,6 +111,7 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
   };
 
   const desktopSlideData = renderSlideContent(slide);
+  const desktopShowCoverFallback = !desktopSlideData.coverId || coverFailed;
 
   return (
     <section aria-label="Featured music" className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-[0_16px_40px_rgba(0,0,0,0.55)]">
@@ -124,7 +125,7 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
           className="group w-56 aspect-square shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl"
           aria-label={`Open ${desktopSlideData.title}`}
         >
-          {showCoverFallback ? (
+          {desktopShowCoverFallback ? (
             <div className={`relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800/80 via-slate-900 to-purple-950/60 backdrop-blur-xl ${slide.type === 'artist' ? 'rounded-full' : ''}`}>
               <Disc3 size={40} className="absolute text-white/10" />
               <span className="relative text-3xl font-black tracking-wide text-white/70">{desktopSlideData.initials}</span>
@@ -169,6 +170,7 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
       <div className="md:hidden relative z-10 flex overflow-x-auto snap-x snap-mandatory no-scrollbar p-5 gap-4">
         {availableSlides.map((currentSlide) => {
           const { Icon, isSong, title, subtitle, coverId, initials, handleAction } = renderSlideContent(currentSlide);
+          const mobileShowCoverFallback = !coverId || coverFailed;
           return (
             <div key={currentSlide.type} className="flex-none w-[85%] snap-center flex flex-col gap-5">
               <button
@@ -177,7 +179,7 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
                 className="group w-full aspect-square shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl"
                 aria-label={`Open ${title}`}
               >
-                {showCoverFallback ? (
+                {mobileShowCoverFallback ? (
                   <div className={`relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800/80 via-slate-900 to-purple-950/60 backdrop-blur-xl ${currentSlide.type === 'artist' ? 'rounded-full' : ''}`}>
                     <Disc3 size={40} className="absolute text-white/10" />
                     <span className="relative text-3xl font-black tracking-wide text-white/70">{initials}</span>
