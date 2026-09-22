@@ -136,7 +136,7 @@ export default function ChatWidget() {
       {/* Floating Action Button (FAB) — sits above the sticky bottom player */}
       <button
         onClick={() => setIsOpen(prev => !prev)}
-        className="fixed bottom-[120px] sm:bottom-32 right-4 sm:right-6 z-[70] w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 text-white shadow-[0_0_24px_rgba(168,85,247,0.55)] hover:shadow-[0_0_36px_rgba(168,85,247,0.8)] flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 border border-purple-400/30 group"
+        className="fixed bottom-[130px] md:bottom-8 right-4 sm:right-6 z-[70] w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 text-white shadow-[0_0_24px_rgba(168,85,247,0.55)] hover:shadow-[0_0_36px_rgba(168,85,247,0.8)] flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 border border-purple-400/30 group"
         title={isOpen ? "Close Aether AI" : "Chat with Aether AI"}
         aria-label="Toggle Aether AI Chat"
       >
@@ -152,7 +152,7 @@ export default function ChatWidget() {
 
       {/* Glassmorphic Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-[180px] sm:bottom-48 right-3 sm:right-6 z-[70] w-[calc(100vw-1.5rem)] sm:w-96 max-w-sm h-[480px] sm:h-[530px] rounded-3xl bg-slate-950/90 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed bottom-[190px] md:bottom-24 right-3 sm:right-6 z-[70] w-[calc(100vw-1.5rem)] sm:w-96 max-w-sm h-[480px] sm:h-[530px] rounded-3xl bg-slate-950/90 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           
           {/* Header */}
           <div className="p-3.5 sm:p-4 border-b border-white/10 bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-indigo-950/40 flex items-center justify-between shrink-0">

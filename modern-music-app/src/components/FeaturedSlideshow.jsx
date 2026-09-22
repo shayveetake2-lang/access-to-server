@@ -82,53 +82,56 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
 
   if (!availableSlides.length) return null;
 
-  const Icon = slide.icon;
-  const isSong = slide.type === 'song';
-  const title = isSong ? item.title : item.name || item.title || 'Untitled';
-  const subtitle = slide.type === 'artist'
-    ? `${item.albumCount || 0} albums in the library`
-    : isSong
-      ? `${item.artist || 'Unknown Artist'}${item.album ? ` • ${item.album}` : ''}`
-      : item.artist || `${item.songCount || 0} tracks`;
-  const coverId = item.coverArt || item.albumId || item.id;
+  const renderSlideContent = (currentSlide) => {
+    const Icon = currentSlide.icon;
+    const isSong = currentSlide.type === 'song';
+    const slideItem = currentSlide.item;
+    const title = isSong ? slideItem.title : slideItem.name || slideItem.title || 'Untitled';
+    const subtitle = currentSlide.type === 'artist'
+      ? `${slideItem.albumCount || 0} albums in the library`
+      : isSong
+        ? `${slideItem.artist || 'Unknown Artist'}${slideItem.album ? ` • ${slideItem.album}` : ''}`
+        : slideItem.artist || `${slideItem.songCount || 0} tracks`;
+    const coverId = slideItem.coverArt || slideItem.albumId || slideItem.id;
 
-  const initials = title
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(word => word[0].toUpperCase())
-    .join('') || '?';
+    const initials = title
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(word => word[0].toUpperCase())
+      .join('') || '?';
 
-  const showCoverFallback = !coverId || coverFailed;
+    const handleAction = () => {
+      if (currentSlide.type === 'song') playQueue([slideItem], 0);
+      else if (currentSlide.type === 'album') navigate(`/albums/${slideItem.id}`);
+      else navigate(`/artists/${slideItem.id}`);
+    };
 
-  const handlePrimaryAction = () => {
-    if (slide.type === 'song') {
-      playQueue([item], 0);
-    } else if (slide.type === 'album') {
-      navigate(`/albums/${item.id}`);
-    } else {
-      navigate(`/artists/${item.id}`);
-    }
+    return { Icon, isSong, title, subtitle, coverId, initials, handleAction };
   };
+
+  const desktopSlideData = renderSlideContent(slide);
 
   return (
     <section aria-label="Featured music" className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-[0_16px_40px_rgba(0,0,0,0.55)]">
       <div className="absolute inset-0 bg-gradient-to-br from-purple-950/80 via-slate-950 to-indigo-950/70" />
-      <div className="relative z-10 flex min-h-[280px] flex-col gap-6 p-5 sm:min-h-[320px] sm:flex-row sm:items-center sm:p-8">
+      
+      {/* Desktop View (Unchanged layout, hidden on mobile) */}
+      <div className="hidden md:flex relative z-10 min-h-[320px] flex-row items-center p-8 gap-6">
         <button
           type="button"
-          onClick={handlePrimaryAction}
-          className="group mx-auto aspect-square w-40 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl sm:mx-0 sm:w-56"
-          aria-label={`Open ${title}`}
+          onClick={desktopSlideData.handleAction}
+          className="group w-56 aspect-square shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl"
+          aria-label={`Open ${desktopSlideData.title}`}
         >
           {showCoverFallback ? (
             <div className={`relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800/80 via-slate-900 to-purple-950/60 backdrop-blur-xl ${slide.type === 'artist' ? 'rounded-full' : ''}`}>
               <Disc3 size={40} className="absolute text-white/10" />
-              <span className="relative text-2xl font-black tracking-wide text-white/70 sm:text-3xl">{initials}</span>
+              <span className="relative text-3xl font-black tracking-wide text-white/70">{desktopSlideData.initials}</span>
             </div>
           ) : (
             <img
-              src={getCoverArtUrl(coverId, getAuthParams(user))}
+              src={getCoverArtUrl(desktopSlideData.coverId, getAuthParams(user))}
               alt=""
               className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${slide.type === 'artist' ? 'rounded-full p-2' : ''}`}
               onError={() => setCoverFailed(true)}
@@ -136,30 +139,78 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
           )}
         </button>
 
-        <div className="min-w-0 flex-1 text-center sm:text-left">
-          <div className="mb-3 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-purple-300 sm:justify-start">
-            <Icon size={16} />
+        <div className="min-w-0 flex-1 text-left">
+          <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
+            <desktopSlideData.Icon size={16} />
             <span>{slide.label}</span>
           </div>
-          <h2 className="truncate text-3xl font-black tracking-tight text-white sm:text-5xl">{title}</h2>
-          <p className="mt-2 truncate text-sm text-slate-300 sm:text-base">{subtitle}</p>
+          <h2 className="truncate text-5xl font-black tracking-tight text-white">{desktopSlideData.title}</h2>
+          <p className="mt-2 truncate text-base text-slate-300">{desktopSlideData.subtitle}</p>
           <button
             type="button"
-            onClick={handlePrimaryAction}
+            onClick={desktopSlideData.handleAction}
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.4)] transition hover:bg-purple-400 active:scale-95"
           >
             <Play size={16} fill="currentColor" />
-            <span>{isSong ? 'Play Song' : `View ${slide.type === 'album' ? 'Album' : 'Artist'}`}</span>
+            <span>{desktopSlideData.isSong ? 'Play Song' : `View ${slide.type === 'album' ? 'Album' : 'Artist'}`}</span>
           </button>
         </div>
 
         {availableSlides.length > 1 && (
-          <div className="absolute bottom-4 right-4 flex items-center gap-1.5 sm:right-8">
+          <div className="absolute bottom-8 right-8 flex items-center gap-1.5">
             <button type="button" onClick={() => setActiveSlide((safeActiveSlide - 1 + availableSlides.length) % availableSlides.length)} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" aria-label="Previous featured item"><ChevronLeft size={18} /></button>
             {availableSlides.map((entry, index) => <button key={entry.type} type="button" onClick={() => setActiveSlide(index)} className={`h-2 rounded-full transition-all ${index === safeActiveSlide ? 'w-6 bg-purple-400' : 'w-2 bg-white/30'}`} aria-label={`Show ${entry.label}`} />)}
             <button type="button" onClick={() => setActiveSlide((safeActiveSlide + 1) % availableSlides.length)} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10" aria-label="Next featured item"><ChevronRight size={18} /></button>
           </div>
         )}
+      </div>
+
+      {/* Mobile View (Horizontal Scroll Snap) */}
+      <div className="md:hidden relative z-10 flex overflow-x-auto snap-x snap-mandatory no-scrollbar p-5 gap-4">
+        {availableSlides.map((currentSlide) => {
+          const { Icon, isSong, title, subtitle, coverId, initials, handleAction } = renderSlideContent(currentSlide);
+          return (
+            <div key={currentSlide.type} className="flex-none w-[85%] snap-center flex flex-col gap-5">
+              <button
+                type="button"
+                onClick={handleAction}
+                className="group w-full aspect-square shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl"
+                aria-label={`Open ${title}`}
+              >
+                {showCoverFallback ? (
+                  <div className={`relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800/80 via-slate-900 to-purple-950/60 backdrop-blur-xl ${currentSlide.type === 'artist' ? 'rounded-full' : ''}`}>
+                    <Disc3 size={40} className="absolute text-white/10" />
+                    <span className="relative text-3xl font-black tracking-wide text-white/70">{initials}</span>
+                  </div>
+                ) : (
+                  <img
+                    src={getCoverArtUrl(coverId, getAuthParams(user))}
+                    alt=""
+                    className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${currentSlide.type === 'artist' ? 'rounded-full p-2' : ''}`}
+                    onError={() => setCoverFailed(true)}
+                  />
+                )}
+              </button>
+              
+              <div className="min-w-0 flex-1 text-center">
+                <div className="mb-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300">
+                  <Icon size={14} />
+                  <span>{currentSlide.label}</span>
+                </div>
+                <h2 className="truncate text-3xl font-black tracking-tight text-white px-2">{title}</h2>
+                <p className="mt-1 truncate text-sm text-slate-300 px-2">{subtitle}</p>
+                <button
+                  type="button"
+                  onClick={handleAction}
+                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-purple-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(168,85,247,0.4)] transition hover:bg-purple-400 active:scale-95"
+                >
+                  <Play size={16} fill="currentColor" />
+                  <span>{isSong ? 'Play Song' : `View ${currentSlide.type === 'album' ? 'Album' : 'Artist'}`}</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

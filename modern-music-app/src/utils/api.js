@@ -328,6 +328,14 @@ export function getMergeMetadataUrl() {
   return `${getBaseUrl()}/api/merge_metadata.php`;
 }
 
+export function getDeleteSongUrl() {
+  return `${getBaseUrl()}/api/delete_song.php`;
+}
+
+export function getMergeSongsUrl() {
+  return `${getBaseUrl()}/api/merge_songs.php`;
+}
+
 export function getMediaPortalUrl() {
   return `${getBaseUrl()}/media.html`;
 }

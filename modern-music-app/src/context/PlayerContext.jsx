@@ -291,6 +291,7 @@ export function PlayerProvider({ children }) {
     setProgress(newAudio.currentTime || 0);
     setDuration(newAudio.duration || nextTrack.duration || 0);
 
+    window.resumeAetherAudio?.();
     const playPromise = newAudio.play();
     if (playPromise !== undefined) {
       playPromise.catch(e => console.warn("[Aether Audio] Play notice on swapped audio:", e));
@@ -374,6 +375,7 @@ export function PlayerProvider({ children }) {
     lastKnownTimeRef.current = 0;
     stalledCountRef.current = 0;
     isReconnectingRef.current = false;
+    window.resumeAetherAudio?.();
     audioRef.current.src = getStreamUrl(track.id, getAuthParams(user));
     audioRef.current.play().catch(e => console.log("Autoplay blocked or error"));
     setIsPlaying(true);
@@ -405,6 +407,7 @@ export function PlayerProvider({ children }) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
+        window.resumeAetherAudio?.();
         audioRef.current.play().catch(e => console.log("Play error"));
       }
       setIsPlaying(!isPlaying);

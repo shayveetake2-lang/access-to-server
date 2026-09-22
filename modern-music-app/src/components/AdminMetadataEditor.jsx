@@ -2,12 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   Users, Music, Disc, GitMerge, Search, CheckSquare, Square, 
   AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, ArrowRight,
-  Filter, Sparkles, Database, UserPlus, Unlink, Link2, Loader2, Pencil, X
+  Filter, Sparkles, Database, UserPlus, Unlink, Link2, Loader2, Pencil, X, Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getMergeMetadataUrl } from '../utils/api';
 import { adminPost } from './admin/adminApi';
+import { deleteSong, mergeSongs } from '../utils/songAdminActions';
 
 export default function AdminMetadataEditor() {
   const { user, getAuthParams } = useAuth();
@@ -480,6 +481,81 @@ export default function AdminMetadataEditor() {
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
   const [savingRename, setSavingRename] = useState(false);
+
+  // Single-song deletion state
+  const [deletingSongId, setDeletingSongId] = useState(null);
+
+  // Duplicate song merge modal state
+  const [showMergeSongsModal, setShowMergeSongsModal] = useState(false);
+  const [mergePrimaryId, setMergePrimaryId] = useState('');
+  const [mergingSongs, setMergingSongs] = useState(false);
+
+  // Deletes a single song from Ampache (and optionally its physical file),
+  // then instantly filters it out of every locally-held list.
+  const handleDeleteSong = async (item, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Permanently delete "${item.title || item.name}"? This cannot be undone.`)) return;
+    const deleteFile = window.confirm(
+      `Also permanently delete the physical audio file from /Volumes/Music?\n\nOK = delete file too\nCancel = keep the file on disk, only remove it from the library`
+    );
+
+    setDeletingSongId(item.id);
+    try {
+      const res = await deleteSong(item.id, user, { deleteFile });
+      setSongs(prev => prev.filter(s => s.id !== item.id));
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+      if (deleteFile && res.file_error) {
+        showToast(`"${item.title || item.name}" deleted, but file removal failed: ${res.file_error}`, 'warning');
+      } else {
+        showToast(`"${item.title || item.name}" deleted${res.file_deleted ? ' (file removed from disk)' : ''}`, 'success');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to delete song', 'error');
+    } finally {
+      setDeletingSongId(null);
+    }
+  };
+
+  // Opens the "choose primary" modal for the currently selected duplicate songs
+  const handleOpenMergeSongsModal = () => {
+    if (selectedIds.size < 2) {
+      showToast('Select at least 2 songs to merge', 'warning');
+      return;
+    }
+    setMergePrimaryId(String(Array.from(selectedIds)[0]));
+    setShowMergeSongsModal(true);
+  };
+
+  // Executes the merge: reassigns play history/ratings/playlist entries from
+  // every non-primary selected song into the chosen primary, then deletes them.
+  const handleConfirmMergeSongs = async () => {
+    const allSelected = Array.from(selectedIds);
+    const primaryId = parseInt(mergePrimaryId, 10);
+    const duplicateIds = allSelected.filter(id => id !== primaryId);
+
+    if (!primaryId || duplicateIds.length === 0) {
+      showToast('Choose a primary track to keep', 'warning');
+      return;
+    }
+
+    setMergingSongs(true);
+    try {
+      const res = await mergeSongs(primaryId, duplicateIds, user);
+      showToast(`Merged ${res.deleted_count || duplicateIds.length} duplicate(s) into "${res.primary_title}"`, 'success');
+      setSongs(prev => prev.filter(s => !duplicateIds.includes(s.id)));
+      setSelectedIds(new Set());
+      setShowMergeSongsModal(false);
+      setMergePrimaryId('');
+    } catch (err) {
+      showToast(err.message || 'Failed to merge songs', 'error');
+    } finally {
+      setMergingSongs(false);
+    }
+  };
 
   const startEditing = (item, e) => {
     e.stopPropagation();
@@ -987,6 +1063,17 @@ export default function AdminMetadataEditor() {
                 )}
               </button>
             )}
+
+            {activeTab === 'songs' && selectedIds.size >= 2 && (
+              <button
+                onClick={handleOpenMergeSongsModal}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98]"
+                title="Merge the selected duplicate songs into one canonical track"
+              >
+                <GitMerge size={15} />
+                <span>Merge Songs ({selectedIds.size})</span>
+              </button>
+            )}
           </div>
 
           {/* Live Result Feedback */}
@@ -1162,6 +1249,22 @@ export default function AdminMetadataEditor() {
                           <span className="hidden sm:inline">Open in Merger</span>
                         </button>
                       )}
+                      {activeTab === 'songs' && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteSong(item, e)}
+                          disabled={deletingSongId === item.id}
+                          className="text-[10px] px-2 py-1 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-300 font-semibold flex items-center gap-1 transition disabled:opacity-40"
+                          title="Permanently delete this song"
+                        >
+                          {deletingSongId === item.id ? (
+                            <Loader2 size={11} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={11} />
+                          )}
+                          <span className="hidden sm:inline">Delete</span>
+                        </button>
+                      )}
                       <span className="text-[10px] font-mono text-slate-500">ID: {item.id}</span>
                     </div>
                   </div>
@@ -1178,6 +1281,102 @@ export default function AdminMetadataEditor() {
         </div>
 
       </div>
+      )}
+
+      {/* Merge Duplicate Songs Modal — choose which selected track is the
+          canonical "Primary" version; the rest are folded into it and removed. */}
+      {showMergeSongsModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => !mergingSongs && setShowMergeSongsModal(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl p-5 sm:p-6 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <GitMerge size={18} className="text-amber-400" />
+                <span>Merge Duplicate Songs</span>
+              </h3>
+              <button
+                onClick={() => setShowMergeSongsModal(false)}
+                disabled={mergingSongs}
+                className="text-slate-400 hover:text-white disabled:opacity-40"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              Choose the track to keep as the <span className="text-amber-300 font-semibold">Primary</span> version.
+              All play history, ratings, favorites, and playlist entries from the other selected tracks will be
+              reassigned to it, then the duplicates will be permanently deleted.
+            </p>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {Array.from(selectedIds).map(id => {
+                const song = songs.find(s => s.id === id);
+                if (!song) return null;
+                const isPrimary = String(mergePrimaryId) === String(id);
+                return (
+                  <label
+                    key={id}
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      isPrimary ? 'bg-amber-500/10 border-amber-500/40' : 'bg-slate-950/60 border-white/5 hover:bg-white/5'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="mergePrimarySong"
+                      value={id}
+                      checked={isPrimary}
+                      onChange={() => setMergePrimaryId(String(id))}
+                      className="accent-amber-500"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-white truncate">{song.title}</div>
+                      <div className="text-[11px] text-slate-400 truncate">
+                        Artist: {song.artist || 'Unknown'} • Album: {song.album || 'Unknown'} • ID: {song.id}
+                      </div>
+                    </div>
+                    {isPrimary && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold shrink-0">
+                        Primary
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => setShowMergeSongsModal(false)}
+                disabled={mergingSongs}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmMergeSongs}
+                disabled={mergingSongs || !mergePrimaryId}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-40 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98]"
+              >
+                {mergingSongs ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Merging...</span>
+                  </>
+                ) : (
+                  <>
+                    <GitMerge size={14} />
+                    <span>Confirm Merge</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

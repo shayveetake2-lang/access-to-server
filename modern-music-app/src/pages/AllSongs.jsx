@@ -1,11 +1,12 @@
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Clock, Plus, ListPlus, Volume2, Shuffle, Flame, TrendingUp, Sparkles, RefreshCw, Search, X, Music, Layers, ListMusic } from 'lucide-react';
+import { Play, Clock, Plus, ListPlus, Volume2, Shuffle, Flame, TrendingUp, Sparkles, RefreshCw, Search, X, Music, Layers, ListMusic, Trash2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
 import { getApiProxyUrl, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART, applyUnknownArtistFallback, resolveUnknownArtistId } from '../utils/api';
+import { deleteSong } from '../utils/songAdminActions';
 import { createDedupeIndex, dedupeAppend } from '../utils/dedupeSongs';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
@@ -47,6 +48,36 @@ export default function AllSongs() {
   const { openAddToPlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const [deletingSongId, setDeletingSongId] = useState(null);
+
+  const isAdmin = user?.role === 'admin' || user?.isAdmin === true;
+
+  // Admin-only: permanently delete a song, then instantly drop it from every
+  // locally-held list (library, charts, and search results share these arrays).
+  const handleDeleteSong = async (song, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Permanently delete "${song.title}"? This cannot be undone.`)) return;
+    const deleteFile = window.confirm(
+      `Also permanently delete the physical audio file from /Volumes/Music?\n\nOK = delete file too\nCancel = keep the file on disk, only remove it from the library`
+    );
+
+    setDeletingSongId(song.id);
+    try {
+      const res = await deleteSong(song.id, user, { deleteFile });
+      setLibrarySongs(prev => prev.filter(s => s.id !== song.id));
+      setChartSongs(prev => prev.filter(s => s.id !== song.id));
+      setLibraryTotal(prev => Math.max(0, prev - 1));
+      if (deleteFile && res.file_error) {
+        showToast(`Deleted "${song.title}" from library, but file removal failed: ${res.file_error}`, 'warning');
+      } else {
+        showToast(`Deleted "${song.title}"${res.file_deleted ? ' (file removed from disk)' : ''}`, 'success');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to delete song', 'error');
+    } finally {
+      setDeletingSongId(null);
+    }
+  };
 
   // Debounce search query input (300ms)
   useEffect(() => {
@@ -502,6 +533,17 @@ export default function AllSongs() {
                     >
                       <Plus size={16} />
                     </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDeleteSong(song)}
+                        disabled={deletingSongId === song.id}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/25 text-slate-300 hover:text-red-300 active:scale-95 transition-all disabled:opacity-40"
+                        title="Delete Song (Admin)"
+                        aria-label="Delete Song"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -666,6 +708,17 @@ export default function AllSongs() {
                           >
                             <Plus size={16} />
                           </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDeleteSong(song)}
+                              disabled={deletingSongId === song.id}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/25 text-slate-300 hover:text-red-300 active:scale-95 transition-all shadow-sm shrink-0 disabled:opacity-40"
+                              title="Delete Song (Admin)"
+                              aria-label="Delete Song"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

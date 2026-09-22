@@ -55,7 +55,8 @@ export default function StickyPlayer() {
     if (!audioEl) return;
 
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return; // Web Audio unsupported — falls back to native <audio> output
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!AudioContextClass || isIOS) return; // Web Audio unsupported or bypassed on iOS (due to physical mute switch & createMediaElementSource bugs)
 
     if (!audioContextRef.current) {
       const ctx = new AudioContextClass();
@@ -134,10 +135,15 @@ export default function StickyPlayer() {
         ctx.resume().catch(() => {});
       }
     };
+    
+    // Expose for synchronous calls in PlayerContext (e.g. from track rows)
+    window.resumeAetherAudio = resumeOnGesture;
+    
     const gestureEvents = ['pointerdown', 'keydown', 'touchstart'];
     gestureEvents.forEach(evt => window.addEventListener(evt, resumeOnGesture, { passive: true }));
     return () => {
       gestureEvents.forEach(evt => window.removeEventListener(evt, resumeOnGesture));
+      delete window.resumeAetherAudio;
     };
   }, []);
 
