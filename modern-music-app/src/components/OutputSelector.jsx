@@ -251,7 +251,7 @@ export default function OutputMenu({ compact = false }) {
         <>
           <div className="fixed inset-0 z-[55] md:hidden" onClick={() => setIsOpen(false)} />
           <div
-            className="absolute bottom-full right-0 mb-4 w-[240px] sm:w-[280px] max-h-[60vh] overflow-y-auto z-[70] rounded-2xl bg-slate-950/98 backdrop-blur-2xl border border-white/15 p-2 shadow-[0_15px_40px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150"
+            className="absolute bottom-full right-0 mb-4 w-[240px] sm:w-[280px] max-h-[60vh] overflow-y-auto z-[70] rounded-2xl bg-slate-950 backdrop-blur-3xl border border-white/20 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.95)] animate-in fade-in zoom-in-95 duration-150"
           >
           {/* Header */}
           <div className="flex items-center justify-between px-2.5 py-2 border-b border-white/10 mb-1.5">
