@@ -211,19 +211,6 @@ export default function OutputMenu({ compact = false }) {
     }
   };
 
-  const requestDeviceLabels = async () => {
-    try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-        setHasPermission(true);
-        refreshDevices();
-      }
-    } catch (e) {
-      console.debug('User dismissed device permission dialog');
-    }
-  };
-
   // Find metadata for current active device
   const currentDevice = devices.find(d => d.deviceId === selectedDeviceId) || devices[0];
   const activeMeta = getDeviceMeta(currentDevice, true);
@@ -336,19 +323,6 @@ export default function OutputMenu({ compact = false }) {
             })}
           </div>
 
-          {/* Browser Permission Unlock Helper (if labels are obscured by browser security) */}
-          {!hasPermission && (
-            <div className="mt-2 pt-2 border-t border-white/10 px-1 text-center">
-              <button
-                type="button"
-                onClick={requestDeviceLabels}
-                className="w-full min-h-12 py-1 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition-colors border border-white/5"
-              >
-                <Sparkles size={12} className="text-amber-400" />
-                <span>Show Full Device Names</span>
-              </button>
-            </div>
-          )}
 
           {/* Browser compatibility footer notes */}
           {!isSinkSupported && !hasAirPlay && (
