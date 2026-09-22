@@ -595,13 +595,13 @@
                             </div>
                             <div id="srv-breakdown-list" class="space-y-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80"></div>
                             
-                            <!-- External Storage Nodes (mac2 Music & Movie Drive) -->
+                            <!-- External Storage Nodes (mac2 Music) — Movies & TV now lives in its own dedicated card below -->
                             <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
                                 <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
                                     <span>External Storage Nodes</span>
                                     <span id="net-nodes-count" class="text-cyan-400">0 Online</span>
                                 </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                                <div class="grid grid-cols-1 gap-2 text-xs font-mono">
                                     <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60">
                                         <div class="flex items-center justify-between mb-1">
                                             <span class="font-sans font-bold text-slate-900 dark:text-white text-[11px] truncate">mac2 (Music)</span>
@@ -613,18 +613,40 @@
                                             <span class="text-slate-400">Free: <span id="net-mac2-free" class="text-emerald-400">--</span></span>
                                         </div>
                                     </div>
-                                    <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="font-sans font-bold text-slate-900 dark:text-white text-[11px] truncate">Movie Storage</span>
-                                            <span id="net-movies-pill" class="px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-slate-800 text-slate-400">○ Offline</span>
-                                        </div>
-                                        <div class="text-[9px] text-slate-400 truncate">/Volumes/Movies</div>
-                                        <div class="flex justify-between items-center text-[10px] pt-1 mt-1 border-t border-slate-200/60 dark:border-slate-800/40">
-                                            <span class="text-slate-400">Used: <span id="net-movies-used" class="text-slate-200">--</span></span>
-                                            <span class="text-slate-400">Free: <span id="net-movies-free" class="text-emerald-400">--</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 4B: Movies & TV Network Storage (isolated from USB controller logic) -->
+                        <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-start justify-between mb-4 gap-2">
+                                    <div class="min-w-0">
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate">Movies &amp; TV Network Storage</h3>
+                                        <p class="text-[11px] font-mono text-slate-400 truncate">/Volumes/Movies</p>
+                                    </div>
+                                    <span id="movies-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400 shrink-0">Checking...</span>
+                                </div>
+                                <div class="flex items-center gap-4 my-2">
+                                    <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+                                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                            <path class="text-slate-200 dark:text-slate-800" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                            <path id="movies-donut-segment" class="text-indigo-500 stroke-current" stroke-dasharray="0, 100" stroke-width="3.5" stroke-linecap="round" fill="none" style="transition: stroke-dasharray 0.6s ease-out;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                        </svg>
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                            <span id="movies-percent-text" class="text-lg font-bold text-slate-900 dark:text-white leading-none">--%</span>
+                                            <span class="text-[10px] text-slate-400 mt-0.5">Used</span>
                                         </div>
                                     </div>
+                                    <div class="flex-1 grid grid-cols-1 gap-2 text-xs font-mono">
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 text-[10px]">USED</span><span id="movies-used-text" class="text-slate-200 font-bold">--</span></div>
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 text-[10px]">FREE</span><span id="movies-free-text" class="text-emerald-400 font-bold">--</span></div>
+                                        <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800/80"><span class="text-slate-400 text-[10px]">TOTAL</span><span id="movies-total-text" class="text-slate-200 font-bold">--</span></div>
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[10px] font-mono text-slate-400">
+                                <span>Windows media node · Streamed via Plex on port 32400</span>
                             </div>
                         </div>
 
@@ -1679,6 +1701,44 @@
                 alert('Failed to provision database: Server error.');
             }
         }
+        // Populates the current user's own storage quota card (Card 6) on load.
+        // NOT the same as refreshServerQuotas() in js/admin_auth.js, which is a
+        // separate admin-only bulk recalculation across every account.
+        async function loadMyStorageQuota() {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token');
+            if (!token) return;
+
+            try {
+                const res = await fetch('api/system/get_my_quota.php', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data && data.status === 'success') {
+                    const percent = Math.round(data.percent_used || 0);
+                    const percentText = document.getElementById('user-quota-percent-text');
+                    if (percentText) percentText.textContent = percent + '%';
+                    const bar = document.getElementById('user-quota-bar-fill');
+                    if (bar) bar.style.width = Math.min(100, percent) + '%';
+                    const usedText = document.getElementById('user-quota-used-text');
+                    if (usedText) usedText.textContent = Number(data.storage_used_mb).toFixed(2) + ' MB';
+                    const freeText = document.getElementById('user-quota-free-text');
+                    if (freeText) freeText.textContent = Number(data.storage_free_mb).toFixed(2) + ' MB';
+                    const limitText = document.getElementById('user-quota-limit-text');
+                    if (limitText) limitText.textContent = Number(data.storage_limit_mb).toFixed(2) + ' MB';
+                    const pill = document.getElementById('user-quota-status-pill');
+                    if (pill) {
+                        pill.textContent = data.within_limit ? 'Within Limit' : 'Over Limit';
+                        pill.className = data.within_limit
+                            ? 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0'
+                            : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0';
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load user storage quota', e);
+            }
+        }
+
         async function loadServerStorage() {
             try {
                 const res = await fetch('api/system/server_storage.php');
@@ -1746,7 +1806,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ title, type })
+                    body: JSON.stringify({ trackTitle: title, mediaType: type })
                 });
                 const data = await res.json();
                 msgEl.classList.remove('hidden');
@@ -1793,11 +1853,11 @@
 
                         return `
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                <td class="py-3 px-4 font-medium text-slate-900 dark:text-slate-200">${escapeHtml(req.media_title)}</td>
+                                <td class="py-3 px-4 font-medium text-slate-900 dark:text-slate-200">${escapeHtml(req.track_title)}</td>
                                 <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${escapeHtml(req.media_type)}</td>
                                 <td class="py-3 px-4 font-mono text-[10px] text-cyan-400">${escapeHtml(req.username)}</td>
                                 <td class="py-3 px-4 font-semibold ${statusColor}">${escapeHtml(req.status)}</td>
-                                <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${new Date(req.request_date).toLocaleString()}</td>
+                                <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${new Date(req.created_at).toLocaleString()}</td>
                             </tr>
                         `;
                     }).join('');
@@ -2521,17 +2581,24 @@
 
                     const movies = drives.movies;
                     if (movies) {
-                        const moviesPill = document.getElementById('net-movies-pill');
+                        const percent = Math.round(movies.percent_used || 0);
+                        const donut = document.getElementById('movies-donut-segment');
+                        if (donut) donut.setAttribute('stroke-dasharray', movies.mounted ? `${percent}, 100` : '0, 100');
+                        const percentText = document.getElementById('movies-percent-text');
+                        if (percentText) percentText.textContent = movies.mounted ? `${percent}%` : '--%';
+                        const usedText = document.getElementById('movies-used-text');
+                        if (usedText) usedText.textContent = movies.mounted ? movies.used_formatted : '--';
+                        const freeText = document.getElementById('movies-free-text');
+                        if (freeText) freeText.textContent = movies.mounted ? movies.free_formatted : '--';
+                        const totalText = document.getElementById('movies-total-text');
+                        if (totalText) totalText.textContent = movies.mounted ? movies.total_formatted : '--';
+                        const moviesPill = document.getElementById('movies-status-pill');
                         if (moviesPill) {
-                            moviesPill.textContent = movies.mounted ? '● Connected' : '○ Offline';
+                            moviesPill.textContent = movies.mounted ? '● Online' : '○ Unmounted';
                             moviesPill.className = movies.mounted
-                                ? 'px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-slate-800 text-slate-400';
+                                ? 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0'
+                                : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0';
                         }
-                        const moviesUsed = document.getElementById('net-movies-used');
-                        if (moviesUsed) moviesUsed.textContent = movies.mounted ? movies.used_formatted : '--';
-                        const moviesFree = document.getElementById('net-movies-free');
-                        if (moviesFree) moviesFree.textContent = movies.mounted ? movies.free_formatted : '--';
                     }
 
                     // 3. Dual-Port USB Storage
@@ -2659,6 +2726,20 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchUnifiedStorage();
+            loadMyStorageQuota();
+            // Live polling loop: keeps Primary SSD, Movies & TV, and Dual USB
+            // telemetry in sync every 5 seconds without a page reload. Paused
+            // while the tab is hidden so it doesn't hammer the 2011 MacBook
+            // in the background.
+            let storagePollId = setInterval(fetchUnifiedStorage, 5000);
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    clearInterval(storagePollId);
+                } else {
+                    fetchUnifiedStorage();
+                    storagePollId = setInterval(fetchUnifiedStorage, 5000);
+                }
+            });
             const btnSsd = document.getElementById('btn-refresh-ssd');
             if (btnSsd) btnSsd.addEventListener('click', fetchUnifiedStorage);
             const btnUsb = document.getElementById('btn-refresh-usb');

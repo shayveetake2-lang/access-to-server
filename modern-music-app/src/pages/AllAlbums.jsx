@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useLayoutEffect } from 'react';
 import { Play, Search, Filter, SlidersHorizontal, LayoutGrid, Layers, ChevronRight, X, Disc } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -44,8 +44,25 @@ export default function AllAlbums() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [selectedDecade, setSelectedDecade] = useState('all');
-  const [selectedLetter, setSelectedLetter] = useState('All');
+  const [selectedLetter, setSelectedLetter] = useState(() => sessionStorage.getItem('allAlbums_letter') || 'All');
   const [sortBy, setSortBy] = useState('popular');
+
+  // Sync letter filter to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('allAlbums_letter', selectedLetter);
+  }, [selectedLetter]);
+
+  useLayoutEffect(() => {
+    const savedScroll = sessionStorage.getItem('allAlbums_scroll');
+    if (savedScroll) {
+      window.scrollTo(0, parseInt(savedScroll, 10));
+    }
+    const handleScroll = () => {
+      sessionStorage.setItem('allAlbums_scroll', window.scrollY.toString());
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const [onlyWithCovers, setOnlyWithCovers] = useState(false);
   const [viewMode, setViewMode] = useState('showcases'); // 'showcases' | 'grid'
   const [playingAlbumId, setPlayingAlbumId] = useState(null);

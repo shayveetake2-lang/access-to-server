@@ -197,7 +197,7 @@ export default function StickyPlayer() {
       const nextTrack = nextInfo.track;
 
       // Ensure we only trigger once per track transition
-      if (prefetchedTrackIdRef.current !== nextTrack.id) {
+      if (String(prefetchedTrackIdRef.current) !== String(nextTrack.id)) {
         console.log(`[Aether Pre-fetch Buffer] 15s remaining (${Math.round(remainingTime)}s). Spawning pre-fetch buffer for next track: "${nextTrack.title}" (ID: ${nextTrack.id})`);
         
         // Discard any previous buffer
@@ -235,9 +235,10 @@ export default function StickyPlayer() {
 
   // Clean up stale prefetch buffer when track changes or component unmounts
   useEffect(() => {
-    if (prefetchedTrackIdRef.current && prefetchedTrackIdRef.current !== currentTrack?.id) {
+    if (prefetchedTrackIdRef.current && String(prefetchedTrackIdRef.current) !== String(currentTrack?.id)) {
+      // If we manually seek/skip to a track OTHER than what we buffered, nuke the buffer
       const nextInfo = getNextTrackInfo();
-      if (!nextInfo || nextInfo.track?.id !== prefetchedTrackIdRef.current) {
+      if (!nextInfo || String(nextInfo.track?.id) !== String(prefetchedTrackIdRef.current)) {
         if (prefetchAudioRef.current) {
           prefetchAudioRef.current.pause();
           prefetchAudioRef.current.src = '';
@@ -267,7 +268,7 @@ export default function StickyPlayer() {
     }
 
     const bufferedAudio = prefetchAudioRef.current;
-    if (bufferedAudio && prefetchedTrackIdRef.current === nextInfo.track.id) {
+    if (bufferedAudio && String(prefetchedTrackIdRef.current) === String(nextInfo.track.id)) {
       console.log(`[Aether Pre-fetch Buffer] Instant zero-latency Skip triggered for: "${nextInfo.track.title}"`);
       prefetchAudioRef.current = null;
       prefetchedTrackIdRef.current = null;

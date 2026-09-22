@@ -11,6 +11,7 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/media/_request_auth.php'; // shared verifyAmpacheUser() token+salt check
 
 // ─── 1. DATABASE CONNECTION TO AMPACHE MYSQL ───
 function getAmpacheMySQLConnection() {
@@ -189,42 +190,24 @@ if (!$requester && !empty($_SESSION['role'])) {
     ];
 }
 
-// Check Subsonic credentials if passed in headers, query, or body
-$subsonicUser = $data['u'] ?? $_GET['u'] ?? $_POST['u'] ?? null;
-if (!$requester && $subsonicUser) {
-    $cleanUser = strtolower(trim($subsonicUser));
-
-    // SECURITY: previously usernames literally equal to "admin"/"musicadmin" were
-    // granted admin here with NO password/token verification — a trivial auth
-    // bypass (`u=admin` in the POST body was enough). Every caller, including
-    // those usernames, must now pass one of the real DB-verified checks below.
-
-    // Check sys_users for admin role
-    if ($sysPdo) {
-        $stmt = $sysPdo->prepare("SELECT id, username, role FROM sys_users WHERE LOWER(username) = :u AND role = 'admin' LIMIT 1");
-        $stmt->execute([':u' => $cleanUser]);
-        $u = $stmt->fetch();
-        if ($u) {
-            $requester = $u;
-        }
-    }
-    // Also check Ampache user table (access >= 75 indicates admin or catalog manager)
-    if (!$requester) {
-        $ampPdo = getAmpacheMySQLConnection();
-        if ($ampPdo) {
-            try {
-                $stmt = $ampPdo->prepare("SELECT id, username, access FROM user WHERE LOWER(username) = :u AND access >= 75 LIMIT 1");
-                $stmt->execute([':u' => $cleanUser]);
-                $u = $stmt->fetch();
-                if ($u) {
-                    $requester = [
-                        'id' => $u['id'],
-                        'username' => $u['username'],
-                        'role' => 'admin'
-                    ];
-                }
-            } catch (\Exception $e) {}
-        }
+// Check Subsonic credentials via Ampache's own REST API loopback (u/t/s token+salt
+// verification) — never trust a bare username with no cryptographic proof.
+//
+// SECURITY: this used to grant admin access to anyone who simply sent
+// `u=<a known admin's username>` with NO password/token/salt at all — a
+// trivial impersonation bypass. It now requires the same t/s proof-of-password
+// every other Subsonic call needs, verified server-side via Ampache itself.
+$subsonicUser  = trim($data['u'] ?? $_GET['u'] ?? $_POST['u'] ?? '');
+$subsonicToken = trim($data['t'] ?? $_GET['t'] ?? $_POST['t'] ?? '');
+$subsonicSalt  = trim($data['s'] ?? $_GET['s'] ?? $_POST['s'] ?? '');
+if (!$requester && $subsonicUser && $subsonicToken && $subsonicSalt) {
+    $ampacheUser = verifyAmpacheUser($subsonicUser, $subsonicToken, $subsonicSalt);
+    if ($ampacheUser && !empty($ampacheUser['adminRole'])) {
+        $requester = [
+            'id' => 0,
+            'username' => $ampacheUser['username'],
+            'role' => 'admin'
+        ];
     }
 }
 
@@ -243,7 +226,7 @@ if ($requester['role'] !== 'admin') {
 // ─── 3. GET ACTIONS (READ CATALOG METADATA FOR ADMIN UI) ───
 $action = $_GET['action'] ?? ($data['action'] ?? 'merge');
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' || in_array($action, ['search_artists', 'get_duplicates', 'find_similar_artists', 'get_artist_items'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' || in_array($action, ['search_artists', 'search_albums', 'search_songs', 'get_duplicates', 'find_similar_artists', 'get_artist_items'])) {
     $pdo = getAmpacheMySQLConnection();
     if (!$pdo) {
         http_response_code(500);
@@ -253,13 +236,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || in_array($action, ['search_artists',
 
     if ($action === 'search_artists') {
         $q = trim($_GET['q'] ?? '');
-        $limit = intval($_GET['limit'] ?? 50);
-        if ($limit < 1 || $limit > 200) $limit = 50;
+        // 500 rather than the old 20/50 cap — the merge tool must be able to
+        // surface every matching artist, including ones with no albums/songs yet.
+        $limit = intval($_GET['limit'] ?? 500);
+        if ($limit < 1 || $limit > 2000) $limit = 500;
 
         $sql = "SELECT id, name, song_count, album_count FROM artist";
         $params = [];
         if (!empty($q)) {
-            $sql .= " WHERE name LIKE :q";
+            // Case-insensitive wildcard match (LOWER(...) LIKE keeps this portable
+            // across collations that aren't already case-insensitive).
+            $sql .= " WHERE LOWER(name) LIKE LOWER(:q)";
             $params[':q'] = "%{$q}%";
         }
         $sql .= " ORDER BY name ASC LIMIT {$limit}";
@@ -269,6 +256,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || in_array($action, ['search_artists',
         $artists = $stmt->fetchAll();
 
         echo json_encode(['status' => 'success', 'artists' => $artists]);
+        exit;
+    }
+
+    // ── search_albums ───────────────────────────────────────────────────────
+    // ?q=<query>&limit=<n> — case-insensitive wildcard search across album name
+    // AND artist name, so albums are found regardless of which field matches.
+    // Orphaned albums (album_artist IS NULL/0) are included by default.
+    if ($action === 'search_albums') {
+        $q = trim($_GET['q'] ?? '');
+        $limit = intval($_GET['limit'] ?? 500);
+        if ($limit < 1 || $limit > 2000) $limit = 500;
+
+        $sql = "SELECT al.id, al.name, al.year, al.song_count, al.album_artist,
+                       ar.name AS artist_name
+                FROM album al
+                LEFT JOIN artist ar ON ar.id = al.album_artist";
+        $params = [];
+        if (!empty($q)) {
+            $sql .= " WHERE LOWER(al.name) LIKE LOWER(:q) OR LOWER(ar.name) LIKE LOWER(:q2)";
+            $params[':q']  = "%{$q}%";
+            $params[':q2'] = "%{$q}%";
+        }
+        $sql .= " ORDER BY al.name ASC LIMIT {$limit}";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $albums = $stmt->fetchAll();
+
+        echo json_encode(['status' => 'success', 'albums' => $albums]);
+        exit;
+    }
+
+    // ── search_songs ────────────────────────────────────────────────────────
+    // ?q=<query>&limit=<n> — case-insensitive wildcard search across song title
+    // AND artist name. Orphaned songs (artist/album IS NULL or 0) are included
+    // by default so unassigned tracks always surface in merge search results.
+    if ($action === 'search_songs') {
+        $q = trim($_GET['q'] ?? '');
+        $limit = intval($_GET['limit'] ?? 500);
+        if ($limit < 1 || $limit > 2000) $limit = 500;
+
+        $sql = "SELECT s.id, s.title, s.artist, s.album, s.track, s.time AS duration,
+                       ar.name AS artist_name, al.name AS album_name
+                FROM song s
+                LEFT JOIN artist ar ON ar.id = s.artist
+                LEFT JOIN album  al ON al.id = s.album";
+        $params = [];
+        if (!empty($q)) {
+            $sql .= " WHERE LOWER(s.title) LIKE LOWER(:q) OR LOWER(ar.name) LIKE LOWER(:q2)";
+            $params[':q']  = "%{$q}%";
+            $params[':q2'] = "%{$q}%";
+        }
+        $sql .= " ORDER BY s.title ASC LIMIT {$limit}";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $songs = $stmt->fetchAll();
+
+        echo json_encode(['status' => 'success', 'songs' => $songs]);
         exit;
     }
 

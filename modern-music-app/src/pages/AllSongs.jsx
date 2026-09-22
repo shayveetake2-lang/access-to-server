@@ -5,7 +5,7 @@ import { Play, Clock, Plus, ListPlus, Volume2, Shuffle, Flame, TrendingUp, Spark
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getApiProxyUrl, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { getApiProxyUrl, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART, applyUnknownArtistFallback, resolveUnknownArtistId } from '../utils/api';
 import { createDedupeIndex, dedupeAppend } from '../utils/dedupeSongs';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
@@ -72,6 +72,7 @@ export default function AllSongs() {
       let totalCount = 0;
       let hasMore = false;
 
+      let proxyFailed = false;
       try {
         const res = await fetch(url);
         const data = await res.json();
@@ -79,28 +80,43 @@ export default function AllSongs() {
           fetchedSongs = data.songs;
           totalCount = data.total || 0;
           hasMore = data.hasMore || false;
+        } else {
+          proxyFailed = true;
         }
       } catch (pe) {
         console.debug("Proxy library fetch notice:", pe);
+        proxyFailed = true;
       }
 
       // Fallback to Subsonic search3 if proxy endpoint unavailable
-      if (fetchedSongs.length === 0 && offset === 0) {
+      if (proxyFailed) {
         try {
           const auth = getAuthParams(user);
+          // Only support infinite scroll if searching. Random songs doesn't support offset.
           const subUrl = debouncedQuery
             ? getAmpacheUrl(`action=search3&query=${encodeURIComponent(debouncedQuery)}&songOffset=${offset}&songCount=${limit}&${auth}`)
             : getAmpacheUrl(`action=getRandomSongs&size=${limit}&${auth}`);
-          const subRes = await fetch(subUrl);
-          const subData = await subRes.json();
-          const raw = subData?.['subsonic-response']?.searchResult3?.song || subData?.['subsonic-response']?.randomSongs?.song;
-          fetchedSongs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-          totalCount = fetchedSongs.length;
-          hasMore = fetchedSongs.length >= limit;
+          
+          if (!debouncedQuery && offset > 0) {
+            // Random songs cannot be paginated. Stop fetching.
+            fetchedSongs = [];
+            hasMore = false;
+          } else {
+            const subRes = await fetch(subUrl);
+            const subData = await subRes.json();
+            const raw = subData?.['subsonic-response']?.searchResult3?.song || subData?.['subsonic-response']?.randomSongs?.song;
+            fetchedSongs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+            totalCount = fetchedSongs.length;
+            hasMore = fetchedSongs.length === limit;
+          }
         } catch (se) {
           console.debug("Subsonic fallback error:", se);
+          hasMore = false;
         }
       }
+
+      const unknownArtistId = await resolveUnknownArtistId(user);
+      fetchedSongs = applyUnknownArtistFallback(fetchedSongs, unknownArtistId);
 
       setLibrarySongs(prev => {
         if (reset) dedupeIndexRef.current = createDedupeIndex();

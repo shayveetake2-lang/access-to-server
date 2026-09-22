@@ -120,26 +120,28 @@ export default function FavoritesGrid() {
                 onClick={() => navigate(isAlbum ? `/albums/${item.id}` : `/artists/${item.id}`)}
                 className="group flex flex-col bg-slate-900/40 hover:bg-slate-800/60 p-2.5 sm:p-3 rounded-2xl transition-all border border-white/5 hover:border-amber-500/30 backdrop-blur-sm relative active:scale-[0.98] cursor-pointer"
               >
-                <div className={`relative aspect-square overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5 ${isAlbum ? 'rounded-xl' : 'rounded-full'}`}>
-                  <img
-                    src={getCoverArtUrl(item.coverArt || item.id, getAuthParams(user))}
-                    alt={item.name || item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      if (e.currentTarget.src !== DEFAULT_COVER_ART) e.currentTarget.src = DEFAULT_COVER_ART;
-                    }}
-                  />
+                <div className="relative aspect-square mb-2.5">
+                  <div className={`h-full w-full overflow-hidden shadow-md bg-slate-800 border border-white/5 ${isAlbum ? 'rounded-xl' : 'rounded-full'}`}>
+                    <img
+                      src={getCoverArtUrl(item.coverArt || item.id, getAuthParams(user))}
+                      alt={item.name || item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                      decoding="async"
+                      onError={(e) => {
+                        if (e.currentTarget.src !== DEFAULT_COVER_ART) e.currentTarget.src = DEFAULT_COVER_ART;
+                      }}
+                    />
+                  </div>
                   <button
                     onClick={(e) => handleUnstar(item, item.__type, e)}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-amber-500 text-white shadow-md shadow-amber-500/30 hover:scale-110 flex items-center justify-center transition-all cursor-pointer"
+                    className="absolute -top-1.5 -right-1.5 z-20 w-7 h-7 rounded-full bg-amber-500 text-white shadow-md shadow-amber-500/30 hover:scale-110 flex items-center justify-center transition-all cursor-pointer"
                     title="Remove from Favorites"
                     aria-label="Remove from Favorites"
                   >
                     <Star size={14} fill="currentColor" />
                   </button>
-                  <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-bold uppercase tracking-wide text-slate-300 flex items-center gap-1">
+                  <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-bold uppercase tracking-wide text-slate-300 flex items-center gap-1">
                     {isAlbum ? <Disc size={10} /> : <Mic2 size={10} />}
                     <span>{item.__type}</span>
                   </div>

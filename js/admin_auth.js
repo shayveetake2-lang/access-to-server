@@ -237,6 +237,12 @@ function updateAdminUI(isLoggedIn, user, role) {
         }
     }
 
+    // Populate the logged-in user's own storage quota card now that we know
+    // who they are (defined in index.html's inline script, loaded after this file).
+    if (isLoggedIn && typeof window.loadMyStorageQuota === 'function') {
+        window.loadMyStorageQuota();
+    }
+
     const standardUserPortal = document.querySelectorAll('.standard-user-portal');
     const standardUserBanner = document.getElementById('standard-user-banner');
     const adminPortal = document.getElementById('admin-portal');

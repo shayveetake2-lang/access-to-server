@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database, X, Check } from 'lucide-react';
+import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database, Music, X, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getApiProxyUrl } from '../utils/api';
@@ -7,6 +7,7 @@ import AdminMetadataEditor from '../components/AdminMetadataEditor';
 import GenreManager from '../components/admin/GenreManager';
 import AdminContentAssigner from '../components/admin/AdminContentAssigner';
 import OrphanedMedia from '../components/admin/OrphanedMedia';
+import MusicRequestsManager from '../components/admin/MusicRequestsManager';
 
 export default function AdminSettings() {
   const { user: currentUser, getAuthParams } = useAuth();
@@ -159,6 +160,17 @@ export default function AdminSettings() {
             <Database size={14} />
             <span>Content &amp; Genres</span>
           </button>
+          <button
+            onClick={() => setAdminTab('requests')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
+              adminTab === 'requests'
+                ? 'bg-purple-500 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Music size={14} />
+            <span>Requests</span>
+          </button>
         </div>
       </div>
 
@@ -173,6 +185,13 @@ export default function AdminSettings() {
           <GenreManager />
           <OrphanedMedia />
           <AdminContentAssigner user={currentUser} />
+        </div>
+      )}
+
+      {/* Tab 4: Music & Media Requests */}
+      {adminTab === 'requests' && (
+        <div className="animate-in fade-in">
+          <MusicRequestsManager />
         </div>
       )}
 

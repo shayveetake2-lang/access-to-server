@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
         verifyToken(parsed).then(isValid => {
           if (isValid) {
             const isAdmin = parsed.isAdmin || ['admin', 'musicadmin', 'serveradmin'].includes((parsed.username || '').toLowerCase());
-            const updated = { ...parsed, isAdmin };
+            const updated = { ...parsed, isAdmin, role: isAdmin ? 'admin' : 'user' };
             setUser(updated);
             // Ensure persisted across all browser sessions/tabs
             localStorage.setItem('ampache_user', JSON.stringify(updated));
@@ -74,7 +74,8 @@ export function AuthProvider({ children }) {
       const credentials = { 
         username, 
         password, 
-        isAdmin 
+        isAdmin,
+        role: isAdmin ? 'admin' : 'user'
       };
       setUser(credentials);
       // Persist across devices and browser sessions

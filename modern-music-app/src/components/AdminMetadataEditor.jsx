@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getMergeMetadataUrl, getAmpacheUrl } from '../utils/api';
+import { getMergeMetadataUrl } from '../utils/api';
 import { adminPost } from './admin/adminApi';
 
 export default function AdminMetadataEditor() {
@@ -54,14 +54,15 @@ export default function AdminMetadataEditor() {
   };
 
   // 1. Fetch initial artists list and potential duplicates
-  const fetchMetadata = async () => {
+  const fetchMetadata = async (query = '') => {
     if (!isAdmin) return;
     setLoading(true);
     try {
-      // Fetch artists via Subsonic or merge API
-      const auth = getAuthParams(user);
-      const authQ = user?.username ? `&u=${encodeURIComponent(user.username)}` : '';
-      const resArtists = await fetch(`${getMergeMetadataUrl()}?action=search_artists&limit=150${authQ}`, {
+      // Fetch artists via Subsonic or merge API — send full u/t/s token+salt auth
+      // (a bare username with no token is no longer accepted server-side).
+      const authQ = `&${getAuthParams(user)}`;
+      const searchQ = query ? `&q=${encodeURIComponent(query)}` : '';
+      const resArtists = await fetch(`${getMergeMetadataUrl()}?action=search_artists&limit=500${searchQ}${authQ}`, {
         headers: getAuthHeaders()
       });
       const dataArtists = await resArtists.json();
@@ -81,20 +82,46 @@ export default function AdminMetadataEditor() {
         }
       } catch (e) {}
 
-      // Fetch albums for album mode
+      // Fetch albums for album mode — server-side LIKE search against name AND
+      // artist, with no restrictive pagination cap, so nothing gets hidden.
       if (activeTab === 'albums') {
-        const resAlb = await fetch(getAmpacheUrl(`action=getAlbumList2&type=alphabetical&size=100&${auth}`));
+        const resAlb = await fetch(`${getMergeMetadataUrl()}?action=search_albums&limit=500${searchQ}${authQ}`, {
+          headers: getAuthHeaders()
+        });
         const dataAlb = await resAlb.json();
-        const albList = dataAlb?.['subsonic-response']?.albumList2?.album || [];
-        setAlbums(Array.isArray(albList) ? albList : [albList]);
+        if (dataAlb?.status === 'success') {
+          const albList = (dataAlb.albums || []).map(a => ({
+            id: a.id,
+            name: a.name,
+            title: a.name,
+            artist: a.artist_name || 'Unassigned',
+            artistId: a.album_artist,
+            year: a.year,
+            songCount: a.song_count,
+          }));
+          setAlbums(albList);
+        }
       }
 
-      // Fetch songs for song mode
+      // Fetch songs for song mode — server-side LIKE search against title AND
+      // artist, including orphaned tracks (artist/album IS NULL or 0).
       if (activeTab === 'songs' || activeTab === 'create_artist') {
-        const resSongs = await fetch(getAmpacheUrl(`action=getRandomSongs&size=100&${auth}`));
+        const resSongs = await fetch(`${getMergeMetadataUrl()}?action=search_songs&limit=500${searchQ}${authQ}`, {
+          headers: getAuthHeaders()
+        });
         const dataSongs = await resSongs.json();
-        const songList = dataSongs?.['subsonic-response']?.randomSongs?.song || [];
-        setSongs(Array.isArray(songList) ? songList : [songList]);
+        if (dataSongs?.status === 'success') {
+          const songList = (dataSongs.songs || []).map(s => ({
+            id: s.id,
+            title: s.title,
+            artist: s.artist_name || 'Unassigned',
+            artistId: s.artist,
+            album: s.album_name || 'Unassigned',
+            albumId: s.album,
+            duration: s.duration,
+          }));
+          setSongs(songList);
+        }
       }
 
     } catch (err) {
@@ -113,6 +140,18 @@ export default function AdminMetadataEditor() {
     setLinkSongIds(new Set());
     setLinkResult(null);
   }, [activeTab, isAdmin]);
+
+  // Debounced server-side re-search whenever the filter bar query changes, so
+  // matches outside the initially-loaded page are still found (fixes missing
+  // items in Artists / Albums / Songs merge search).
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    const handle = setTimeout(() => {
+      fetchMetadata(filterQuery.trim());
+    }, 350);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterQuery]);
 
   // Target artist candidates matching search query
   const targetCandidates = useMemo(() => {
@@ -189,10 +228,13 @@ export default function AdminMetadataEditor() {
     setLastResult(null);
 
     try {
+      const authParams = new URLSearchParams(getAuthParams(user));
       const payload = {
         target_artist_id: parseInt(targetArtistId, 10),
         token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
-        u: user?.username || 'admin'
+        u: authParams.get('u') || '',
+        t: authParams.get('t') || '',
+        s: authParams.get('s') || '',
       };
 
       if (activeTab === 'artists') {
@@ -246,11 +288,14 @@ export default function AdminMetadataEditor() {
 
     setMergingGroupId(actualGroup.key);
     try {
+      const authParams = new URLSearchParams(getAuthParams(user));
       const payload = {
         target_artist_id: parseInt(targetId, 10),
         artist_ids: sourceIds,
         token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
-        u: user?.username || 'admin'
+        u: authParams.get('u') || '',
+        t: authParams.get('t') || '',
+        s: authParams.get('s') || '',
       };
 
       const res = await fetch(getMergeMetadataUrl(), {
@@ -289,10 +334,13 @@ export default function AdminMetadataEditor() {
         artist_ids: g.duplicates.map(d => d.id)
       }));
 
+      const authParams = new URLSearchParams(getAuthParams(user));
       const payload = {
         batch: batchList,
         token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
-        u: user?.username || 'admin'
+        u: authParams.get('u') || '',
+        t: authParams.get('t') || '',
+        s: authParams.get('s') || '',
       };
 
       const res = await fetch(getMergeMetadataUrl(), {
@@ -347,9 +395,20 @@ export default function AdminMetadataEditor() {
     if (!newArtistName.trim()) return;
     setCreatingArtist(true);
     try {
-      const res = await adminPost('createArtist', { name: newArtistName.trim() });
-      setNewlyCreatedArtist({ id: res.id, name: newArtistName.trim() });
+      const trimmedName = newArtistName.trim();
+      const res = await adminPost('createArtist', { name: trimmedName });
+      const newArtistId = res.artist_id || res.id;
+      setNewlyCreatedArtist({ id: newArtistId, name: trimmedName });
       showToast(res.message || "Artist created", "success");
+
+      // Inject the new artist into the active dropdown/list state immediately —
+      // no hard refresh required to select or link songs to it.
+      setArtists(prev => {
+        if (prev.some(a => String(a.id) === String(newArtistId))) return prev;
+        const injected = { id: newArtistId, name: trimmedName, song_count: 0, album_count: 0 };
+        return [...prev, injected].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      });
+
       setNewArtistName('');
     } catch (err) {
       showToast(err.message || "Failed to create artist", "error");

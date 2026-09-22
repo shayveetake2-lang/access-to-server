@@ -19,7 +19,7 @@ export default function TopBar() {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
+  const { playQueue, playSong, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { user, logout } = useAuth();
   const { openAddToPlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
@@ -70,7 +70,7 @@ export default function TopBar() {
   };
 
   const playTrack = (song) => {
-    playQueue([song], 0);
+    playSong(song);
   };
 
   const handleLogout = () => {

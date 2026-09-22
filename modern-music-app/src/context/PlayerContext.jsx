@@ -386,6 +386,20 @@ export function PlayerProvider({ children }) {
     loadTrack(tracks[index]);
   };
 
+  const playSong = (song) => {
+    let newQueue = [...queueRef.current];
+    let newIndex = 0;
+    if (newQueue.length === 0) {
+      newQueue = [song];
+    } else {
+      newIndex = currentIndexRef.current + 1;
+      newQueue.splice(newIndex, 0, song);
+    }
+    setQueue(newQueue);
+    setCurrentIndex(newIndex);
+    loadTrack(song);
+  };
+
   const togglePlay = () => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -640,6 +654,7 @@ export function PlayerProvider({ children }) {
         playPrevious, 
         seek,
         playQueue,
+        playSong,
         toggleRepeat,
         toggleShuffle,
         addToQueue,

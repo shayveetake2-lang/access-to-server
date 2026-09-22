@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Disc3, Mic2, Play, Sparkles } from 'lucide-r
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
-import { getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { getCoverArtUrl } from '../utils/api';
 
 function getWeekSeed(date = new Date()) {
   const thursday = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -36,6 +36,7 @@ function artistMatches(item, artist) {
 
 export default function FeaturedSlideshow({ songs = [], albums = [], artists = [] }) {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [coverFailed, setCoverFailed] = useState(false);
   const navigate = useNavigate();
   const { user, getAuthParams } = useAuth();
   const { playQueue } = usePlayer();
@@ -63,6 +64,9 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
   }, [songs, albums, artists, weekSeed]);
 
   const availableSlides = featured.filter(slide => slide.item);
+  const safeActiveSlide = activeSlide < availableSlides.length ? activeSlide : 0;
+  const slide = availableSlides[safeActiveSlide] || null;
+  const item = slide?.item || null;
 
   useEffect(() => {
     if (availableSlides.length < 2) return undefined;
@@ -72,11 +76,12 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
     return () => window.clearInterval(timer);
   }, [availableSlides.length]);
 
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [slide?.type, item?.id]);
+
   if (!availableSlides.length) return null;
 
-  const safeActiveSlide = activeSlide < availableSlides.length ? activeSlide : 0;
-  const slide = availableSlides[safeActiveSlide];
-  const item = slide.item;
   const Icon = slide.icon;
   const isSong = slide.type === 'song';
   const title = isSong ? item.title : item.name || item.title || 'Untitled';
@@ -86,6 +91,15 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
       ? `${item.artist || 'Unknown Artist'}${item.album ? ` • ${item.album}` : ''}`
       : item.artist || `${item.songCount || 0} tracks`;
   const coverId = item.coverArt || item.albumId || item.id;
+
+  const initials = title
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(word => word[0].toUpperCase())
+    .join('') || '?';
+
+  const showCoverFallback = !coverId || coverFailed;
 
   const handlePrimaryAction = () => {
     if (slide.type === 'song') {
@@ -107,12 +121,19 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
           className="group mx-auto aspect-square w-40 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl sm:mx-0 sm:w-56"
           aria-label={`Open ${title}`}
         >
-          <img
-            src={getCoverArtUrl(coverId, getAuthParams(user))}
-            alt=""
-            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${slide.type === 'artist' ? 'rounded-full p-2' : ''}`}
-            onError={(event) => { if (event.currentTarget.src !== DEFAULT_COVER_ART) event.currentTarget.src = DEFAULT_COVER_ART; }}
-          />
+          {showCoverFallback ? (
+            <div className={`relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800/80 via-slate-900 to-purple-950/60 backdrop-blur-xl ${slide.type === 'artist' ? 'rounded-full' : ''}`}>
+              <Disc3 size={40} className="absolute text-white/10" />
+              <span className="relative text-2xl font-black tracking-wide text-white/70 sm:text-3xl">{initials}</span>
+            </div>
+          ) : (
+            <img
+              src={getCoverArtUrl(coverId, getAuthParams(user))}
+              alt=""
+              className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${slide.type === 'artist' ? 'rounded-full p-2' : ''}`}
+              onError={() => setCoverFailed(true)}
+            />
+          )}
         </button>
 
         <div className="min-w-0 flex-1 text-center sm:text-left">

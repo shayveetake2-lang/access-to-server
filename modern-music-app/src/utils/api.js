@@ -136,16 +136,61 @@ function getSearchVariants(query) {
   return [...variants].slice(0, 18);
 }
 
+// Cached lookup of the canonical "Unknown Artist" profile id (created server-side
+// by api/group_unknown_artists.php) so client-side fallbacks link to a real artist
+// page instead of a dead-end id.
+let _cachedUnknownArtistId = null;
+
+export async function resolveUnknownArtistId(user = null) {
+  if (_cachedUnknownArtistId) return _cachedUnknownArtistId;
+  try {
+    const auth = getSubsonicAuthParams(user);
+    const res = await fetch(getAmpacheUrl(`action=search3&query=Unknown+Artist&artistCount=5&songCount=0&albumCount=0&${auth}`), { cache: 'no-store' });
+    const data = await res.json();
+    const found = data?.['subsonic-response']?.searchResult3?.artist;
+    const list = Array.isArray(found) ? found : (found ? [found] : []);
+    const match = list.find(a => (a.name || '').trim().toLowerCase() === 'unknown artist');
+    if (match) _cachedUnknownArtistId = String(match.id);
+  } catch (e) {
+    console.debug('resolveUnknownArtistId lookup failed:', e);
+  }
+  return _cachedUnknownArtistId;
+}
+
+/**
+ * Fallback mapper for Subsonic track/album objects: any item missing its
+ * `artist` name or `artistId` is rewritten to point at the shared
+ * "Unknown Artist" profile so it still renders and remains clickable.
+ */
+export function applyUnknownArtistFallback(items = [], unknownArtistId = null) {
+  if (!Array.isArray(items)) return items;
+  return items.map(item => {
+    if (!item) return item;
+    const artistName = (item.artist || '').toString().trim();
+    const hasValidArtistId = item.artistId !== undefined && item.artistId !== null &&
+      String(item.artistId).trim() !== '' && String(item.artistId) !== '0';
+    if (artistName && hasValidArtistId) return item;
+    return {
+      ...item,
+      artist: artistName || 'Unknown Artist',
+      artistId: hasValidArtistId ? item.artistId : (unknownArtistId || item.artistId)
+    };
+  });
+}
+
 export async function searchSubsonic(query, user = null) {
   const trimmedQuery = query.trim();
   if (trimmedQuery.length < 2) return {};
 
   const auth = getSubsonicAuthParams(user, true);
   const variants = getSearchVariants(trimmedQuery);
-  const responses = await Promise.allSettled(variants.map(variant => (
-    fetch(getAmpacheUrl(`action=search3&query=${encodeURIComponent(variant)}&songCount=5&albumCount=5&artistCount=5&${auth}&_t=${Date.now()}`), { cache: 'no-store' })
-      .then(response => response.json())
-  )));
+  const [responses, unknownArtistId] = await Promise.all([
+    Promise.allSettled(variants.map(variant => (
+      fetch(getAmpacheUrl(`action=search3&query=${encodeURIComponent(variant)}&songCount=200&albumCount=5&artistCount=5&${auth}&_t=${Date.now()}`), { cache: 'no-store' })
+        .then(response => response.json())
+    ))),
+    resolveUnknownArtistId(user)
+  ]);
   const merged = { song: [], album: [], artist: [] };
   const seen = { song: new Set(), album: new Set(), artist: new Set() };
 
@@ -156,7 +201,8 @@ export async function searchSubsonic(query, user = null) {
       const items = Array.isArray(found[type]) ? found[type] : (found[type] ? [found[type]] : []);
       items.forEach(item => {
         const key = String(item.id || `${type}-${item.name || item.title}`);
-        if (!seen[type].has(key) && merged[type].length < 5) {
+        const limit = type === 'song' ? 200 : 5;
+        if (!seen[type].has(key) && merged[type].length < limit) {
           seen[type].add(key);
           merged[type].push(item);
         }
@@ -164,7 +210,8 @@ export async function searchSubsonic(query, user = null) {
     });
   });
 
-  merged.song = dedupeSongs(merged.song);
+  merged.song = dedupeSongs(applyUnknownArtistFallback(merged.song, unknownArtistId));
+  merged.album = applyUnknownArtistFallback(merged.album, unknownArtistId);
 
   return merged;
 }
@@ -212,10 +259,13 @@ export async function fetchRecentlyAdded(user = null, limits = { songLimit: 20, 
 export async function fetchFeaturedLibrary(user = null) {
   const auth = getSubsonicAuthParams(user);
   const cacheBust = `_t=${Date.now()}`;
-  const responses = await Promise.allSettled([
-    fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json()),
-    fetch(getAmpacheUrl(`action=getArtists&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json()),
-    fetch(getAmpacheUrl(`action=search3&query=%2A&songCount=200&albumCount=0&artistCount=0&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json())
+  const [responses, unknownArtistId] = await Promise.all([
+    Promise.allSettled([
+      fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json()),
+      fetch(getAmpacheUrl(`action=getArtists&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json()),
+      fetch(getAmpacheUrl(`action=search3&query=%2A&songCount=200&albumCount=0&artistCount=0&${auth}&${cacheBust}`), { cache: 'no-store' }).then(response => response.json())
+    ]),
+    resolveUnknownArtistId(user)
   ]);
   const albumsData = responses[0].status === 'fulfilled' ? responses[0].value : {};
   const artistsData = responses[1].status === 'fulfilled' ? responses[1].value : {};
@@ -233,9 +283,9 @@ export async function fetchFeaturedLibrary(user = null) {
     }
   }
   return {
-    albums: Array.isArray(albums) ? albums : [albums].filter(Boolean),
+    albums: applyUnknownArtistFallback(Array.isArray(albums) ? albums : [albums].filter(Boolean), unknownArtistId),
     artists: Array.isArray(artists) ? artists.flatMap(group => group.artist || []) : [],
-    songs: Array.isArray(songs) ? songs : [songs].filter(Boolean)
+    songs: applyUnknownArtistFallback(Array.isArray(songs) ? songs : [songs].filter(Boolean), unknownArtistId)
   };
 }
 
@@ -280,6 +330,10 @@ export function getMergeMetadataUrl() {
 
 export function getMediaPortalUrl() {
   return `${getBaseUrl()}/media.html`;
+}
+
+export function getMediaRequestsUrl(endpoint) {
+  return `${getBaseUrl()}/api/media/${endpoint}`;
 }
 
 /**

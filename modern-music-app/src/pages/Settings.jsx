@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Mail, Music, HelpCircle } from 'lucide-react';
+import { Moon, Sun, Mail, Music, HelpCircle, Send } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import { getMediaRequestsUrl, getSubsonicAuthParams } from '../utils/api';
 
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(true);
   const { showToast } = useToast();
+  const { user } = useAuth();
+
+  const [trackTitle, setTrackTitle] = useState('');
+  const [artistName, setArtistName] = useState('');
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   
   useEffect(() => {
     const stored = localStorage.getItem('aether_theme');
@@ -26,6 +34,41 @@ export default function Settings() {
       document.documentElement.classList.remove('dark');
     }
     showToast(`Theme updated to ${newMode ? 'Dark' : 'Light'} Mode!`, 'success');
+  };
+
+  const handleSubmitRequest = async (e) => {
+    e.preventDefault();
+    if (!trackTitle.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      const authParams = new URLSearchParams(getSubsonicAuthParams(user, true));
+      const res = await fetch(getMediaRequestsUrl('submit_request.php'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trackTitle: trackTitle.trim(),
+          artistName: artistName.trim(),
+          notes: notes.trim(),
+          mediaType: 'Song',
+          u: authParams.get('u') || user?.username || '',
+          t: authParams.get('t') || '',
+          s: authParams.get('s') || '',
+        }),
+      });
+      const data = await res.json();
+      if (data?.status === 'success') {
+        showToast('🎵 Song request submitted!', 'success');
+        setTrackTitle('');
+        setArtistName('');
+        setNotes('');
+      } else {
+        showToast(data?.message || 'Failed to submit request', 'error');
+      }
+    } catch (err) {
+      showToast('Network error submitting request', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -53,13 +96,38 @@ export default function Settings() {
         {/* Request a Song */}
         <div className="bg-slate-900/50 backdrop-blur-sm border border-white/5 rounded-2xl p-6">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2"><Music size={20} className="text-purple-400" /> Request a Song</h3>
-          <p className="text-slate-400 mb-4">Can't find your favorite track? Request the Server Admin to add it to the library.</p>
-          <a 
-            href="mailto:admin@local.host?subject=Song Request for Aether Audio"
-            className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-medium transition-colors border border-white/5"
-          >
-            <Mail size={18} /> Email Admin
-          </a>
+          <p className="text-slate-400 mb-4">Can't find your favorite track? Send a request straight to the server admin's queue.</p>
+          <form onSubmit={handleSubmitRequest} className="space-y-3">
+            <input
+              type="text"
+              value={trackTitle}
+              onChange={(e) => setTrackTitle(e.target.value)}
+              placeholder="Song title *"
+              required
+              className="w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <input
+              type="text"
+              value={artistName}
+              onChange={(e) => setArtistName(e.target.value)}
+              placeholder="Artist name (optional)"
+              className="w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notes (optional)"
+              rows={2}
+              className="w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+            />
+            <button
+              type="submit"
+              disabled={submitting || !trackTitle.trim()}
+              className="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-400 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+            >
+              <Send size={18} /> {submitting ? 'Submitting...' : 'Submit Request'}
+            </button>
+          </form>
         </div>
 
         {/* Contact Admin */}

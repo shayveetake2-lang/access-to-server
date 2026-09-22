@@ -139,9 +139,9 @@ function getOrCreateUnknownArtistId(PDO $pdo): int {
     $row = $find->fetch();
     if ($row) return (int)$row['id'];
 
-    $ins = $pdo->prepare('INSERT INTO artist (name, last_update, addition_time) VALUES (?, ?, ?)');
-    $now = time();
-    $ins->execute(['Unknown Artist', $now, $now]);
+    // `artist` has no addition_time column — only last_update (confirmed against live schema)
+    $ins = $pdo->prepare('INSERT INTO artist (name, last_update) VALUES (?, ?)');
+    $ins->execute(['Unknown Artist', time()]);
     return (int)$pdo->lastInsertId();
 }
 
@@ -230,6 +230,9 @@ switch ($action) {
     // ── createArtist ─────────────────────────────────────────────────────────
     // Body: { action, name: string }
     // Inserts a brand new custom artist row directly into the `artist` table.
+    // NOTE: this Ampache schema's `artist` table only has id/name/prefix/mbid/
+    // summary/placeformed/yearformed/last_update/user/*_count columns — there
+    // is no clean_name or catalog column on `artist` (those live on album/song).
     case 'createArtist': {
         $name = trim($body['name'] ?? '');
         if ($name === '') json_error('name is required');
@@ -241,15 +244,34 @@ switch ($action) {
         $check->execute([$name]);
         $existing = $check->fetch();
         if ($existing) {
-            json_ok(['message' => "Artist '{$name}' already exists", 'id' => (int)$existing['id'], 'created' => false]);
+            json_ok(['message' => "Artist '{$name}' already exists", 'id' => (int)$existing['id'], 'artist_id' => (int)$existing['id'], 'created' => false]);
+        }
+
+        // prefix: leading article captured separately (e.g. "The Beatles" -> prefix "The", name "Beatles")
+        $prefix = null;
+        if (preg_match('/^(the|a|an)\s+(.+)$/i', $name, $m)) {
+            $prefix = $m[1];
         }
 
         $now = time();
-        $ins = $pdo->prepare('INSERT INTO artist (name, last_update, addition_time) VALUES (?, ?, ?)');
-        $ins->execute([$name, $now, $now]);
-        $newId = (int)$pdo->lastInsertId();
+        $newId = null;
+        try {
+            $ins = $pdo->prepare('INSERT INTO artist (name, prefix, last_update) VALUES (?, ?, ?)');
+            $ins->execute([$name, $prefix, $now]);
+            $newId = (int)$pdo->lastInsertId();
+        } catch (\PDOException $e) {
+            // Duplicate entry race (unique index on name) — return the existing row gracefully
+            if ((int)$e->getCode() === 23000 || stripos($e->getMessage(), 'Duplicate entry') !== false) {
+                $check->execute([$name]);
+                $existing = $check->fetch();
+                if ($existing) {
+                    json_ok(['message' => "Artist '{$name}' already exists", 'id' => (int)$existing['id'], 'artist_id' => (int)$existing['id'], 'created' => false]);
+                }
+            }
+            json_error('Failed to create artist: ' . $e->getMessage(), 500);
+        }
 
-        json_ok(['message' => "Artist '{$name}' created", 'id' => $newId, 'created' => true]);
+        json_ok(['message' => "Artist '{$name}' created", 'id' => $newId, 'artist_id' => $newId, 'created' => true]);
     }
 
     // ── linkSongsToArtist ──────────────────────────────────────────────────

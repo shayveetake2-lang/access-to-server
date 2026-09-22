@@ -201,6 +201,22 @@ function initSQLiteSchema(PDO $pdo) {
         @$pdo->exec("CREATE INDEX IF NOT EXISTS idx_media_requests_user ON media_requests(user_id)");
     } catch (\Exception $e) {}
 
+    // media_requests migration: unify ServerFlow (movie/TV) and Aether (song) requests
+    // on shared track_title/artist_name/notes/created_at columns.
+    // NOTE: this server's PHP (7.4.33) ships SQLite 3.19.3, which predates
+    // ALTER TABLE ... RENAME COLUMN (added in SQLite 3.25.0) — that statement
+    // fails with a syntax error here, so we ADD new columns and backfill from
+    // the legacy media_title/request_date columns instead of renaming them.
+    try { @$pdo->exec("ALTER TABLE media_requests ADD COLUMN track_title VARCHAR(255) DEFAULT ''"); } catch (\Exception $e) {}
+    try { @$pdo->exec("ALTER TABLE media_requests ADD COLUMN created_at DATETIME DEFAULT NULL"); } catch (\Exception $e) {}
+    try { @$pdo->exec("UPDATE media_requests SET track_title = media_title WHERE track_title IS NULL OR track_title = ''"); } catch (\Exception $e) {}
+    try { @$pdo->exec("UPDATE media_requests SET created_at = request_date WHERE created_at IS NULL"); } catch (\Exception $e) {}
+    try { @$pdo->exec("ALTER TABLE media_requests ADD COLUMN artist_name VARCHAR(255) DEFAULT ''"); } catch (\Exception $e) {}
+    try { @$pdo->exec("ALTER TABLE media_requests ADD COLUMN notes TEXT DEFAULT ''"); } catch (\Exception $e) {}
+    // Aether/Ampache-only requesters have no sys_users row (user_id stored as 0),
+    // so the display name must be captured at submit time or it's lost forever.
+    try { @$pdo->exec("ALTER TABLE media_requests ADD COLUMN requester_name VARCHAR(255) DEFAULT ''"); } catch (\Exception $e) {}
+
     // Initial admin user provisioning without hardcoded backdoors
     try {
         $initialPass = getenv('ADMIN_INITIAL_PASSWORD');

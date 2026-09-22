@@ -8,7 +8,7 @@ import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 import { extractPrimaryArtistName, normalizeArtistKey } from '../utils/artistHelper';
 import StarButton from '../components/StarButton';
-
+import HeartButton from '../components/HeartButton';
 export default function ArtistDetails() {
   const { id } = useParams();
   const [artist, setArtist] = useState(null);
@@ -278,12 +278,6 @@ export default function ArtistDetails() {
 
             <div className="flex items-center justify-center sm:justify-start gap-3 text-slate-300 text-xs sm:text-sm font-medium mb-5">
               <span>{allAlbums.length} {allAlbums.length === 1 ? 'Album' : 'Albums'}</span>
-              {allSongs.length > 0 && (
-                <>
-                  <span>•</span>
-                  <span>{allSongs.length} Songs</span>
-                </>
-              )}
             </div>
 
             {/* Action Buttons: Play All & Shuffle All */}
@@ -432,6 +426,12 @@ export default function ArtistDetails() {
                           >
                             <ListPlus size={16} />
                           </button>
+                          <HeartButton 
+                            song={song} 
+                            size={16} 
+                            compact 
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 active:scale-95 transition-all shadow-sm shrink-0"
+                          />
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

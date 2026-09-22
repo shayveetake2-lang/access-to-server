@@ -1,9 +1,10 @@
 import { useAuth } from '../context/AuthContext';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Search, Tag, Users, Sparkles } from 'lucide-react';
+import { Search, Tag, Users, Sparkles } from 'lucide-react';
 import { mergeArtists } from '../utils/artistHelper';
-import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { getAmpacheUrl } from '../utils/api';
+import { ArtistGrid } from '../components/ArtistGrid';
 
 export default function AllArtists() {
   const [rawArtists, setRawArtists] = useState([]);
@@ -15,7 +16,23 @@ export default function AllArtists() {
   // Grouping and filtering state
   const [activeTab, setActiveTab] = useState('name'); // 'name' | 'genre'
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLetter, setSelectedLetter] = useState('All');
+  const [selectedLetter, setSelectedLetter] = useState(() => sessionStorage.getItem('allArtists_letter') || 'All');
+
+  useEffect(() => {
+    sessionStorage.setItem('allArtists_letter', selectedLetter);
+  }, [selectedLetter]);
+
+  useLayoutEffect(() => {
+    const savedScroll = sessionStorage.getItem('allArtists_scroll');
+    if (savedScroll) {
+      window.scrollTo(0, parseInt(savedScroll, 10));
+    }
+    const handleScroll = () => {
+      sessionStorage.setItem('allArtists_scroll', window.scrollY.toString());
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const [selectedGenre, setSelectedGenre] = useState('All');
 
   useEffect(() => {
@@ -289,63 +306,14 @@ export default function AllArtists() {
                 <span className="text-lg font-bold text-purple-400">{letter}</span>
                 <span className="text-xs text-slate-400 font-mono">({artistsInGroup.length})</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
-                {artistsInGroup.map(artist => (
-                  <ArtistCard key={artist.id} artist={artist} user={user} getAuthParams={getAuthParams} />
-                ))}
-              </div>
+              <ArtistGrid artists={artistsInGroup} user={user} getAuthParams={getAuthParams} />
             </div>
           ))}
         </div>
       ) : (
         // Flat filtered grid
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
-          {filteredArtists.map(artist => (
-            <ArtistCard key={artist.id} artist={artist} user={user} getAuthParams={getAuthParams} />
-          ))}
-        </div>
+        <ArtistGrid artists={filteredArtists} user={user} getAuthParams={getAuthParams} />
       )}
     </div>
-  );
-}
-
-function ArtistCard({ artist, user, getAuthParams }) {
-  const primaryGenre = artist.genres && artist.genres.length > 0 ? artist.genres[0] : null;
-
-  return (
-    <Link
-      to={`/artists/${artist.id}`}
-      className="group flex flex-col items-center bg-slate-900/40 hover:bg-slate-800/60 p-3 sm:p-4 rounded-2xl transition-all border border-white/5 hover:border-purple-500/30 backdrop-blur-sm cursor-pointer active:scale-[0.98] shadow-sm hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
-    >
-      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 mb-3 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform overflow-hidden border-2 border-white/10 group-hover:border-purple-500/40">
-        {artist.coverArt ? (
-          <img
-            src={getCoverArtUrl(artist.coverArt, getAuthParams(user))}
-            className="w-full h-full object-cover"
-            alt={artist.name}
-            loading="lazy"
-            onError={(e) => {
-              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                e.currentTarget.src = DEFAULT_COVER_ART;
-              }
-            }}
-          />
-        ) : (
-          <User size={28} className="text-white/50" />
-        )}
-      </div>
-      <h4 className="font-semibold text-slate-100 text-center group-hover:text-purple-400 transition-colors w-full truncate text-xs sm:text-sm">
-        {artist.name}
-      </h4>
-      <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400 mt-0.5 truncate w-full">
-        <span>{artist.albumCount} {artist.albumCount === 1 ? 'Album' : 'Albums'}</span>
-        {primaryGenre && (
-          <>
-            <span>•</span>
-            <span className="text-purple-400/80 truncate max-w-[80px]">{primaryGenre}</span>
-          </>
-        )}
-      </div>
-    </Link>
   );
 }
