@@ -359,10 +359,10 @@ export default function StickyPlayer() {
       {/* ========================================================================= */}
       <div 
         onClick={() => setIsExpanded(true)}
-        className="md:hidden fixed bottom-[calc(max(env(safe-area-inset-bottom,0px),0.5rem)+4.0rem)] left-2.5 right-2.5 min-h-[80px] bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl flex items-center justify-between px-3 shadow-[0_8px_30px_rgba(0,0,0,0.7)] z-40 cursor-pointer select-none active:scale-[0.99] transition-transform overflow-hidden"
+        className="md:hidden fixed bottom-[calc(max(env(safe-area-inset-bottom,0px),0.5rem)+4.0rem)] left-2.5 right-2.5 min-h-[80px] bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl flex items-center justify-between px-3 shadow-[0_8px_30px_rgba(0,0,0,0.7)] z-40 cursor-pointer select-none active:scale-[0.99] transition-transform"
       >
         {/* Top hairline progress bar */}
-        <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-white/10">
+        <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-white/10 rounded-t-2xl overflow-hidden">
           <div 
             className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 transition-all duration-150" 
             style={{ width: `${progressPercent}%` }} 
