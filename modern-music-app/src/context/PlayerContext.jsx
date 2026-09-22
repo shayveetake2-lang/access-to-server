@@ -344,20 +344,7 @@ export function PlayerProvider({ children }) {
         navigator.mediaSession.setActionHandler('nexttrack', () => {
           playNext();
         });
-        // Seek handlers keep the iOS/Android audio daemon from throttling the process
-        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-          if (audioRef.current) {
-            audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - (details.seekOffset || 10));
-          }
-        });
-        navigator.mediaSession.setActionHandler('seekforward', (details) => {
-          if (audioRef.current) {
-            audioRef.current.currentTime = Math.min(
-              audioRef.current.duration || Infinity,
-              audioRef.current.currentTime + (details.seekOffset || 10)
-            );
-          }
-        });
+
       } catch (err) {
         console.debug('MediaSession error:', err);
       }

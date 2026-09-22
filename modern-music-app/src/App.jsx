@@ -21,7 +21,7 @@ import AdminSettings from './pages/AdminSettings';
 import AdminRoute from './components/AdminRoute';
 
 import MobileNav from './components/MobileNav';
-import ChatWidget from './components/ChatWidget';
+
 import ErrorBoundary from './components/ErrorBoundary';
 
 function ProtectedLayout() {
@@ -65,7 +65,7 @@ function ProtectedLayout() {
       <ErrorBoundary fallback={null}>
         <StickyPlayer />
       </ErrorBoundary>
-      <ChatWidget />
+
       <MobileNav />
     </div>
   );

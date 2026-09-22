@@ -147,6 +147,18 @@ export default function StickyPlayer() {
     };
   }, []);
 
+  // Ensure iOS lock screen displays previous/next track icons instead of 10s skip icons
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
+      navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+      
+      // Explicitly unbind seek handlers to force iOS to show the track skip icons
+      navigator.mediaSession.setActionHandler('seekbackward', null);
+      navigator.mediaSession.setActionHandler('seekforward', null);
+    }
+  }, [playNext, playPrev]);
+
   // Tear down the Web Audio graph on unmount so nodes/context don't leak
   // (StickyPlayer is normally persistent, but this guards HMR/route teardown).
   useEffect(() => {
