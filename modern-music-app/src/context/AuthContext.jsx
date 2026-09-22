@@ -7,6 +7,23 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+// Resolves the authoritative admin flag straight from the Ampache server's
+// `adminRole` field (falling back to the reserved-username allowlist only if
+// the getUser lookup fails outright), so a role promotion/demotion made on
+// the server is always honored — never just trusted from a stale local cache.
+async function resolveIsAdmin(username, authParams) {
+  let isAdmin = ['admin', 'musicadmin', 'serveradmin'].includes((username || '').toLowerCase());
+  try {
+    const userRes = await fetch(getAmpacheUrl(`action=getUser&username=${encodeURIComponent(username)}&${authParams}`));
+    const userData = await userRes.json();
+    const userObj = userData?.['subsonic-response']?.user;
+    if (userObj) {
+      isAdmin = userObj.adminRole === true || userObj.adminRole === 'true' || userObj.adminRole === 1;
+    }
+  } catch (e) {}
+  return isAdmin;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,9 +35,13 @@ export function AuthProvider({ children }) {
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        verifyToken(parsed).then(isValid => {
+        verifyToken(parsed).then(async (isValid) => {
           if (isValid) {
-            const isAdmin = parsed.isAdmin || ['admin', 'musicadmin', 'serveradmin'].includes((parsed.username || '').toLowerCase());
+            // Re-check adminRole against the server on every reload instead of
+            // trusting the cached flag — otherwise a role change made after the
+            // user's last full login never takes effect until they log out/in.
+            const authParams = getSubsonicAuthParams(parsed);
+            const isAdmin = await resolveIsAdmin(parsed.username, authParams);
             const updated = { ...parsed, isAdmin, role: isAdmin ? 'admin' : 'user' };
             setUser(updated);
             // Ensure persisted across all browser sessions/tabs
@@ -61,15 +82,7 @@ export function AuthProvider({ children }) {
     const authParams = getSubsonicAuthParams({ username, password });
     const isValid = await verifyToken({ username, password });
     if (isValid) {
-      let isAdmin = ['admin', 'musicadmin', 'serveradmin'].includes(username.toLowerCase());
-      try {
-        const userRes = await fetch(getAmpacheUrl(`action=getUser&username=${encodeURIComponent(username)}&${authParams}`));
-        const userData = await userRes.json();
-        const userObj = userData?.['subsonic-response']?.user;
-        if (userObj && (userObj.adminRole === true || userObj.adminRole === 'true' || userObj.adminRole === 1)) {
-          isAdmin = true;
-        }
-      } catch (e) {}
+      const isAdmin = await resolveIsAdmin(username, authParams);
 
       const credentials = { 
         username, 

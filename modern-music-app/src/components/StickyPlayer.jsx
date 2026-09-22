@@ -279,6 +279,13 @@ export default function StickyPlayer() {
     }
   };
 
+  const handlePlayPause = () => {
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(() => {});
+    }
+    togglePlay();
+  };
+
   const handleToggleMute = () => {
     if (volume > 0) {
       prevVolumeRef.current = volume;
@@ -398,19 +405,20 @@ export default function StickyPlayer() {
           </div>
         </div>
 
-        {/* Action Buttons: Like + Add to Playlist + Play/Pause & Next Button */}
+        {/* Action Buttons: Output Selector + Like + Add to Playlist + Play/Pause & Next Button */}
         <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <HeartButton song={currentTrack} size={18} compact className="w-12 h-12 rounded-full hover:bg-white/5 flex items-center justify-center" />
+          <OutputMenu compact align="right" />
+          <HeartButton song={currentTrack} size={18} compact className="hidden sm:flex w-12 h-12 rounded-full hover:bg-white/5 items-center justify-center" />
           <button 
             onClick={() => openAddToPlaylistModal(currentTrack.id)} 
-            className="w-12 h-12 text-slate-300 hover:text-purple-300 active:scale-90 transition-all rounded-full hover:bg-white/5 flex items-center justify-center"
+            className="hidden sm:flex w-12 h-12 text-slate-300 hover:text-purple-300 active:scale-90 transition-all rounded-full hover:bg-white/5 items-center justify-center"
             title="Add to Playlist"
             aria-label="Add to Playlist"
           >
             <Plus size={18} />
           </button>
           <button 
-            onClick={togglePlay} 
+            onClick={handlePlayPause} 
             className="w-12 h-12 rounded-full bg-purple-500 active:bg-purple-400 text-white flex items-center justify-center shadow-md active:scale-95 transition-all"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
@@ -565,7 +573,7 @@ export default function StickyPlayer() {
                 <SkipBack size={26} fill="currentColor" />
               </button>
               <button 
-                onClick={togglePlay} 
+                onClick={handlePlayPause} 
                 className="w-16 h-16 rounded-full bg-purple-500 active:bg-purple-400 text-white flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.5)] active:scale-95 transition-all"
                 aria-label={isPlaying ? 'Pause' : 'Play'}
               >
@@ -687,7 +695,7 @@ export default function StickyPlayer() {
               <SkipBack size={20} fill="currentColor" />
             </button>
             <button 
-              onClick={togglePlay} 
+              onClick={handlePlayPause} 
               className="w-10 h-10 rounded-full bg-purple-500 hover:bg-purple-400 flex items-center justify-center text-white shadow-[0_0_20px_rgba(168,85,247,0.5)] transition hover:scale-105 active:scale-95"
               title={isPlaying ? "Pause (Space)" : "Play (Space)"}
             >

@@ -18,6 +18,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
 import AdminSettings from './pages/AdminSettings';
+import AdminRoute from './components/AdminRoute';
 
 import MobileNav from './components/MobileNav';
 import ChatWidget from './components/ChatWidget';
@@ -54,8 +55,8 @@ function ProtectedLayout() {
               <Route path="/public-playlists" element={<PublicPlaylists />} />
               <Route path="/help" element={<Help />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/admin" element={<AdminSettings />} />
-              <Route path="/admin/metadata" element={<AdminSettings />} />
+              <Route path="/admin" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+              <Route path="/admin/metadata" element={<AdminRoute><AdminSettings /></AdminRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </ErrorBoundary>

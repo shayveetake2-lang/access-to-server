@@ -262,6 +262,12 @@ export default function AlbumDetails() {
                       >
                         <ListPlus size={16} />
                       </button>
+                      <HeartButton 
+                        song={song} 
+                        size={16} 
+                        compact 
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 active:scale-95 transition-all shadow-sm shrink-0"
+                      />
                       <button 
                         onClick={(e) => { 
                           e.stopPropagation(); 

@@ -79,7 +79,7 @@ export default function TopBar() {
   };
 
   return (
-    <header className="h-16 md:h-20 flex items-center justify-between px-3 sm:px-4 md:px-8 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-30 pt-safe gap-2 sm:gap-3">
+    <header className="h-16 md:h-20 flex items-center justify-between px-3 sm:px-4 md:px-8 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50 pointer-events-auto pt-[env(safe-area-inset-top)] gap-2 sm:gap-3">
       
       {/* Mobile Brand Logo */}
       <Link to="/" className="md:hidden flex items-center gap-2 shrink-0 group focus:outline-none" title="Aether Audio Home">

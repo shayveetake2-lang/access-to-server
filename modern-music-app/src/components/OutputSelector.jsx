@@ -261,9 +261,11 @@ export default function OutputMenu({ compact = false }) {
 
       {/* Interactive Dropdown Menu */}
       {isOpen && (
-        <div
-          className="absolute bottom-full right-0 mb-2 z-50 w-[min(20rem,calc(100vw-1rem))] rounded-2xl bg-slate-950/98 backdrop-blur-2xl border border-white/15 p-2.5 shadow-[0_15px_40px_rgba(0,0,0,0.85)] animate-in fade-in zoom-in-95 duration-150"
-        >
+        <>
+          <div className="fixed inset-0 z-[55] md:hidden" onClick={() => setIsOpen(false)} />
+          <div
+            className="fixed bottom-0 left-0 w-full z-[60] max-h-64 overflow-y-auto rounded-t-2xl bg-slate-950/98 backdrop-blur-2xl border-t border-white/15 p-2.5 shadow-[0_-10px_40px_rgba(0,0,0,0.85)] animate-in slide-in-from-bottom-4 duration-150 md:absolute md:bottom-full md:left-auto md:right-0 md:mb-2 md:w-[min(20rem,calc(100vw-1rem))] md:max-h-[70vh] md:rounded-2xl md:border md:shadow-[0_15px_40px_rgba(0,0,0,0.85)] md:animate-in md:fade-in md:zoom-in-95"
+          >
           {/* Header */}
           <div className="flex items-center justify-between px-2.5 py-2 border-b border-white/10 mb-1.5">
             <div className="flex items-center gap-1.5">
@@ -355,6 +357,7 @@ export default function OutputMenu({ compact = false }) {
             </div>
           )}
         </div>
+        </>
       )}
     </div>
   );
