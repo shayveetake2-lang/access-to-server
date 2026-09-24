@@ -16,7 +16,7 @@ function requireAuth() {
     $authHeader = $headers['Authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     
     $token = '';
-    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+    if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $matches)) {
         $token = trim($matches[1]);
     }
     if (empty($token) && !empty($_POST['token'])) {
@@ -27,33 +27,23 @@ function requireAuth() {
     $adminLogged = !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
 
     if (!empty($token)) {
-        $parts = explode('.', $token);
-        if (count($parts) === 3) {
-            $header = $parts[0];
-            $payload = $parts[1];
-            $signature_provided = $parts[2];
-            $jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
-            $signature_expected = base64_encode(hash_hmac('sha256', "$header.$payload", $jwt_secret, true));
-            if (!hash_equals($signature_expected, $signature_provided)) {
-                http_response_code(401);
-                echo json_encode(['status' => 'error', 'message' => 'Invalid JWT signature.']);
-                exit;
-            }
-            $decoded_payload = json_decode(base64_decode($payload), true);
-            if (isset($decoded_payload['exp']) && $decoded_payload['exp'] < time()) {
-                http_response_code(401);
-                echo json_encode(['status' => 'error', 'message' => 'JWT token expired.']);
-                exit;
-            }
+        require_once __DIR__ . '/jwt_utils.php';
+        $decoded_payload = verifyAndDecodeJwt($token);
+        if ($decoded_payload !== null) {
             // Populate session
             $_SESSION['auth_token'] = $token;
-            $_SESSION['user_id'] = $decoded_payload['sub'] ?? 0;
+            $_SESSION['user_id'] = $decoded_payload['user_id'] ?? $decoded_payload['sub'] ?? 0;
             $_SESSION['username'] = $decoded_payload['username'] ?? '';
             $_SESSION['role'] = $decoded_payload['role'] ?? 'member';
             $_SESSION['admin_logged_in'] = ($_SESSION['role'] === 'admin');
             $sessionToken = $token;
             $adminLogged = $_SESSION['admin_logged_in'];
         } else {
+            if (count(explode('.', $token)) === 3) {
+                http_response_code(401);
+                echo json_encode(['status' => 'error', 'message' => 'Invalid or expired JWT token.']);
+                exit;
+            }
             // Legacy token fallback for DB check
             try {
                 require_once __DIR__ . '/../../config/config.php';

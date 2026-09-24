@@ -14,45 +14,46 @@ function sendMsg($msg) {
 }
 
 // ==========================================
-// 1. Token Verification Check (JWT via Query)
+// 1. Dual-Mode Token Verification (JWT via Header or Query for SSE)
 // ==========================================
-$jwt = $_GET['token'] ?? '';
+require_once __DIR__ . '/../auth/jwt_utils.php';
+
+$jwt = '';
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+
+if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $matches)) {
+    $jwt = trim($matches[1]);
+} elseif (!empty($_GET['token'])) {
+    $jwt = trim($_GET['token']);
+} elseif (!empty($_POST['token'])) {
+    $jwt = trim($_POST['token']);
+}
+
 if (empty($jwt)) {
     http_response_code(401);
-    echo "data: Error 401: Unauthorized. Token missing.\n\n";
+    echo "data: Error 401: Unauthorized. Authentication token missing.\n\n";
     exit;
 }
 
-$parts = explode('.', $jwt);
-if (count($parts) !== 3) {
+$decoded_payload = verifyAndDecodeJwt($jwt);
+if ($decoded_payload === null) {
     http_response_code(403);
-    echo "data: Error 403: Forbidden. Invalid token format.\n\n";
+    echo "data: Error 403: Forbidden. Invalid or expired token signature.\n\n";
     exit;
 }
 
-$header = $parts[0];
-$payload = $parts[1];
-$signature_provided = $parts[2];
-
-$jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
-$signature_expected = base64_encode(hash_hmac('sha256', "$header.$payload", $jwt_secret, true));
-
-if (!hash_equals($signature_expected, $signature_provided)) {
+// Strict Role-Based Access Control: Deployment requires admin privileges
+$userRole = $decoded_payload['role'] ?? 'user';
+if ($userRole !== 'admin') {
     http_response_code(403);
-    echo "data: Error 403: Forbidden. Invalid token signature.\n\n";
+    echo "data: Error 403: Forbidden. Administrator privileges required to execute deployments.\n\n";
     exit;
 }
 
-$decoded_payload = json_decode(base64_decode($payload), true);
-if (isset($decoded_payload['exp']) && $decoded_payload['exp'] < time()) {
-    http_response_code(401);
-    echo "data: Error 401: Unauthorized. Token expired.\n\n";
-    exit;
-}
-
-// Set session for downstream code
+// Set session for downstream quota & ownership handling
 $_SESSION['username'] = $decoded_payload['username'] ?? 'admin';
-$_SESSION['role'] = $decoded_payload['role'] ?? 'user';
+$_SESSION['role'] = 'admin';
 
 // ==========================================
 // 2. Set SSE Headers for Streaming Output

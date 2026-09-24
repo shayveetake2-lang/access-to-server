@@ -113,10 +113,13 @@ function initProfileDropdown() {
 }
 
 function handlePlexRouting(e) {
-    e.preventDefault();
-    if (window.location.hostname === "10.247.192.231" || window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
-        window.open("http://10.247.192.231:32400/web", "_blank");
-    } else {
+    if (e && e.preventDefault) e.preventDefault();
+    const host = window.location.hostname;
+    const isLocal = host === "127.0.0.1" || host === "localhost" || host.startsWith("192.168.") || host.startsWith("10.");
+    if (!isLocal || host.includes('serverflow') || host.includes('cloudflare')) {
         window.open("https://app.plex.tv/web", "_blank");
+    } else {
+        window.open("http://" + host + ":32400/web", "_blank");
     }
 }
+window.handlePlexRouting = handlePlexRouting;

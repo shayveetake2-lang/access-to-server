@@ -49,8 +49,7 @@ function getProxyPdo() {
     $hosts = array_unique(array_filter([
         $host,
         '127.0.0.1',
-        'localhost',
-        '10.247.192.231'
+        'localhost'
     ]));
     $ports = array_unique(array_filter([
         $port,
@@ -1473,9 +1472,7 @@ if ($action === 'register') {
     
     $candidates = [
         "http://127.0.0.1:8888/ampache/public/rest/index.php",
-        "http://10.247.192.231:8888/ampache/public/rest/index.php",
-        "http://127.0.0.1:8888/access-to-server/ampache/public/rest/index.php",
-        "http://10.247.192.231:8888/access-to-server/ampache/public/rest/index.php"
+        "http://127.0.0.1:8888/access-to-server/ampache/public/rest/index.php"
     ];
 
     $response = false;

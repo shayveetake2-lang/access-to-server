@@ -75,7 +75,7 @@ $action = $_GET['action'] ?? '';
 
 // Helper to connect to Ampache database for catalog reads
 function getAmpacheConnection() {
-    $hosts = ['127.0.0.1', '10.247.192.231'];
+    $hosts = ['127.0.0.1', 'localhost'];
     $creds = [
         ['ampache_user', 'password'],
         ['root', 'root'],

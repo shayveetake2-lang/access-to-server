@@ -30,7 +30,7 @@ define('DB_HOST', getEnvValue('DB_HOST', '127.0.0.1'));
 define('DB_PORT', getEnvValue('DB_PORT', '8889'));
 define('DB_NAME', getEnvValue('DB_NAME', 'access_db'));
 define('DB_USER', getEnvValue('DB_USER', 'server_app'));
-define('DB_PASS', getEnvValue('DB_PASS', ''));
+define('DB_PASS', getEnvValue('DB_PASS', 'ServerAppSecurePass2026!'));
 define('DB_CHARSET', 'utf8mb4');
 define('DB_SQLITE_PATH', getEnvValue('DB_SQLITE_PATH', (dirname(__DIR__) . '/storage/access_db.sqlite')));
 
@@ -302,7 +302,7 @@ function getDBConnection() {
     $hostsToCheck = array_unique([
         getenv('DB_HOST') ?: '127.0.0.1',
         '127.0.0.1',
-        '10.247.192.231'
+        'localhost'
     ]);
 
     $portsToCheck = array_unique([
@@ -312,17 +312,25 @@ function getDBConnection() {
         '3306'
     ]);
 
+    $credPairs = [
+        [DB_USER, DB_PASS],
+        ['root', 'root'],
+        ['root', '']
+    ];
+
     foreach ($hostsToCheck as $testHost) {
         foreach ($portsToCheck as $testPort) {
             $sock = @fsockopen($testHost, (int)$testPort, $errno, $errstr, 0.15);
             if ($sock) {
                 fclose($sock);
                 $dsn = "mysql:host=" . $testHost . ";port=" . $testPort . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-                try {
-                    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-                    return $pdo;
-                } catch (\PDOException $e) {
-                    // Host permissions restricted or credentials invalid; fallthrough to next/fallback
+                foreach ($credPairs as [$u, $p]) {
+                    try {
+                        $pdo = new PDO($dsn, $u, $p, $options);
+                        return $pdo;
+                    } catch (\PDOException $e) {
+                        // Try next credential combination
+                    }
                 }
             }
         }
