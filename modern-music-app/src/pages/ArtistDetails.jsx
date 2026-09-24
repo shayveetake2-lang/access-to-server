@@ -5,7 +5,7 @@ import { User, Disc, Play, Shuffle, Clock, Plus, ListPlus, Volume2, ChevronDown,
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { fetchArtistDetails, fetchAllArtists, fetchAlbumDetails, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 import { dedupeSongs } from '../utils/dedupeSongs';
 import { extractPrimaryArtistName, normalizeArtistKey } from '../utils/artistHelper';
 import StarButton from '../components/StarButton';
@@ -36,11 +36,10 @@ export default function ArtistDetails() {
       setLoading(true);
       try {
         const auth = getAuthParams(user);
-        // 1. Fetch main artist details
-        const res = await fetch(getAmpacheUrl(`action=getArtist&id=${id}&${auth}`));
-        const data = await res.json();
+        // 1. Fetch main artist details (database-proxy first, Subsonic fallback)
+        const mainArtist = await fetchArtistDetails(id, user);
 
-        if (data?.['subsonic-response']?.status !== 'ok' || !data['subsonic-response']?.artist) {
+        if (!mainArtist) {
           if (isMounted) {
             setArtist(null);
             setLoading(false);
@@ -48,7 +47,6 @@ export default function ArtistDetails() {
           return;
         }
 
-        const mainArtist = data['subsonic-response'].artist;
         if (!isMounted) return;
         setArtist(mainArtist);
 
@@ -58,27 +56,21 @@ export default function ArtistDetails() {
         // 2. Discover any featured/similar artist entries in the catalog to merge
         let aliasArtistIds = [];
         try {
-          const allArtistsRes = await fetch(getAmpacheUrl(`action=getArtists&${auth}`));
-          const allArtistsData = await allArtistsRes.json();
-          if (allArtistsData?.['subsonic-response']?.status === 'ok') {
-            const index = allArtistsData['subsonic-response'].artists?.index || [];
-            let possibleRelated = [];
-            index.forEach(idx => {
-              (idx.artist || []).forEach(otherArtist => {
-                if (String(otherArtist.id) !== String(id)) {
-                  const otherKey = normalizeArtistKey(extractPrimaryArtistName(otherArtist.name));
-                  if (otherKey === primaryKey) {
-                    aliasArtistIds.push(otherArtist.id);
-                  } else {
-                    possibleRelated.push(otherArtist);
-                  }
-                }
-              });
-            });
-            if (isMounted) {
-              // Just pick some other artists randomly to simulate "Top / Related Artists"
-              setRelatedArtists(possibleRelated.sort(() => 0.5 - Math.random()).slice(0, 6));
+          const { artists: allArtistsList } = await fetchAllArtists(user);
+          let possibleRelated = [];
+          (allArtistsList || []).forEach(otherArtist => {
+            if (String(otherArtist.id) !== String(id)) {
+              const otherKey = normalizeArtistKey(extractPrimaryArtistName(otherArtist.name));
+              if (otherKey === primaryKey) {
+                aliasArtistIds.push(otherArtist.id);
+              } else {
+                possibleRelated.push(otherArtist);
+              }
             }
+          });
+
+          if (isMounted) {
+            setRelatedArtists(possibleRelated.sort(() => 0.5 - Math.random()).slice(0, 6));
           }
         } catch (e) {
           console.debug("Error checking alias artists:", e);
@@ -92,15 +84,11 @@ export default function ArtistDetails() {
 
         if (aliasArtistIds.length > 0) {
           try {
-            const aliasFetches = aliasArtistIds.map(aliasId => 
-              fetch(getAmpacheUrl(`action=getArtist&id=${aliasId}&${auth}`))
-                .then(r => r.json())
-                .catch(() => null)
-            );
-            const aliasResponses = await Promise.all(aliasFetches);
-            aliasResponses.forEach(aliasRes => {
-              if (aliasRes?.['subsonic-response']?.status === 'ok' && aliasRes['subsonic-response']?.artist?.album) {
-                const rawAlias = aliasRes['subsonic-response'].artist.album;
+            const aliasFetches = aliasArtistIds.map(aliasId => fetchArtistDetails(aliasId, user));
+            const aliasArtists = await Promise.all(aliasFetches);
+            aliasArtists.forEach(aliasArt => {
+              if (aliasArt?.album) {
+                const rawAlias = aliasArt.album;
                 const aliasList = Array.isArray(rawAlias) ? rawAlias : (rawAlias ? [rawAlias] : []);
                 combinedAlbums = [...combinedAlbums, ...aliasList];
               }
@@ -138,15 +126,11 @@ export default function ArtistDetails() {
         setLoadingTracks(true);
         let collectedAlbumSongs = [];
         try {
-          const albumTracksFetches = uniqueAlbums.map(album =>
-            fetch(getAmpacheUrl(`action=getAlbum&id=${album.id}&${auth}`))
-              .then(r => r.json())
-              .catch(() => null)
-          );
+          const albumTracksFetches = uniqueAlbums.map(album => fetchAlbumDetails(album.id, user));
           const albumResponses = await Promise.all(albumTracksFetches);
-          albumResponses.forEach(albumRes => {
-            if (albumRes?.['subsonic-response']?.status === 'ok' && albumRes['subsonic-response']?.album?.song) {
-              const songs = albumRes['subsonic-response'].album.song;
+          albumResponses.forEach(albumObj => {
+            if (albumObj?.song) {
+              const songs = albumObj.song;
               if (Array.isArray(songs)) {
                 collectedAlbumSongs = [...collectedAlbumSongs, ...songs];
               } else if (songs) {

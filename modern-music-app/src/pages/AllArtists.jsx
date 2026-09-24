@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useLayoutEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Tag, Users, Sparkles } from 'lucide-react';
 import { mergeArtists } from '../utils/artistHelper';
-import { getAmpacheUrl } from '../utils/api';
+import { fetchAllArtists, fetchAllAlbums } from '../utils/api';
 import { ArtistGrid } from '../components/ArtistGrid';
 
 export default function AllArtists() {
@@ -39,30 +39,15 @@ export default function AllArtists() {
     let isMounted = true;
     const fetchData = async () => {
       try {
-        const auth = getAuthParams(user);
-        // Fetch artists and albums in parallel to extract genres and album associations
-        const [artistsRes, albumsRes] = await Promise.all([
-          fetch(getAmpacheUrl(`action=getArtists&${auth}`)).then(r => r.json()).catch(() => null),
-          fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}`)).then(r => r.json()).catch(() => null)
+        // Fetch artists and albums in parallel with database-proxy first & Subsonic fallback
+        const [artistsData, albumsData] = await Promise.all([
+          fetchAllArtists(user),
+          fetchAllAlbums(user)
         ]);
 
         if (isMounted) {
-          if (artistsRes?.['subsonic-response']?.status === 'ok') {
-            const index = artistsRes['subsonic-response'].artists?.index || [];
-            let all = [];
-            index.forEach(idx => {
-              if (idx.artist) {
-                const artList = Array.isArray(idx.artist) ? idx.artist : [idx.artist];
-                all = [...all, ...artList];
-              }
-            });
-            setRawArtists(all);
-          }
-
-          if (albumsRes?.['subsonic-response']?.status === 'ok') {
-            const albumList = albumsRes['subsonic-response'].albumList?.album || [];
-            setRawAlbums(Array.isArray(albumList) ? albumList : (albumList ? [albumList] : []));
-          }
+          setRawArtists(artistsData.artists || []);
+          setRawAlbums(albumsData.albums || []);
         }
       } catch (err) {
         console.error("Failed to load artists:", err);

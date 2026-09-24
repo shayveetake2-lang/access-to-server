@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
-import { getAmpacheUrl, getSubsonicAuthParams } from '../utils/api';
+import { getAmpacheUrl, getSubsonicAuthParams, getApiProxyUrl } from '../utils/api';
 
 const LikedSongsContext = createContext();
 
@@ -49,8 +49,27 @@ export function LikedSongsProvider({ children }) {
   const fetchStarred = useCallback(async () => {
     if (!user) return;
     setLoadingStarred(true);
+    const uParam = user.username ? `&u=${encodeURIComponent(user.username)}` : '';
+    const cacheBust = `_t=${Date.now()}`;
+
+    // 1. Try high-speed database proxy first
     try {
-      // Always generate fresh auth params for getStarred to avoid stale token issues
+      const res = await fetch(`${getApiProxyUrl()}?action=getStarred2${uParam}&${cacheBust}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data?.status === 'ok') {
+        const raw = data.songs || data['subsonic-response']?.starred2?.song;
+        const songs = (Array.isArray(raw) ? raw : (raw ? [raw] : [])).filter(Boolean);
+        setLikedSongs(songs);
+        setLikedIds(new Set(songs.filter(s => s && s.id).map(s => String(s.id))));
+        setLoadingStarred(false);
+        return;
+      }
+    } catch (proxyErr) {
+      console.debug('fetchStarred proxy fallback:', proxyErr);
+    }
+
+    // 2. Subsonic fallback
+    try {
       const auth = getSubsonicAuthParams(user, true);
       const res = await fetch(getAmpacheUrl(`action=getStarred2&${auth}`));
       const data = await res.json();
@@ -90,7 +109,6 @@ export function LikedSongsProvider({ children }) {
 
     if (!wasLiked) {
       setLikedSongs(prev => {
-        // Don't duplicate
         if (prev.some(s => String(s.id) === id)) return prev;
         return [song, ...prev];
       });
@@ -98,34 +116,53 @@ export function LikedSongsProvider({ children }) {
       setLikedSongs(prev => prev.filter(s => String(s.id) !== id));
     }
 
+    let success = false;
+    const uParam = user.username ? `&u=${encodeURIComponent(user.username)}` : '';
+
+    // 1. Try high-speed database proxy first (immediate persistence in user_flag)
     try {
-      // Force fresh auth params on every star/unstar call (critical for multi-user sync)
-      const auth = getSubsonicAuthParams(user, true);
-      const res = await fetch(getAmpacheUrl(`action=${action}&id=${encodeURIComponent(id)}&${auth}`));
-      const data = await res.json();
-      if (data?.['subsonic-response']?.status !== 'ok') {
-        // Revert on failure
-        setLikedIds(prev => {
-          const next = new Set(prev);
-          if (wasLiked) {
-            next.add(id);
-          } else {
-            next.delete(id);
-          }
-          return next;
-        });
-        if (!wasLiked) {
-          setLikedSongs(prev => prev.filter(s => String(s.id) !== id));
-        } else {
-          setLikedSongs(prev => [song, ...prev]);
-        }
-        showToast('Failed to update liked songs', 'error');
-      } else {
-        showToast(wasLiked ? '💔 Removed from Liked Songs' : '❤️ Added to Liked Songs', 'success');
+      const pRes = await fetch(`${getApiProxyUrl()}?action=${action}&id=${encodeURIComponent(id)}${uParam}`);
+      const pData = await pRes.json();
+      if (pData?.status === 'ok') {
+        success = true;
       }
-    } catch (err) {
-      console.debug('toggleLike network error:', err);
-      showToast('Network error — try again', 'error');
+    } catch (e) {
+      console.debug('toggleLike proxy notice:', e);
+    }
+
+    // 2. Subsonic fallback if proxy did not succeed
+    if (!success) {
+      try {
+        const auth = getSubsonicAuthParams(user, true);
+        const res = await fetch(getAmpacheUrl(`action=${action}&id=${encodeURIComponent(id)}&${auth}`));
+        const data = await res.json();
+        if (data?.['subsonic-response']?.status === 'ok') {
+          success = true;
+        }
+      } catch (err) {
+        console.debug('toggleLike Subsonic fallback notice:', err);
+      }
+    }
+
+    if (!success) {
+      // Revert optimistic update on failure
+      setLikedIds(prev => {
+        const next = new Set(prev);
+        if (wasLiked) {
+          next.add(id);
+        } else {
+          next.delete(id);
+        }
+        return next;
+      });
+      if (!wasLiked) {
+        setLikedSongs(prev => prev.filter(s => String(s.id) !== id));
+      } else {
+        setLikedSongs(prev => [song, ...prev]);
+      }
+      showToast('Failed to update liked songs', 'error');
+    } else {
+      showToast(wasLiked ? '💔 Removed from Liked Songs' : '❤️ Added to Liked Songs', 'success');
     }
   }, [user, likedIds, showToast]);
 

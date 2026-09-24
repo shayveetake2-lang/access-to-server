@@ -5,6 +5,14 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, Range, X-Requested-With');
+header('Access-Control-Expose-Headers: Content-Range, Accept-Ranges, Content-Length');
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 // Helper to load configuration from .env
 function getProxyEnv($key, $default = null) {
@@ -31,31 +39,58 @@ function getProxyPdo() {
     static $pdo = null;
     if ($pdo !== null) return $pdo;
 
-    $host = defined('AMPACHE_DB_HOST') ? AMPACHE_DB_HOST : getProxyEnv('AMPACHE_DB_HOST', '127.0.0.1');
-    $port = defined('AMPACHE_DB_PORT') ? AMPACHE_DB_PORT : getProxyEnv('AMPACHE_DB_PORT', '8889');
-    $dbname = defined('AMPACHE_DB_NAME') ? AMPACHE_DB_NAME : getProxyEnv('AMPACHE_DB_NAME', 'ampache');
-    $user = defined('AMPACHE_DB_USER') ? AMPACHE_DB_USER : getProxyEnv('AMPACHE_DB_USER', 'ampache_user');
-    $pass = defined('AMPACHE_DB_PASS') ? AMPACHE_DB_PASS : getProxyEnv('AMPACHE_DB_PASS', 'password');
+    $cfgFile = __DIR__ . '/../ampache/config/ampache.cfg.php';
+    $cfg = file_exists($cfgFile) ? @parse_ini_file($cfgFile) : [];
 
-    $hosts = array_unique([$host, '127.0.0.1', 'localhost']);
+    $host = !empty($cfg['database_hostname']) ? $cfg['database_hostname'] : (defined('AMPACHE_DB_HOST') ? AMPACHE_DB_HOST : getProxyEnv('AMPACHE_DB_HOST', '127.0.0.1'));
+    $port = !empty($cfg['database_port']) ? $cfg['database_port'] : (defined('AMPACHE_DB_PORT') ? AMPACHE_DB_PORT : getProxyEnv('AMPACHE_DB_PORT', '8889'));
+    $dbname = !empty($cfg['database_name']) ? $cfg['database_name'] : (defined('AMPACHE_DB_NAME') ? AMPACHE_DB_NAME : getProxyEnv('AMPACHE_DB_NAME', 'ampache'));
+
+    $hosts = array_unique(array_filter([
+        $host,
+        '127.0.0.1',
+        'localhost',
+        '10.247.192.231'
+    ]));
+    $ports = array_unique(array_filter([
+        $port,
+        '8889',
+        '3306',
+        '3307'
+    ]));
+
+    $creds = [
+        [!empty($cfg['database_username']) ? $cfg['database_username'] : 'server_app', !empty($cfg['database_password']) ? $cfg['database_password'] : 'password'],
+        ['root', 'root'],
+        ['server_app', 'password'],
+        ['ampache_user', 'password'],
+        ['root', '']
+    ];
+
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_TIMEOUT => 2
     ];
 
     foreach ($hosts as $h) {
-        try {
-            $pdo = new PDO("mysql:host={$h};port={$port};dbname={$dbname};charset=utf8mb4", $user, $pass, $options);
-            return $pdo;
-        } catch (\Exception $e) {}
+        foreach ($ports as $p) {
+            foreach ($creds as [$u, $pwd]) {
+                try {
+                    $pdo = new PDO("mysql:host={$h};port={$p};dbname={$dbname};charset=utf8mb4", $u, $pwd, $options);
+                    return $pdo;
+                } catch (\Exception $e) {}
+            }
+        }
     }
 
     $socket = '/Applications/MAMP/tmp/mysql/mysql.sock';
     if (file_exists($socket)) {
-        try {
-            $pdo = new PDO("mysql:unix_socket={$socket};dbname={$dbname};charset=utf8mb4", $user, $pass, $options);
-            return $pdo;
-        } catch (\Exception $e) {}
+        foreach ($creds as [$u, $pwd]) {
+            try {
+                $pdo = new PDO("mysql:unix_socket={$socket};dbname={$dbname};charset=utf8mb4", $u, $pwd, $options);
+                return $pdo;
+            } catch (\Exception $e) {}
+        }
     }
 
     return null;
@@ -63,6 +98,460 @@ function getProxyPdo() {
 
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? ($input['action'] ?? '');
+
+// ── Audio Streaming Endpoint (Hardware-Accelerated Seekable Stream with HTTP 206) ──
+if ($action === 'stream' || $action === 'download') {
+    $rawSongId = $_GET['id'] ?? ($input['id'] ?? ($_GET['songId'] ?? ($input['songId'] ?? 0)));
+    $cleanSongId = intval(preg_replace('/^[^0-9]+/', '', (string)$rawSongId));
+    if ($cleanSongId >= 300000000) {
+        $cleanSongId = $cleanSongId % 100000000;
+    } elseif ($cleanSongId >= 100000000) {
+        $cleanSongId = $cleanSongId % 100000000;
+    }
+
+    if ($cleanSongId <= 0) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Valid song ID required for streaming.']);
+        exit;
+    }
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare("SELECT file, size, bitrate, time, title FROM song WHERE id = :id LIMIT 1");
+    $stmt->execute([':id' => $cleanSongId]);
+    $song = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$song || empty($song['file'])) {
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'Song not found in library.']);
+        exit;
+    }
+
+    $filePath = $song['file'];
+    if (!file_exists($filePath) || !is_readable($filePath)) {
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'Audio file missing from server storage disk.']);
+        exit;
+    }
+
+    $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+    $mimes = [
+        'mp3' => 'audio/mpeg',
+        'flac' => 'audio/flac',
+        'm4a' => 'audio/mp4',
+        'aac' => 'audio/aac',
+        'ogg' => 'audio/ogg',
+        'oga' => 'audio/ogg',
+        'opus' => 'audio/opus',
+        'wav' => 'audio/wav',
+        'wma' => 'audio/x-ms-wma'
+    ];
+    $mime = $mimes[$ext] ?? 'audio/mpeg';
+
+    $size = filesize($filePath);
+    $start = 0;
+    $end = $size - 1;
+    $isRange = false;
+
+    if (isset($_SERVER['HTTP_RANGE'])) {
+        $range = trim($_SERVER['HTTP_RANGE']);
+        if (preg_match('/bytes=\h*(\d+)-(\d*)[\D.*]?/i', $range, $matches)) {
+            $start = intval($matches[1]);
+            if (!empty($matches[2])) {
+                $end = intval($matches[2]);
+            }
+            if ($start > $end || $start >= $size) {
+                while (ob_get_level()) { ob_end_clean(); }
+                header('HTTP/1.1 416 Range Not Satisfiable');
+                header("Content-Range: bytes */$size");
+                exit;
+            }
+            $isRange = true;
+        }
+    }
+
+    $length = $end - $start + 1;
+    while (ob_get_level()) { ob_end_clean(); }
+
+    if ($isRange) {
+        header('HTTP/1.1 206 Partial Content');
+        header("Content-Range: bytes $start-$end/$size");
+    } else {
+        header('HTTP/1.1 200 OK');
+    }
+
+    header('Content-Type: ' . $mime, true);
+    header('Content-Length: ' . $length, true);
+    header('Accept-Ranges: bytes');
+    header('Cache-Control: public, max-age=604800');
+
+    $fp = @fopen($filePath, 'rb');
+    if ($fp) {
+        if ($start > 0) {
+            fseek($fp, $start);
+        }
+        $bytesToSend = $length;
+        $bufferSize = 64 * 1024;
+        while (!feof($fp) && $bytesToSend > 0 && (connection_status() === 0)) {
+            $readLength = ($bytesToSend > $bufferSize) ? $bufferSize : $bytesToSend;
+            $data = fread($fp, $readLength);
+            if ($data === false) break;
+            echo $data;
+            flush();
+            $bytesToSend -= strlen($data);
+        }
+        fclose($fp);
+    }
+    exit;
+}
+
+// ── Cover Art Endpoint (Instant Direct MySQL Binary Blob with SVG Fallback) ──
+if ($action === 'getCoverArt' || $action === 'coverArt') {
+    $rawId = trim($_GET['id'] ?? ($_GET['coverArt'] ?? ($input['id'] ?? '')));
+    $typeHint = null;
+    if (strpos($rawId, 'al-') === 0) {
+        $typeHint = 'album';
+        $num = intval(substr($rawId, 3));
+    } elseif (strpos($rawId, 'ar-') === 0) {
+        $typeHint = 'artist';
+        $num = intval(substr($rawId, 3));
+    } elseif (strpos($rawId, 'sg-') === 0) {
+        $typeHint = 'song';
+        $num = intval(substr($rawId, 3));
+    } else {
+        $num = intval($rawId);
+    }
+
+    if ($num >= 300000000) {
+        if (!$typeHint) $typeHint = 'song';
+        $cleanId = $num % 100000000;
+    } elseif ($num >= 200000000) {
+        if (!$typeHint) $typeHint = 'album';
+        $cleanId = $num % 100000000;
+    } elseif ($num >= 100000000) {
+        if (!$typeHint) $typeHint = 'artist';
+        $cleanId = $num % 100000000;
+    } else {
+        $cleanId = $num;
+    }
+
+    $pdo = getProxyPdo();
+    $imgRow = null;
+
+    if ($pdo && $cleanId > 0) {
+        try {
+            if ($typeHint === 'album') {
+                $stmt = $pdo->prepare("SELECT image, mime FROM image WHERE object_type = 'album' AND object_id = :id ORDER BY id DESC LIMIT 1");
+                $stmt->execute([':id' => $cleanId]);
+                $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            } elseif ($typeHint === 'artist') {
+                $stmt = $pdo->prepare("SELECT image, mime FROM image WHERE object_type = 'artist' AND object_id = :id ORDER BY id DESC LIMIT 1");
+                $stmt->execute([':id' => $cleanId]);
+                $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            } elseif ($typeHint === 'song') {
+                // Find song's album
+                $sStmt = $pdo->prepare("SELECT album, artist FROM song WHERE id = :id LIMIT 1");
+                $sStmt->execute([':id' => $cleanId]);
+                $sRow = $sStmt->fetch(PDO::FETCH_ASSOC);
+                if ($sRow && !empty($sRow['album'])) {
+                    $stmt = $pdo->prepare("SELECT image, mime FROM image WHERE object_type = 'album' AND object_id = :id ORDER BY id DESC LIMIT 1");
+                    $stmt->execute([':id' => $sRow['album']]);
+                    $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+                if (!$imgRow && $sRow && !empty($sRow['artist'])) {
+                    $stmt = $pdo->prepare("SELECT image, mime FROM image WHERE object_type = 'artist' AND object_id = :id ORDER BY id DESC LIMIT 1");
+                    $stmt->execute([':id' => $sRow['artist']]);
+                    $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+            } else {
+                // Untyped fallback cascade: album -> artist -> image.id -> song
+                $stmt = $pdo->prepare("SELECT image, mime FROM image WHERE object_type = 'album' AND object_id = :id ORDER BY id DESC LIMIT 1");
+                $stmt->execute([':id' => $cleanId]);
+                $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$imgRow) {
+                    $stmt = $pdo->prepare("SELECT image, mime FROM image WHERE object_type = 'artist' AND object_id = :id ORDER BY id DESC LIMIT 1");
+                    $stmt->execute([':id' => $cleanId]);
+                    $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+
+                if (!$imgRow) {
+                    $stmt = $pdo->prepare("SELECT image, mime FROM image WHERE id = :id LIMIT 1");
+                    $stmt->execute([':id' => $cleanId]);
+                    $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+
+                if (!$imgRow) {
+                    $sStmt = $pdo->prepare("SELECT album FROM song WHERE id = :id LIMIT 1");
+                    $sStmt->execute([':id' => $cleanId]);
+                    $sRow = $sStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($sRow && !empty($sRow['album'])) {
+                        $stmt = $pdo->prepare("SELECT image, mime FROM image WHERE object_type = 'album' AND object_id = :id ORDER BY id DESC LIMIT 1");
+                        $stmt->execute([':id' => $sRow['album']]);
+                        $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                    }
+                }
+            }
+        } catch (\Exception $e) {}
+    }
+
+    if ($imgRow && !empty($imgRow['image'])) {
+        while (ob_get_level()) { ob_end_clean(); }
+        header('Content-Type: ' . ($imgRow['mime'] ?: 'image/jpeg'), true);
+        header('Content-Length: ' . strlen($imgRow['image']), true);
+        header('Cache-Control: public, max-age=2592000, immutable');
+        echo $imgRow['image'];
+        exit;
+    }
+
+    // Default SVG placeholder fallback
+    while (ob_get_level()) { ob_end_clean(); }
+    header('Content-Type: image/svg+xml', true);
+    header('Cache-Control: public, max-age=86400');
+    echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#131722"/><circle cx="150" cy="150" r="50" fill="#1e2230"/><path d="M145 136 L145 156 A7 7 0 1 0 152 163 L152 143 L162 146 L162 138 Z" fill="#6366f1"/></svg>';
+    exit;
+}
+
+// ── Starred Items Retrieval Endpoint (Subsonic getStarred2 Compatibility) ───
+if ($action === 'getStarred' || $action === 'getStarred2' || $action === 'getStarredSongs') {
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $username = trim($_GET['u'] ?? ($input['u'] ?? ''));
+    $userId = 1;
+    if (!empty($username)) {
+        try {
+            $uStmt = $pdo->prepare("SELECT id FROM user WHERE username = :u LIMIT 1");
+            $uStmt->execute([':u' => $username]);
+            $foundUid = $uStmt->fetchColumn();
+            if ($foundUid) $userId = (int)$foundUid;
+        } catch (\Exception $e) {}
+    }
+
+    try {
+        // 1. Starred Songs
+        $sStmt = $pdo->prepare("
+            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                   s.total_count as playCount,
+                   art.name as artist, art.id as artistId,
+                   alb.name as album, alb.id as albumId,
+                   uf.date as starredDate
+            FROM user_flag uf
+            JOIN song s ON uf.object_id = s.id
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album alb ON s.album = alb.id
+            WHERE uf.object_type = 'song' AND uf.user = :uid AND s.enabled = 1
+            ORDER BY uf.date DESC
+        ");
+        $sStmt->execute([':uid' => $userId]);
+        $sRows = $sStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $songs = [];
+        foreach ($sRows as $r) {
+            $subId = (string)(300000000 + (int)$r['id']);
+            $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
+            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+            $songs[] = [
+                'id' => $subId,
+                'parent' => $subAlbId,
+                'title' => $r['title'] ?: 'Unknown Track',
+                'isDir' => false,
+                'isVideo' => false,
+                'type' => 'music',
+                'albumId' => $subAlbId,
+                'album' => $r['album'] ?: 'Unknown Album',
+                'artistId' => $subArtId,
+                'artist' => $r['artist'] ?: 'Unknown Artist',
+                'coverArt' => 'al-' . $subAlbId,
+                'duration' => (int)$r['duration'],
+                'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
+                'track' => (int)$r['track'],
+                'size' => (int)$r['size'],
+                'playCount' => (int)$r['playCount'],
+                'starred' => date('c', (int)$r['starredDate']),
+                'contentType' => 'audio/mpeg',
+                'suffix' => 'mp3'
+            ];
+        }
+
+        // 2. Starred Albums
+        $aStmt = $pdo->prepare("
+            SELECT alb.id, alb.name, alb.year, alb.song_count as songCount,
+                   art.name as artist, art.id as artistId,
+                   uf.date as starredDate
+            FROM user_flag uf
+            JOIN album alb ON uf.object_id = alb.id
+            LEFT JOIN artist art ON alb.album_artist = art.id
+            WHERE uf.object_type = 'album' AND uf.user = :uid
+            ORDER BY uf.date DESC
+        ");
+        $aStmt->execute([':uid' => $userId]);
+        $aRows = $aStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $albums = [];
+        foreach ($aRows as $r) {
+            $subAlbId = (string)(200000000 + (int)$r['id']);
+            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+            $albums[] = [
+                'id' => $subAlbId,
+                'name' => $r['name'] ?: 'Unknown Album',
+                'title' => $r['name'] ?: 'Unknown Album',
+                'artist' => $r['artist'] ?: 'Unknown Artist',
+                'artistId' => $subArtId,
+                'coverArt' => 'al-' . $subAlbId,
+                'songCount' => (int)($r['songCount'] ?? 0),
+                'year' => (int)($r['year'] ?? 0),
+                'starred' => date('c', (int)$r['starredDate'])
+            ];
+        }
+
+        // 3. Starred Artists
+        $arStmt = $pdo->prepare("
+            SELECT art.id, art.name,
+                   uf.date as starredDate
+            FROM user_flag uf
+            JOIN artist art ON uf.object_id = art.id
+            WHERE uf.object_type = 'artist' AND uf.user = :uid
+            ORDER BY uf.date DESC
+        ");
+        $arStmt->execute([':uid' => $userId]);
+        $arRows = $arStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $artists = [];
+        foreach ($arRows as $r) {
+            $subArtId = (string)(100000000 + (int)$r['id']);
+            $artists[] = [
+                'id' => $subArtId,
+                'name' => $r['name'] ?: 'Unknown Artist',
+                'coverArt' => 'ar-' . $subArtId,
+                'starred' => date('c', (int)$r['starredDate'])
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'ok',
+            'subsonic-response' => [
+                'status' => 'ok',
+                'version' => '1.16.1',
+                'type' => 'ampache',
+                'serverVersion' => '6.6.7',
+                'starred2' => [
+                    'song' => $songs,
+                    'album' => $albums,
+                    'artist' => $artists
+                ]
+            ],
+            'songs' => $songs,
+            'albums' => $albums,
+            'artists' => $artists,
+            'count' => count($songs)
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Star / Unstar / Toggle Endpoint (Immediate DB Persistence) ─────────────
+if ($action === 'star' || $action === 'unstar' || $action === 'toggleStar') {
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $username = trim($_GET['u'] ?? ($input['u'] ?? ''));
+    $userId = 1;
+    if (!empty($username)) {
+        try {
+            $uStmt = $pdo->prepare("SELECT id FROM user WHERE username = :u LIMIT 1");
+            $uStmt->execute([':u' => $username]);
+            $foundUid = $uStmt->fetchColumn();
+            if ($foundUid) $userId = (int)$foundUid;
+        } catch (\Exception $e) {}
+    }
+
+    $rawSongId = $_GET['id'] ?? ($input['id'] ?? ($_GET['songId'] ?? ($input['songId'] ?? null)));
+    $rawAlbumId = $_GET['albumId'] ?? ($input['albumId'] ?? null);
+    $rawArtistId = $_GET['artistId'] ?? ($input['artistId'] ?? null);
+
+    $targetType = 'song';
+    $rawTargetId = $rawSongId;
+
+    if ($rawAlbumId !== null && empty($rawSongId)) {
+        $targetType = 'album';
+        $rawTargetId = $rawAlbumId;
+    } elseif ($rawArtistId !== null && empty($rawSongId)) {
+        $targetType = 'artist';
+        $rawTargetId = $rawArtistId;
+    }
+
+    $cleanTargetId = intval(preg_replace('/^[^0-9]+/', '', (string)$rawTargetId));
+    if ($cleanTargetId >= 100000000) {
+        $cleanTargetId = $cleanTargetId % 100000000;
+    }
+
+    if ($cleanTargetId <= 0) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Valid object ID required to star/unstar.']);
+        exit;
+    }
+
+    try {
+        $checkStmt = $pdo->prepare("SELECT id FROM user_flag WHERE user = :uid AND object_id = :oid AND object_type = :typ LIMIT 1");
+        $checkStmt->execute([':uid' => $userId, ':oid' => $cleanTargetId, ':typ' => $targetType]);
+        $existingFlagId = $checkStmt->fetchColumn();
+
+        $shouldBeStarred = ($action === 'star');
+        if ($action === 'toggleStar') {
+            $shouldBeStarred = !$existingFlagId;
+        }
+
+        if ($shouldBeStarred) {
+            if (!$existingFlagId) {
+                $ins = $pdo->prepare("INSERT INTO user_flag (user, object_id, object_type, date) VALUES (:uid, :oid, :typ, :dt)");
+                $ins->execute([
+                    ':uid' => $userId,
+                    ':oid' => $cleanTargetId,
+                    ':typ' => $targetType,
+                    ':dt' => time()
+                ]);
+            }
+        } else {
+            $del = $pdo->prepare("DELETE FROM user_flag WHERE user = :uid AND object_id = :oid AND object_type = :typ");
+            $del->execute([':uid' => $userId, ':oid' => $cleanTargetId, ':typ' => $targetType]);
+        }
+
+        echo json_encode([
+            'status' => 'ok',
+            'subsonic-response' => [
+                'status' => 'ok',
+                'version' => '1.16.1'
+            ],
+            'action' => $action,
+            'starred' => $shouldBeStarred,
+            'type' => $targetType,
+            'id' => $cleanTargetId
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
 
 // ── Playlist Visibility Toggle Endpoint (Guaranteed DB Persistence) ─────────
 if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibility') {
@@ -599,6 +1088,325 @@ if ($action === 'getRecentlyAdded' || $action === 'getRecent') {
             'status' => 'ok',
             'recentSongs' => $recentSongs,
             'recentAlbums' => $recentAlbums
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Direct Database Fetch for Artists (Bypasses Subsonic Token Auth Issues) ──
+if ($action === 'getArtists' || $action === 'getAllArtists') {
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("
+            SELECT art.id, art.name,
+                   COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount,
+                   img.object_id as hasArt,
+                   GROUP_CONCAT(DISTINCT t.name SEPARATOR '||') as genres
+            FROM artist art
+            LEFT JOIN album alb ON alb.album_artist = art.id
+            LEFT JOIN image img ON img.object_type = 'artist' AND img.object_id = art.id AND img.size = 'original'
+            LEFT JOIN song s ON s.artist = art.id AND s.enabled = 1
+            LEFT JOIN tag_map tm ON tm.object_type = 'song' AND tm.object_id = s.id
+            LEFT JOIN tag t ON t.id = tm.tag_id
+            WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
+            GROUP BY art.id, art.name, art.album_count, img.object_id
+            ORDER BY art.name ASC
+        ");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $artists = [];
+        $indexMap = [];
+
+        foreach ($rows as $r) {
+            $subArtId = (string)$r['id'];
+            $genres = !empty($r['genres']) ? explode('||', $r['genres']) : [];
+            $artObj = [
+                'id' => $subArtId,
+                'name' => $r['name'],
+                'coverArt' => $r['hasArt'] ? ('ar-' . $subArtId) : null,
+                'albumCount' => (int)$r['albumCount'],
+                'genres' => $genres
+            ];
+            $artists[] = $artObj;
+
+            $firstChar = strtoupper(mb_substr(trim($r['name']), 0, 1, 'UTF-8'));
+            $indexLetter = preg_match('/^[A-Z]$/', $firstChar) ? $firstChar : '#';
+            if (!isset($indexMap[$indexLetter])) {
+                $indexMap[$indexLetter] = [];
+            }
+            $indexMap[$indexLetter][] = $artObj;
+        }
+
+        $indexList = [];
+        foreach ($indexMap as $letter => $artList) {
+            $indexList[] = [
+                'name' => $letter,
+                'artist' => $artList
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'ok',
+            'artists' => $artists,
+            'subsonic-response' => [
+                'status' => 'ok',
+                'version' => '1.16.1',
+                'artists' => [
+                    'ignoredArticles' => 'The An A',
+                    'index' => $indexList
+                ]
+            ]
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Direct Database Fetch for Albums (Bypasses Subsonic Token Auth Issues) ──
+if ($action === 'getAlbums' || $action === 'getAllAlbums' || $action === 'getAlbumList') {
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("
+            SELECT alb.id, alb.name, alb.year, alb.disk_count, alb.song_count, alb.total_count as playCount,
+                   COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId,
+                   GROUP_CONCAT(DISTINCT t.name SEPARATOR '||') as genres
+            FROM album alb
+            LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
+            LEFT JOIN song s ON s.album = alb.id AND s.enabled = 1
+            LEFT JOIN tag_map tm ON tm.object_type = 'song' AND tm.object_id = s.id
+            LEFT JOIN tag t ON t.id = tm.tag_id
+            WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
+            GROUP BY alb.id, alb.name, alb.year, alb.disk_count, alb.song_count, alb.total_count, art.name, art.id
+            ORDER BY alb.name ASC
+        ");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $albums = [];
+        foreach ($rows as $r) {
+            $subAlbId = (string)$r['id'];
+            $subArtId = (string)($r['artistId'] ?? 0);
+            $genres = !empty($r['genres']) ? explode('||', $r['genres']) : [];
+            $albums[] = [
+                'id' => $subAlbId,
+                'name' => $r['name'],
+                'title' => $r['name'],
+                'artist' => $r['artist'] ?: 'Various Artists',
+                'artistId' => $subArtId,
+                'coverArt' => 'al-' . $subAlbId,
+                'songCount' => (int)($r['song_count'] ?: 0),
+                'playCount' => (int)($r['playCount'] ?: 0),
+                'year' => (int)$r['year'],
+                'genre' => !empty($genres) ? $genres[0] : ''
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'ok',
+            'albums' => $albums,
+            'subsonic-response' => [
+                'status' => 'ok',
+                'version' => '1.16.1',
+                'albumList' => [
+                    'album' => $albums
+                ]
+            ]
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Direct Database Fetch for Single Album Details ─────────────────────────
+if ($action === 'getAlbum') {
+    $rawId = $_GET['id'] ?? ($input['id'] ?? 0);
+    $cleanId = intval(preg_replace('/\D/', '', (string)$rawId));
+    if ($cleanId >= 200000000) {
+        $cleanId = $cleanId % 100000000;
+    }
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    try {
+        $stmtAlb = $pdo->prepare("
+            SELECT alb.id, alb.name, alb.year,
+                   COALESCE(art.name, 'Various Artists') as artist,
+                   COALESCE(art.id, 0) as artistId
+            FROM album alb
+            LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
+            WHERE alb.id = :id
+            LIMIT 1
+        ");
+        $stmtAlb->execute([':id' => $cleanId]);
+        $albumRow = $stmtAlb->fetch(PDO::FETCH_ASSOC);
+
+        if (!$albumRow) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'Album not found.']);
+            exit;
+        }
+
+        $stmtSongs = $pdo->prepare("
+            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                   s.total_count as playCount, art.name as artist, art.id as artistId,
+                   alb.name as album, alb.id as albumId, alb.year as year
+            FROM song s
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album alb ON s.album = alb.id
+            WHERE s.album = :id AND s.enabled = 1
+            ORDER BY s.track ASC, s.title ASC
+        ");
+        $stmtSongs->execute([':id' => $cleanId]);
+        $songRows = $stmtSongs->fetchAll(PDO::FETCH_ASSOC);
+
+        $songs = [];
+        foreach ($songRows as $s) {
+            $songs[] = [
+                'id' => (string)$s['id'],
+                'parent' => (string)$s['albumId'],
+                'title' => $s['title'],
+                'artist' => $s['artist'] ?: 'Unknown Artist',
+                'artistId' => (string)$s['artistId'],
+                'album' => $s['album'],
+                'albumId' => (string)$s['albumId'],
+                'duration' => (int)$s['duration'],
+                'track' => (int)$s['track'],
+                'coverArt' => 'al-' . $s['albumId'],
+                'year' => (int)$s['year'],
+                'playCount' => (int)$s['playCount']
+            ];
+        }
+
+        $subAlbId = (string)$albumRow['id'];
+        $albumData = [
+            'id' => $subAlbId,
+            'name' => $albumRow['name'],
+            'artist' => $albumRow['artist'] ?: 'Various Artists',
+            'artistId' => (string)($albumRow['artistId'] ?? 0),
+            'coverArt' => 'al-' . $subAlbId,
+            'songCount' => count($songs),
+            'year' => (int)$albumRow['year'],
+            'song' => $songs
+        ];
+
+        echo json_encode([
+            'status' => 'ok',
+            'album' => $albumData,
+            'subsonic-response' => [
+                'status' => 'ok',
+                'version' => '1.16.1',
+                'album' => $albumData
+            ]
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Direct Database Fetch for Single Artist Details ────────────────────────
+if ($action === 'getArtist') {
+    $rawId = $_GET['id'] ?? ($input['id'] ?? 0);
+    $cleanId = intval(preg_replace('/\D/', '', (string)$rawId));
+    if ($cleanId >= 100000000) {
+        $cleanId = $cleanId % 100000000;
+    }
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    try {
+        $stmtArt = $pdo->prepare("
+            SELECT art.id, art.name, img.object_id as hasArt
+            FROM artist art
+            LEFT JOIN image img ON img.object_type = 'artist' AND img.object_id = art.id AND img.size = 'original'
+            WHERE art.id = :id
+            LIMIT 1
+        ");
+        $stmtArt->execute([':id' => $cleanId]);
+        $artRow = $stmtArt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$artRow) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'Artist not found.']);
+            exit;
+        }
+
+        $stmtAlbs = $pdo->prepare("
+            SELECT alb.id, alb.name, alb.year, COUNT(s.id) as songCount
+            FROM album alb
+            LEFT JOIN song s ON s.album = alb.id AND s.enabled = 1
+            WHERE alb.album_artist = :id OR alb.id IN (SELECT DISTINCT album FROM song WHERE artist = :id AND enabled = 1)
+            GROUP BY alb.id, alb.name, alb.year
+            ORDER BY alb.year DESC, alb.name ASC
+        ");
+        $stmtAlbs->execute([':id' => $cleanId]);
+        $albRows = $stmtAlbs->fetchAll(PDO::FETCH_ASSOC);
+
+        $albums = [];
+        foreach ($albRows as $a) {
+            $albums[] = [
+                'id' => (string)$a['id'],
+                'name' => $a['name'],
+                'artist' => $artRow['name'],
+                'artistId' => (string)$artRow['id'],
+                'coverArt' => 'al-' . $a['id'],
+                'songCount' => (int)$a['songCount'],
+                'year' => (int)$a['year']
+            ];
+        }
+
+        $subArtId = (string)$artRow['id'];
+        $artistData = [
+            'id' => $subArtId,
+            'name' => $artRow['name'],
+            'coverArt' => $artRow['hasArt'] ? ('ar-' . $subArtId) : null,
+            'albumCount' => count($albums),
+            'album' => $albums
+        ];
+
+        echo json_encode([
+            'status' => 'ok',
+            'artist' => $artistData,
+            'subsonic-response' => [
+                'status' => 'ok',
+                'version' => '1.16.1',
+                'artist' => $artistData
+            ]
         ]);
         exit;
     } catch (\Exception $e) {

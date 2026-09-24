@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART, fetchFeaturedLibrary } from '../utils/api';
+import { fetchAllAlbums, fetchAlbumDetails, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART, fetchFeaturedLibrary } from '../utils/api';
 import LikedSongs from './LikedSongs';
 import RecentlyAdded from './RecentlyAdded';
 import FavoritesGrid from './FavoritesGrid';
@@ -54,10 +54,11 @@ export default function Dashboard() {
         setLoading(true);
 
         // Fetch parallel:
-        // 1. Full Catalog Albums (alphabeticalByArtist for genres & full library)
+        // 1. Full Catalog Albums (database-proxy first)
         // 2. Playlists (community public playlists)
+        // 3. Featured library
         const [albumRes, playlistRes, featuredRes] = await Promise.allSettled([
-          fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${getAuthParams(user)}`)),
+          fetchAllAlbums(user),
           fetch(getAmpacheUrl(`action=getPlaylists&${getAuthParams(user)}`)),
           fetchFeaturedLibrary(user)
         ]);
@@ -66,16 +67,8 @@ export default function Dashboard() {
 
         // Process Library Albums
         let loadedAlbums = [];
-        if (albumRes.status === 'fulfilled') {
-          try {
-            const albumData = await albumRes.value.json();
-            if (albumData?.['subsonic-response']?.status === 'ok') {
-              const raw = albumData['subsonic-response'].albumList?.album;
-              loadedAlbums = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-            }
-          } catch (e) {
-            console.debug("Album list parse note:", e);
-          }
+        if (albumRes.status === 'fulfilled' && albumRes.value?.albums) {
+          loadedAlbums = albumRes.value.albums;
         }
 
         // Process Public Playlists
@@ -232,10 +225,9 @@ export default function Dashboard() {
     setPlayingAlbumId(album.id);
 
     try {
-      const res = await fetch(getAmpacheUrl(`action=getAlbum&id=${album.id}&${getAuthParams(user)}`));
-      const data = await res.json();
-      if (data?.['subsonic-response']?.status === 'ok') {
-        const rawSongs = data['subsonic-response']?.album?.song || [];
+      const albumData = await fetchAlbumDetails(album.id, user);
+      if (albumData?.song) {
+        const rawSongs = albumData.song;
         const songs = Array.isArray(rawSongs) ? rawSongs : [rawSongs];
         if (songs.length > 0) {
           playQueue(songs, 0);
@@ -243,6 +235,8 @@ export default function Dashboard() {
         } else {
           showToast(`No tracks in "${album.name || album.title}"`, 'warning');
         }
+      } else {
+        showToast(`No tracks in "${album.name || album.title}"`, 'warning');
       }
     } catch (err) {
       showToast('Failed to play album', 'error');

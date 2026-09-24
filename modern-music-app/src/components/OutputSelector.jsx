@@ -119,9 +119,10 @@ export default function OutputMenu({ compact = false }) {
   };
 
   useEffect(() => {
-    // Check if HTMLAudioElement supports setSinkId
+    // Check if HTMLAudioElement or AudioContext supports setSinkId
     const testAudio = document.createElement('audio');
-    const sinkSupported = typeof testAudio.setSinkId === 'function';
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const sinkSupported = typeof testAudio.setSinkId === 'function' || (AudioContextClass && typeof AudioContextClass.prototype.setSinkId === 'function');
     setIsSinkSupported(sinkSupported);
 
     // Check Apple AirPlay WebKit availability
@@ -163,10 +164,18 @@ export default function OutputMenu({ compact = false }) {
 
   // Apply setSinkId when selected device changes or audio element updates
   useEffect(() => {
-    if (!isSinkSupported || !audioRef?.current || !selectedDeviceId) return;
-    if (typeof audioRef.current.setSinkId === 'function') {
+    if (!selectedDeviceId) return;
+
+    if (isSinkSupported && audioRef?.current && typeof audioRef.current.setSinkId === 'function') {
       audioRef.current.setSinkId(selectedDeviceId).catch((e) => {
-        console.warn('[Aether Audio] setSinkId notice:', e);
+        console.warn('[Aether Audio] setSinkId notice on <audio>:', e);
+      });
+    }
+
+    const ctx = typeof window !== 'undefined' ? window._aetherAudioContext : null;
+    if (ctx && typeof ctx.setSinkId === 'function') {
+      ctx.setSinkId(selectedDeviceId === 'default' ? '' : selectedDeviceId).catch((e) => {
+        console.warn('[Aether Audio] setSinkId notice on AudioContext:', e);
       });
     }
   }, [selectedDeviceId, audioRef?.current, isSinkSupported]);
@@ -194,13 +203,25 @@ export default function OutputMenu({ compact = false }) {
       localStorage.setItem('aether_audio_sink_id', deviceId);
     }
 
+    // 1. Set on HTMLAudioElement
     if (audioRef?.current && typeof audioRef.current.setSinkId === 'function') {
       try {
         await audioRef.current.setSinkId(deviceId);
       } catch (err) {
-        console.warn('[Aether Audio] Failed to switch output destination:', err);
+        console.warn('[Aether Audio] Failed to switch output destination on <audio>:', err);
       }
     }
+
+    // 2. Set on AudioContext (Web Audio API normalizer graph)
+    const ctx = typeof window !== 'undefined' ? window._aetherAudioContext : null;
+    if (ctx && typeof ctx.setSinkId === 'function') {
+      try {
+        await ctx.setSinkId(deviceId === 'default' ? '' : deviceId);
+      } catch (err) {
+        console.warn('[Aether Audio] Failed to switch output destination on AudioContext:', err);
+      }
+    }
+
     setIsOpen(false);
   };
 

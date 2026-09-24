@@ -58,9 +58,20 @@ export default function StickyPlayer() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     if (!AudioContextClass || isIOS) return; // Web Audio unsupported or bypassed on iOS (due to physical mute switch & createMediaElementSource bugs)
 
-    if (!audioContextRef.current) {
+    if (!window._aetherAudioContext || window._aetherAudioContext.state === 'closed') {
       const ctx = new AudioContextClass();
+      window._aetherAudioContext = ctx;
 
+      // Apply saved output device to the newly created AudioContext if supported
+      const savedSinkId = typeof window !== 'undefined' ? localStorage.getItem('aether_audio_sink_id') : null;
+      if (savedSinkId && typeof ctx.setSinkId === 'function') {
+        ctx.setSinkId(savedSinkId === 'default' ? '' : savedSinkId).catch(() => {});
+      }
+    }
+    const ctx = window._aetherAudioContext;
+    audioContextRef.current = ctx;
+
+    if (!compressorRef.current) {
       // Stage 1: leveling compressor — aggressively narrows the dynamic range so
       // quiet passages and loud passages end up much closer in output level.
       const compressor = ctx.createDynamicsCompressor();
@@ -88,7 +99,6 @@ export default function StickyPlayer() {
       makeupGain.connect(limiter);
       limiter.connect(ctx.destination);
 
-      audioContextRef.current = ctx;
       compressorRef.current = compressor;
       makeupGainRef.current = makeupGain;
       limiterRef.current = limiter;
@@ -104,19 +114,22 @@ export default function StickyPlayer() {
           sourceNodeRef.current.disconnect();
           sourceNodeRef.current = null;
         }
-        const source = audioContextRef.current.createMediaElementSource(audioEl);
-        source.connect(compressorRef.current);
-        sourceNodeRef.current = source;
+        // An HTMLMediaElement can only be bound to createMediaElementSource once in its lifetime.
+        // Cache it on the audio element instance so React Strict Mode or navigation does not recreate it.
+        if (!audioEl._sourceNode) {
+          audioEl._sourceNode = ctx.createMediaElementSource(audioEl);
+        }
+        audioEl._sourceNode.disconnect();
+        audioEl._sourceNode.connect(compressorRef.current);
+        sourceNodeRef.current = audioEl._sourceNode;
         hookedAudioElRef.current = audioEl;
       } catch (err) {
-        // Thrown if a source node already exists for this exact element (e.g. React
-        // Strict Mode double-invoke in dev) — safe to ignore, graph is already bound.
-        console.debug('[Aether Audio] Normalizer graph already bound for this element:', err);
+        console.debug('[Aether Audio] Normalizer graph bind notice:', err);
       }
     }
 
-    if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume().catch(() => {});
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
     }
   };
 
@@ -130,7 +143,7 @@ export default function StickyPlayer() {
   useEffect(() => {
     const resumeOnGesture = () => {
       setupNormalizerGraph();
-      const ctx = audioContextRef.current;
+      const ctx = audioContextRef.current || window._aetherAudioContext;
       if (ctx && ctx.state === 'suspended') {
         ctx.resume().catch(() => {});
       }
@@ -159,8 +172,7 @@ export default function StickyPlayer() {
     }
   }, [playNext, playPrev]);
 
-  // Tear down the Web Audio graph on unmount so nodes/context don't leak
-  // (StickyPlayer is normally persistent, but this guards HMR/route teardown).
+  // Tear down node connections on unmount but preserve AudioContext so it survives remounts
   useEffect(() => {
     return () => {
       try {
@@ -168,9 +180,6 @@ export default function StickyPlayer() {
         compressorRef.current?.disconnect();
         makeupGainRef.current?.disconnect();
         limiterRef.current?.disconnect();
-        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close().catch(() => {});
-        }
       } catch (err) {
         console.debug('[Aether Audio] Normalizer graph teardown notice:', err);
       }

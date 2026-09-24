@@ -5,7 +5,7 @@ import { Play, Clock, Plus, ListPlus, Volume2, Disc, ArrowLeft, GitMerge } from 
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { fetchAlbumDetails as fetchAlbumData, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 import { dedupeSongs } from '../utils/dedupeSongs';
 import HeartButton from '../components/HeartButton';
 import StarButton from '../components/StarButton';
@@ -49,11 +49,9 @@ export default function AlbumDetails() {
             if (isMounted) setAlbum(null);
           }
         } else {
-          const response = await fetch(getAmpacheUrl(`action=getAlbum&id=${id}&${getAuthParams(user)}`));
-          const data = await response.json();
-          if (data?.['subsonic-response']?.status === 'ok') {
-            const rawAlbum = data['subsonic-response'].album;
-            if (rawAlbum && rawAlbum.song) {
+          const rawAlbum = await fetchAlbumData(id, user);
+          if (rawAlbum) {
+            if (rawAlbum.song) {
               rawAlbum.song = dedupeSongs(Array.isArray(rawAlbum.song) ? rawAlbum.song : [rawAlbum.song]);
             }
             if (isMounted) setAlbum(rawAlbum);

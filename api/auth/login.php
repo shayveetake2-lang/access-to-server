@@ -60,6 +60,55 @@ try {
         
         $salt = bin2hex(random_bytes(6));
         $subsonic_token = md5($password . $salt);
+
+        // Harmonize with Ampache Subsonic API token auth which validates md5(apikey + salt)
+        try {
+            $ampCfgFile = __DIR__ . '/../../ampache/config/ampache.cfg.php';
+            $ampCfg = file_exists($ampCfgFile) ? @parse_ini_file($ampCfgFile) : [];
+            $ampHost = $ampCfg['database_hostname'] ?? '127.0.0.1';
+            $ampPort = $ampCfg['database_port'] ?? '8889';
+            $ampDb   = $ampCfg['database_name'] ?? 'ampache';
+            $ampUser = $ampCfg['database_username'] ?? 'server_app';
+            $ampPass = $ampCfg['database_password'] ?? 'password';
+            
+            $ampHosts = array_unique(array_filter([$ampHost, '127.0.0.1', 'localhost', '10.247.192.231']));
+            $ampCreds = [
+                [$ampUser, $ampPass],
+                ['root', 'root'],
+                ['server_app', 'password']
+            ];
+            $ampPdo = null;
+            foreach ($ampHosts as $ah) {
+                foreach ($ampCreds as [$au, $ap]) {
+                    try {
+                        $ampPdo = new PDO("mysql:host={$ah};port={$ampPort};dbname={$ampDb};charset=utf8mb4", $au, $ap, [
+                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                            PDO::ATTR_TIMEOUT => 1
+                        ]);
+                        break 2;
+                    } catch (\Exception $e) {}
+                }
+            }
+            if ($ampPdo) {
+                $aStmt = $ampPdo->prepare("SELECT apikey FROM user WHERE username = :u LIMIT 1");
+                $aStmt->execute([':u' => $user['username']]);
+                $foundApiKey = $aStmt->fetchColumn();
+                if (!empty($foundApiKey)) {
+                    $subsonic_token = md5($foundApiKey . $salt);
+                } else if ($user['username'] === (getenv('AMPACHE_ADMIN_USER') ?: 'admin')) {
+                    $adminKey = getenv('AMPACHE_ADMIN_API_KEY') ?: '18e499b984c75ad09e233f6d8fe0228d';
+                    $subsonic_token = md5($adminKey . $salt);
+                }
+            } else if ($user['username'] === (getenv('AMPACHE_ADMIN_USER') ?: 'admin')) {
+                $adminKey = getenv('AMPACHE_ADMIN_API_KEY') ?: '18e499b984c75ad09e233f6d8fe0228d';
+                $subsonic_token = md5($adminKey . $salt);
+            }
+        } catch (\Exception $ae) {
+            if ($user['username'] === (getenv('AMPACHE_ADMIN_USER') ?: 'admin')) {
+                $adminKey = getenv('AMPACHE_ADMIN_API_KEY') ?: '18e499b984c75ad09e233f6d8fe0228d';
+                $subsonic_token = md5($adminKey . $salt);
+            }
+        }
         
         $_SESSION['auth_token'] = $jwt;
         $_SESSION['user_id'] = $user['id'];

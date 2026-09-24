@@ -38,7 +38,7 @@ define('DB_SQLITE_PATH', getEnvValue('DB_SQLITE_PATH', (dirname(__DIR__) . '/sto
 define('AMPACHE_DB_HOST', getEnvValue('AMPACHE_DB_HOST', DB_HOST));
 define('AMPACHE_DB_PORT', getEnvValue('AMPACHE_DB_PORT', DB_PORT));
 define('AMPACHE_DB_NAME', getEnvValue('AMPACHE_DB_NAME', 'ampache'));
-define('AMPACHE_DB_USER', getEnvValue('AMPACHE_DB_USER', 'ampache_user'));
+define('AMPACHE_DB_USER', getEnvValue('AMPACHE_DB_USER', 'server_app'));
 define('AMPACHE_DB_PASS', getEnvValue('AMPACHE_DB_PASS', 'password'));
 
 /**

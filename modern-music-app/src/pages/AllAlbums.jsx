@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { fetchAllAlbums, fetchAlbumDetails, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
 const GENRE_CATEGORIES = [
@@ -75,24 +75,19 @@ export default function AllAlbums() {
   useEffect(() => {
     const fetchAlbums = async () => {
       try {
-        const response = await fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${getAuthParams(user)}`));
-        const data = await response.json();
-        if (data?.['subsonic-response']?.status === 'ok') {
-          const raw = data['subsonic-response'].albumList?.album;
-          const albumList = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-          
-          // Add artificial Unknown Album block for orphaned tracks
-          albumList.push({
-            id: 'unknown',
-            name: 'Unknown Album',
-            artist: 'Various Artists',
-            songCount: '?',
-            coverArt: 'unknown',
-            year: 0
-          });
+        const { albums: albumList } = await fetchAllAlbums(user);
+        
+        // Add artificial Unknown Album block for orphaned tracks
+        const fullList = [...albumList, {
+          id: 'unknown',
+          name: 'Unknown Album',
+          artist: 'Various Artists',
+          songCount: '?',
+          coverArt: 'unknown',
+          year: 0
+        }];
 
-          setAlbums(albumList);
-        }
+        setAlbums(fullList);
       } catch (err) {
         console.error("Browse fetch error:", err);
       } finally {
@@ -112,17 +107,17 @@ export default function AllAlbums() {
     setPlayingAlbumId(album.id);
 
     try {
-      const res = await fetch(getAmpacheUrl(`action=getAlbum&id=${album.id}&${getAuthParams(user)}`));
-      const data = await res.json();
-      if (data?.['subsonic-response']?.status === 'ok') {
-        const rawSongs = data['subsonic-response']?.album?.song;
-        const songs = Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : []);
+      const albumData = await fetchAlbumDetails(album.id, user);
+      if (albumData?.song) {
+        const songs = Array.isArray(albumData.song) ? albumData.song : [albumData.song];
         if (songs.length > 0) {
           playQueue(songs, 0);
           showToast(`▶ Playing album "${album.name}"`, 'success');
         } else {
           showToast(`No tracks in "${album.name}"`, 'warning');
         }
+      } else {
+        showToast(`No tracks in "${album.name}"`, 'warning');
       }
     } catch (err) {
       showToast('Failed to play album', 'error');

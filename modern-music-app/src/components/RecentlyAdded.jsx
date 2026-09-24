@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getCoverArtUrl, fetchRecentlyAdded, DEFAULT_COVER_ART } from '../utils/api';
+import { fetchAlbumDetails, getCoverArtUrl, fetchRecentlyAdded, DEFAULT_COVER_ART } from '../utils/api';
 
 function formatDuration(seconds) {
   if (!seconds || isNaN(seconds)) return '0:00';
@@ -58,10 +58,9 @@ export default function RecentlyAdded() {
     if (playingAlbumId) return;
     setPlayingAlbumId(album.id);
     try {
-      const res = await fetch(getAmpacheUrl(`action=getAlbum&id=${album.id}&${getAuthParams(user)}`));
-      const data = await res.json();
-      if (data?.['subsonic-response']?.status === 'ok') {
-        const rawSongs = data['subsonic-response']?.album?.song || [];
+      const albumData = await fetchAlbumDetails(album.id, user);
+      if (albumData?.song) {
+        const rawSongs = albumData.song;
         const albumSongs = Array.isArray(rawSongs) ? rawSongs : [rawSongs];
         if (albumSongs.length > 0) {
           playQueue(albumSongs, 0);
@@ -69,6 +68,8 @@ export default function RecentlyAdded() {
         } else {
           showToast(`No tracks in "${album.name || album.title}"`, 'warning');
         }
+      } else {
+        showToast(`No tracks in "${album.name || album.title}"`, 'warning');
       }
     } catch (err) {
       showToast('Failed to play album', 'error');
