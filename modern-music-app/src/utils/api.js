@@ -86,12 +86,21 @@ export function getSubsonicAuthParams(user = null, forceNew = false) {
     return _cachedAuthParams;
   }
 
-  // Generate random salt and MD5 token (Subsonic Token Auth standard: t = md5(password + salt))
+  // Phase 1: Secure Pre-Computed Subsonic Hash (No Plaintext Password Required)
+  if (credentials.subsonic_token && credentials.subsonic_salt) {
+    const params = `u=${encodeURIComponent(credentials.username)}&t=${credentials.subsonic_token}&s=${credentials.subsonic_salt}&v=1.16.1&c=Aether&f=json`;
+    _cachedAuthParams = params;
+    _cachedAuthUserKey = userKey;
+    _cachedAuthTimestamp = now;
+    return params;
+  }
+
+  // Fallback to legacy random salt and MD5 token (Subsonic Token Auth standard)
   const salt = Math.random().toString(36).substring(2, 12);
   const password = credentials.password || '';
   const token = md5(password + salt);
 
-  // Provide enc:hex password parameter for Ampache backwards-compatibility & users without dedicated API keys
+  // Provide enc:hex password parameter for Ampache backwards-compatibility
   const hexPass = password
     ? Array.from(password).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
     : '';
