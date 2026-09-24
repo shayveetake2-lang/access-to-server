@@ -118,7 +118,30 @@ if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibil
 }
 
 // ── User Role Toggle Endpoint (Guaranteed Ampache Database Persistence) ─────
+function verifyProxyAdminJwt() {
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
+        $parts = explode('.', trim($m[1]));
+        if (count($parts) === 3) {
+            $secret = getProxyEnv('JWT_SECRET', 'default-secret-key-change-me');
+            $expected = base64_encode(hash_hmac('sha256', "{$parts[0]}.{$parts[1]}", $secret, true));
+            if (hash_equals($expected, $parts[2])) {
+                $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+                if (isset($payload['role']) && $payload['role'] === 'admin') return true;
+            }
+        }
+    }
+    return false;
+}
+
 if ($action === 'updateUserRole') {
+    if (!verifyProxyAdminJwt()) {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized. Admin Bearer JWT required.']);
+        exit;
+    }
+
     $targetUsername = trim($_POST['username'] ?? ($_GET['username'] ?? ($input['username'] ?? '')));
     $isAdminVal = $_POST['adminRole'] ?? ($_GET['adminRole'] ?? ($input['adminRole'] ?? null));
 

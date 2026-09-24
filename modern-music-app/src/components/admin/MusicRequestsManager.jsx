@@ -57,7 +57,10 @@ export default function MusicRequestsManager() {
     try {
       const res = await fetch(getMediaRequestsUrl('update_request_status.php'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token || ''}`
+        },
         body: JSON.stringify({ ...authBody(), id, status }),
       });
       const data = await res.json();

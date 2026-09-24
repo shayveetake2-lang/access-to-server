@@ -93,7 +93,10 @@ export default function AdminSettings() {
       // 2. Direct Ampache DB Persistence Proxy
       try {
         await fetch(`${getApiProxyUrl()}?action=updateUserRole&username=${encodeURIComponent(u.username)}&adminRole=${newRole}`, {
-          method: 'POST'
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentUser?.token || ''}`
+          }
         });
       } catch (pe) {
         console.debug("Role proxy sync:", pe);

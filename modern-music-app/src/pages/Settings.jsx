@@ -44,7 +44,10 @@ export default function Settings() {
       const authParams = new URLSearchParams(getSubsonicAuthParams(user, true));
       const res = await fetch(getMediaRequestsUrl('submit_request.php'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token || ''}`
+        },
         body: JSON.stringify({
           trackTitle: trackTitle.trim(),
           artistName: artistName.trim(),
