@@ -2652,5 +2652,17 @@
             }
         });
     </script>
+    <script>
+        // Dynamically routes users to the direct ZeroTier IP if on the local network,
+        // otherwise redirects to the official Plex portal if accessed via Cloudflare Tunnel.
+        function handlePlexRouting(e) {
+            e.preventDefault();
+            if (window.location.hostname === 'serverflow.icu' || window.location.hostname.includes('cloudflare')) {
+                window.open('https://app.plex.tv/web', '_blank');
+            } else {
+                window.open('http://10.247.192.231:32400/web', '_blank');
+            }
+        }
+    </script>
 </body>
 </html>
