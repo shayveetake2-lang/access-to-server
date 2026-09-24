@@ -3,18 +3,28 @@
 // surfaces hit the same secure PHP endpoints and update local state the same way.
 import { getDeleteSongUrl, getMergeSongsUrl, getSubsonicAuthParams } from './api';
 
+function getStoredToken(user) {
+  if (user?.token) return user.token;
+  try {
+    const raw = localStorage.getItem('ampache_user') || sessionStorage.getItem('ampache_user');
+    return raw ? JSON.parse(raw)?.token || '' : '';
+  } catch {
+    return '';
+  }
+}
+
 function buildAuthPayload(user) {
   const authParams = new URLSearchParams(getSubsonicAuthParams(user, true));
   return {
-    token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
+    token: getStoredToken(user),
     u: authParams.get('u') || user?.username || '',
     t: authParams.get('t') || '',
     s: authParams.get('s') || '',
   };
 }
 
-function authHeaders() {
-  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token');
+function authHeaders(user) {
+  const token = getStoredToken(user);
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
@@ -25,7 +35,7 @@ function authHeaders() {
 export async function deleteSong(songId, user, { deleteFile = false } = {}) {
   const res = await fetch(getDeleteSongUrl(), {
     method: 'POST',
-    headers: authHeaders(),
+    headers: authHeaders(user),
     body: JSON.stringify({
       song_id: songId,
       delete_file: deleteFile,
@@ -44,7 +54,7 @@ export async function deleteSong(songId, user, { deleteFile = false } = {}) {
 export async function mergeSongs(primarySongId, duplicateSongIds, user) {
   const res = await fetch(getMergeSongsUrl(), {
     method: 'POST',
-    headers: authHeaders(),
+    headers: authHeaders(user),
     body: JSON.stringify({
       primary_song_id: primarySongId,
       duplicate_song_ids: duplicateSongIds,

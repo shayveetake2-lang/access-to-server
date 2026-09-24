@@ -58,8 +58,18 @@ export default function AdminMetadataEditor() {
 
   const isAdmin = user?.role === 'admin' || user?.isAdmin === true || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase());
 
+  const getAuthToken = () => {
+    if (user?.token) return user.token;
+    try {
+      const stored = localStorage.getItem('ampache_user') || sessionStorage.getItem('ampache_user');
+      return stored ? JSON.parse(stored)?.token || '' : '';
+    } catch {
+      return '';
+    }
+  };
+
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token');
+    const token = getAuthToken();
     const headers = { 'Content-Type': 'application/json' };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -261,7 +271,7 @@ export default function AdminMetadataEditor() {
       const authParams = new URLSearchParams(getAuthParams(user));
       const payload = {
         target_artist_id: parseInt(targetArtistId, 10),
-        token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
+        token: getAuthToken(),
         u: authParams.get('u') || '',
         t: authParams.get('t') || '',
         s: authParams.get('s') || '',
@@ -322,7 +332,7 @@ export default function AdminMetadataEditor() {
       const payload = {
         target_artist_id: parseInt(targetId, 10),
         artist_ids: sourceIds,
-        token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
+        token: getAuthToken(),
         u: authParams.get('u') || '',
         t: authParams.get('t') || '',
         s: authParams.get('s') || '',
@@ -367,7 +377,7 @@ export default function AdminMetadataEditor() {
       const authParams = new URLSearchParams(getAuthParams(user));
       const payload = {
         batch: batchList,
-        token: localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '',
+        token: getAuthToken(),
         u: authParams.get('u') || '',
         t: authParams.get('t') || '',
         s: authParams.get('s') || '',

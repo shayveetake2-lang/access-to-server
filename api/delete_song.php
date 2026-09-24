@@ -79,6 +79,9 @@ if (empty($token) && !empty($data['token'])) {
 if (empty($token) && !empty($_POST['token'])) {
     $token = trim($_POST['token']);
 }
+if (empty($token) && !empty($_GET['token'])) {
+    $token = trim($_GET['token']);
+}
 
 $requester = null;
 $sysPdo = null;
@@ -88,22 +91,28 @@ try {
 
 // Validate JWT or DB Token
 if (!empty($token)) {
+    require_once __DIR__ . '/auth/jwt_utils.php';
     if (substr_count($token, '.') === 2) {
-        $parts = explode('.', $token);
-        $payloadJson = base64_decode(strtr($parts[1], '-_', '+/'));
-        $payload = json_decode($payloadJson, true);
-        if (is_array($payload)) {
-            if (isset($payload['exp']) && time() > $payload['exp']) {
-                http_response_code(401);
-                echo json_encode(['status' => 'error', 'message' => 'Authentication token has expired.']);
-                exit;
-            }
+        $payload = verifyAndDecodeJwt($token);
+        if ($payload !== null) {
             if (!empty($payload['role']) && $payload['role'] === 'admin') {
                 $requester = [
-                    'id' => $payload['sub'] ?? 0,
+                    'id' => $payload['user_id'] ?? $payload['sub'] ?? 0,
                     'username' => $payload['username'] ?? 'jwt_admin',
                     'role' => 'admin'
                 ];
+            }
+        } else {
+            // Check if token was malformed vs expired
+            $parts = explode('.', $token);
+            if (isset($parts[1])) {
+                $pJson = base64UrlDecode($parts[1]);
+                $pArr = json_decode($pJson, true);
+                if (is_array($pArr) && isset($pArr['exp']) && time() > $pArr['exp']) {
+                    http_response_code(401);
+                    echo json_encode(['status' => 'error', 'message' => 'Authentication token has expired.']);
+                    exit;
+                }
             }
         }
     }
