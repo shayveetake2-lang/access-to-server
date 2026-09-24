@@ -52,7 +52,16 @@ try {
         $ttlDays = (int)(getenv('AUTH_TOKEN_TTL_DAYS') ?: 7);
         $expiresAt = date('Y-m-d H:i:s', time() + ($ttlDays * 86400));
         
-        $_SESSION['auth_token'] = $token;
+        $jwt_header = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
+        $jwt_payload = base64_encode(json_encode(['user_id' => $user['id'], 'username' => $user['username'], 'role' => $user['role'], 'exp' => time() + ($ttlDays * 86400)]));
+        $jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
+        $jwt_signature = base64_encode(hash_hmac('sha256', "$jwt_header.$jwt_payload", $jwt_secret, true));
+        $jwt = "$jwt_header.$jwt_payload.$jwt_signature";
+        
+        $salt = bin2hex(random_bytes(6));
+        $subsonic_token = md5($password . $salt);
+        
+        $_SESSION['auth_token'] = $jwt;
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $role = ($user['role'] === 'admin') ? 'admin' : 'user';
@@ -80,11 +89,13 @@ try {
         $percentUsed = $limitMB > 0 ? min(100, round(($usedMB / $limitMB) * 100, 1)) : 0;
 
         echo json_encode([
-            'status'  => 'success',
-            'token'   => $token,
-            'role'    => $user['role'],
-            'username'=> $user['username'],
-            'storage' => [
+            'status'         => 'success',
+            'token'          => $jwt,
+            'role'           => $user['role'],
+            'subsonic_token' => $subsonic_token,
+            'subsonic_salt'  => $salt,
+            'username'       => $user['username'],
+            'storage'        => [
                 'limit_mb'       => $limitMB,
                 'used_mb'        => $usedMB,
                 'used_bytes'     => round($usedMB * 1024 * 1024),

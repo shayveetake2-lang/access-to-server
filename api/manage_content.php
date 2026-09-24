@@ -90,14 +90,43 @@ if (!is_array($body)) {
 
 $action = $body['action'] ?? '';
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// ── Auth (Dual: JWT Bearer OR Subsonic u/t/s) ───────────────────────────────
 
-$requesterUsername = trim($body['u'] ?? '');
-$requesterToken     = trim($body['t'] ?? '');
-$requesterSalt      = trim($body['s'] ?? '');
+$is_admin = false;
 
-if (!verifyAmpacheAdmin($requesterUsername, $requesterToken, $requesterSalt)) {
-    json_error('Unauthorized: valid Ampache administrator credentials required.', 403);
+// 1. Check for JWT Bearer token
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
+    $jwt = trim($m[1]);
+    $parts = explode('.', $jwt);
+    if (count($parts) === 3) {
+        $header = $parts[0];
+        $payload_b64 = $parts[1];
+        $signature_provided = $parts[2];
+        
+        $jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
+        $signature_expected = base64_encode(hash_hmac('sha256', "$header.$payload_b64", $jwt_secret, true));
+        
+        if (hash_equals($signature_expected, $signature_provided)) {
+            $payload = json_decode(base64_decode(strtr($payload_b64, '-_', '+/')), true);
+            if (is_array($payload) && isset($payload['role']) && $payload['role'] === 'admin') {
+                $is_admin = true;
+            }
+        }
+    }
+}
+
+// 2. Fallback to Subsonic Credentials Loopback
+if (!$is_admin) {
+    $requesterUsername = trim($body['u'] ?? '');
+    $requesterToken     = trim($body['t'] ?? '');
+    $requesterSalt      = trim($body['s'] ?? '');
+    $is_admin = verifyAmpacheAdmin($requesterUsername, $requesterToken, $requesterSalt);
+}
+
+if (!$is_admin) {
+    json_error('Unauthorized: valid administrator credentials or JWT required.', 403);
 }
 
 

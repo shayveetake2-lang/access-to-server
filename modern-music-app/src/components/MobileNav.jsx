@@ -5,7 +5,7 @@ export default function MobileNav() {
   const tabs = [
     { label: 'Home', path: '/', icon: Home },
     { label: 'Albums', path: '/albums', icon: Disc },
-    { label: 'Songs', path: '/songs', icon: Music },
+    { label: 'Songs', path: '/songs?tab=top100', icon: Music },
     { label: 'Liked', path: '/liked', icon: Heart },
     { label: 'Playlists', path: '/playlists', icon: ListMusic },
   ];

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Play, Shuffle, Globe, User, BookmarkPlus, ListMusic, ChevronRight } from 'lucide-react';
+import { Play, Shuffle, Globe, User, BookmarkPlus, ListMusic, ChevronRight, MessageSquare, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
@@ -9,6 +9,7 @@ import LikedSongs from './LikedSongs';
 import RecentlyAdded from './RecentlyAdded';
 import FavoritesGrid from './FavoritesGrid';
 import FeaturedSlideshow from './FeaturedSlideshow';
+import Recommendations from './Recommendations';
 
 const GENRE_CATEGORIES = [
   { id: 'all', label: 'All Genres' },
@@ -31,6 +32,13 @@ export default function Dashboard() {
   const [isQuickListening, setIsQuickListening] = useState(false);
   const [playingAlbumId, setPlayingAlbumId] = useState(null);
   const [savingPlaylistId, setSavingPlaylistId] = useState(null);
+  
+  // Media Request Modal State
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestTitle, setRequestTitle] = useState('');
+  const [requestArtist, setRequestArtist] = useState('');
+  const [requestNotes, setRequestNotes] = useState('');
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
   const { user, getAuthParams } = useAuth();
   const { playQueue } = usePlayer();
@@ -153,6 +161,42 @@ export default function Dashboard() {
 
     return list;
   }, [allAlbums]);
+
+  const handleSubmitRequest = async (e) => {
+    e.preventDefault();
+    if (!requestTitle.trim()) return;
+    setIsSubmittingRequest(true);
+    
+    try {
+      const res = await fetch('/api/request_media.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          title: requestTitle,
+          artist: requestArtist,
+          notes: requestNotes
+        })
+      });
+      
+      if (res.ok) {
+        showToast('Song request submitted successfully!', 'success');
+        setIsRequestModalOpen(false);
+        setRequestTitle('');
+        setRequestArtist('');
+        setRequestNotes('');
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to submit request', 'error');
+      }
+    } catch (error) {
+      showToast('Network error while submitting request', 'error');
+    } finally {
+      setIsSubmittingRequest(false);
+    }
+  };
 
   // Quick Listen: Instant random playback
   const handleQuickListen = async () => {
@@ -315,6 +359,9 @@ export default function Dashboard() {
       ) : (
         <>
           <FeaturedSlideshow songs={featuredSongs} albums={allAlbums} artists={allArtists} />
+
+          {/* ✨ Discovery / Recommendations */}
+          <Recommendations />
 
           {/* ❤️ Liked Songs — pinned below featured music */}
           <LikedSongs />
@@ -506,6 +553,87 @@ export default function Dashboard() {
               ))}
           </div>
         </>
+      )}
+
+      {/* Floating "Request a Song" Button */}
+      <button
+        onClick={() => setIsRequestModalOpen(true)}
+        className="fixed bottom-24 right-4 md:bottom-32 md:right-8 w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-500 text-white shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-40 border border-purple-400/30"
+        title="Request a Song"
+      >
+        <MessageSquare size={24} />
+      </button>
+
+      {/* "Request a Song" Modal */}
+      {isRequestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsRequestModalOpen(false)}></div>
+          <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-white/5 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <MessageSquare className="text-purple-400" size={20} />
+                Request a Song
+              </h2>
+              <button 
+                onClick={() => setIsRequestModalOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors p-1"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmitRequest} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Song Title <span className="text-red-400">*</span></label>
+                <input 
+                  type="text" 
+                  value={requestTitle}
+                  onChange={e => setRequestTitle(e.target.value)}
+                  className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50"
+                  placeholder="e.g. Blinding Lights"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Artist (Optional)</label>
+                <input 
+                  type="text" 
+                  value={requestArtist}
+                  onChange={e => setRequestArtist(e.target.value)}
+                  className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50"
+                  placeholder="e.g. The Weeknd"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Additional Notes (Optional)</label>
+                <textarea 
+                  value={requestNotes}
+                  onChange={e => setRequestNotes(e.target.value)}
+                  className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 min-h-[80px]"
+                  placeholder="e.g. Please add the explicit version!"
+                ></textarea>
+              </div>
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsRequestModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!requestTitle.trim() || isSubmittingRequest}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-purple-600 hover:bg-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-purple-500/20"
+                >
+                  {isSubmittingRequest ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : null}
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

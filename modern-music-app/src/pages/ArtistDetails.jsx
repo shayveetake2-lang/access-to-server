@@ -1,23 +1,27 @@
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { User, Disc, Play, Shuffle, Clock, Plus, ListPlus, Volume2, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { User, Disc, Play, Shuffle, Clock, Plus, ListPlus, Volume2, ChevronDown, ChevronUp, Sparkles, GitMerge } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { dedupeSongs } from '../utils/dedupeSongs';
 import { extractPrimaryArtistName, normalizeArtistKey } from '../utils/artistHelper';
 import StarButton from '../components/StarButton';
 import HeartButton from '../components/HeartButton';
 export default function ArtistDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [artist, setArtist] = useState(null);
   const [allAlbums, setAllAlbums] = useState([]);
   const [topSongs, setTopSongs] = useState([]);
   const [allSongs, setAllSongs] = useState([]);
+  const [relatedArtists, setRelatedArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [showAllTopSongs, setShowAllTopSongs] = useState(false);
+  const [viewingAllSongs, setViewingAllSongs] = useState(false);
   const [mergedAliasCount, setMergedAliasCount] = useState(0);
 
   const { user, getAuthParams } = useAuth();
@@ -58,16 +62,23 @@ export default function ArtistDetails() {
           const allArtistsData = await allArtistsRes.json();
           if (allArtistsData?.['subsonic-response']?.status === 'ok') {
             const index = allArtistsData['subsonic-response'].artists?.index || [];
+            let possibleRelated = [];
             index.forEach(idx => {
               (idx.artist || []).forEach(otherArtist => {
                 if (String(otherArtist.id) !== String(id)) {
                   const otherKey = normalizeArtistKey(extractPrimaryArtistName(otherArtist.name));
                   if (otherKey === primaryKey) {
                     aliasArtistIds.push(otherArtist.id);
+                  } else {
+                    possibleRelated.push(otherArtist);
                   }
                 }
               });
             });
+            if (isMounted) {
+              // Just pick some other artists randomly to simulate "Top / Related Artists"
+              setRelatedArtists(possibleRelated.sort(() => 0.5 - Math.random()).slice(0, 6));
+            }
           }
         } catch (e) {
           console.debug("Error checking alias artists:", e);
@@ -154,7 +165,8 @@ export default function ArtistDetails() {
             songMap.set(s.id, s);
           }
         });
-        const allUniqueSongs = Array.from(songMap.values());
+        // Deduplicate collected album songs by title/duration via dedupeSongs
+        const allUniqueSongs = dedupeSongs(Array.from(songMap.values()));
 
         if (isMounted) {
           setAllSongs(allUniqueSongs);
@@ -232,7 +244,7 @@ export default function ArtistDetails() {
     );
   }
 
-  const displayedTopSongs = showAllTopSongs ? topSongs : topSongs.slice(0, 5);
+  const displayedTopSongs = viewingAllSongs ? allSongs : (showAllTopSongs ? topSongs : topSongs.slice(0, 5));
 
   return (
     <div className="pb-28 max-w-7xl mx-auto space-y-8">
@@ -269,6 +281,15 @@ export default function ArtistDetails() {
                 <span className="inline-flex items-center gap-1 text-[10px] text-purple-300 font-medium bg-purple-500/15 px-2 py-0.5 rounded-full border border-purple-500/25">
                   <Sparkles size={10} /> +{mergedAliasCount} featured appearance{mergedAliasCount === 1 ? '' : 's'} merged
                 </span>
+              )}
+              {user?.role === 'admin' && (
+                <button 
+                  onClick={() => navigate(`/settings?tab=metadata&mergeType=artist&mergeId=${artist.id}`)}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-full backdrop-blur-sm transition-colors border border-white/10 ml-auto sm:ml-4"
+                >
+                  <GitMerge className="w-3.5 h-3.5" />
+                  <span>Open in Merger</span>
+                </button>
               )}
             </div>
 
@@ -319,18 +340,35 @@ export default function ArtistDetails() {
             <h2 className="text-lg sm:text-2xl font-bold text-white flex items-center gap-2">
               <Sparkles size={20} className="text-purple-400" /> Top Songs
             </h2>
-            {topSongs.length > 5 && (
-              <button
-                onClick={() => setShowAllTopSongs(!showAllTopSongs)}
-                className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1"
-              >
-                {showAllTopSongs ? (
-                  <>Show less <ChevronUp size={14} /></>
-                ) : (
-                  <>Show all ({topSongs.length}) <ChevronDown size={14} /></>
-                )}
-              </button>
-            )}
+            <div className="flex items-center gap-4">
+              {topSongs.length > 5 && !viewingAllSongs && (
+                <button
+                  onClick={() => setShowAllTopSongs(!showAllTopSongs)}
+                  className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1"
+                >
+                  {showAllTopSongs ? (
+                    <>Show less <ChevronUp size={14} /></>
+                  ) : (
+                    <>Show top {topSongs.length} <ChevronDown size={14} /></>
+                  )}
+                </button>
+              )}
+              {allSongs.length > topSongs.length && (
+                <button
+                  onClick={() => {
+                    setViewingAllSongs(!viewingAllSongs);
+                    if (!viewingAllSongs) setShowAllTopSongs(false);
+                  }}
+                  className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
+                >
+                  {viewingAllSongs ? (
+                    <>Back to Top Songs <ChevronUp size={14} /></>
+                  ) : (
+                    <>View All Songs ({allSongs.length}) <ChevronDown size={14} /></>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Responsive Track Table */}
@@ -513,6 +551,48 @@ export default function ArtistDetails() {
           </div>
         )}
       </div>
+
+      {/* ========================================================================= */}
+      {/* RELATED / TOP ARTISTS                                                     */}
+      {/* ========================================================================= */}
+      {relatedArtists.length > 0 && (
+        <div className="space-y-4 pt-4 border-t border-white/5 mt-8">
+          <h2 className="text-lg sm:text-2xl font-bold text-white flex items-center gap-2 px-1">
+            <User size={20} className="text-purple-400 sm:w-6 sm:h-6" /> Related Top Artists
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
+            {relatedArtists.map((relArtist) => (
+              <Link
+                to={`/artists/${relArtist.id}`}
+                key={relArtist.id}
+                className="group flex flex-col items-center text-center bg-slate-900/40 hover:bg-slate-800/60 p-3 sm:p-4 rounded-2xl transition-all border border-white/5 hover:border-purple-500/30 backdrop-blur-sm active:scale-[0.98] shadow-sm"
+              >
+                <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 border-2 border-white/5 group-hover:border-purple-400/50 transition-colors shadow-md">
+                  {relArtist.coverArt ? (
+                    <img
+                      src={getCoverArtUrl(relArtist.coverArt, getAuthParams(user))}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      alt={relArtist.name}
+                      onError={(e) => {
+                        if (e.currentTarget.src !== DEFAULT_COVER_ART) {
+                          e.currentTarget.src = DEFAULT_COVER_ART;
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                      <User size={24} className="text-slate-500" />
+                    </div>
+                  )}
+                </div>
+                <h4 className="font-semibold text-slate-100 group-hover:text-purple-400 transition-colors text-xs sm:text-sm w-full truncate px-1">
+                  {relArtist.name}
+                </h4>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

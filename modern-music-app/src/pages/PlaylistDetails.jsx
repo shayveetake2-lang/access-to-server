@@ -5,6 +5,7 @@ import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getCoverArtUrl, getApiProxyUrl, DEFAULT_COVER_ART } from '../utils/api';
+import HeartButton from '../components/HeartButton';
 
 export default function PlaylistDetails() {
   const { id } = useParams();
@@ -337,6 +338,12 @@ export default function PlaylistDetails() {
                   >
                     <ListPlus size={16} />
                   </button>
+                  <HeartButton 
+                    song={song} 
+                    size={16} 
+                    compact 
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 active:scale-95 transition-all shadow-sm shrink-0"
+                  />
                   {isOwner && (
                     <button 
                       onClick={(e) => handleRemoveTrack(index, e)} 
@@ -429,6 +436,12 @@ export default function PlaylistDetails() {
                       >
                         <ListPlus size={16} />
                       </button>
+                      <HeartButton 
+                        song={song} 
+                        size={16} 
+                        compact 
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 active:scale-95 transition-all shadow-sm shrink-0"
+                      />
                       {isOwner && (
                         <button 
                           onClick={(e) => handleRemoveTrack(index, e)} 

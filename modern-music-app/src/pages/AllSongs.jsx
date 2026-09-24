@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Play, Clock, Plus, ListPlus, Volume2, Shuffle, Flame, TrendingUp, Sparkles, RefreshCw, Search, X, Music, Layers, ListMusic, Trash2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
@@ -9,6 +9,7 @@ import { getApiProxyUrl, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART, apply
 import { deleteSong } from '../utils/songAdminActions';
 import { createDedupeIndex, dedupeAppend } from '../utils/dedupeSongs';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
+import HeartButton from '../components/HeartButton';
 
 const SORT_OPTIONS = [
   { id: 'title_asc', label: '🔤 Title (A → Z)' },
@@ -23,7 +24,15 @@ const SORT_OPTIONS = [
 ];
 
 export default function AllSongs() {
-  const [activeTab, setActiveTab] = useState('library'); // 'library' | 'charts'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'top100';
+
+  const setActiveTab = useCallback((tab) => {
+    setSearchParams(prev => {
+      prev.set('tab', tab);
+      return prev;
+    }, { replace: true });
+  }, [setSearchParams]);
   
   // Library Infinite Scroll State (Handles 10k+ Songs)
   const [librarySongs, setLibrarySongs] = useState([]);
@@ -110,7 +119,8 @@ export default function AllSongs() {
         if (data?.status === 'ok' && Array.isArray(data.songs)) {
           fetchedSongs = data.songs;
           totalCount = data.total || 0;
-          hasMore = data.hasMore || false;
+          hasMore = data.hasMore !== undefined ? data.hasMore : (fetchedSongs.length === limit);
+          if (fetchedSongs.length < limit) hasMore = false;
         } else {
           proxyFailed = true;
         }
@@ -139,6 +149,7 @@ export default function AllSongs() {
             fetchedSongs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
             totalCount = fetchedSongs.length;
             hasMore = fetchedSongs.length === limit;
+            if (fetchedSongs.length < limit) hasMore = false;
           }
         } catch (se) {
           console.debug("Subsonic fallback error:", se);
@@ -166,6 +177,7 @@ export default function AllSongs() {
   // Trigger initial fetch or reset on query/sort changes
   useEffect(() => {
     if (activeTab === 'library') {
+      setHasMoreLibrary(true);
       fetchLibrarySongs(true, 0);
     }
   }, [debouncedQuery, sortBy, activeTab, fetchLibrarySongs]);
@@ -217,7 +229,7 @@ export default function AllSongs() {
   }, [period, user, getAuthParams]);
 
   useEffect(() => {
-    if (activeTab === 'charts') {
+    if (activeTab === 'top100') {
       fetchChartSongs(period);
     }
   }, [activeTab, period, fetchChartSongs]);
@@ -326,9 +338,9 @@ export default function AllSongs() {
             <span>Full Library ({libraryTotal > 0 ? libraryTotal.toLocaleString() : '10k+'})</span>
           </button>
           <button
-            onClick={() => setActiveTab('charts')}
+            onClick={() => setActiveTab('top100')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              activeTab === 'charts'
+              activeTab === 'top100'
                 ? 'bg-purple-500 text-white shadow-md shadow-purple-500/20'
                 : 'text-slate-400 hover:text-white'
             }`}
@@ -415,7 +427,7 @@ export default function AllSongs() {
       </div>
 
       {/* Main Content: Songs List */}
-      {(isLibraryLoading && activeTab === 'library') || (isChartLoading && activeTab === 'charts') ? (
+      {(isLibraryLoading && activeTab === 'library') || (isChartLoading && activeTab === 'top100') ? (
         <div className="flex justify-center py-24">
           <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -455,7 +467,7 @@ export default function AllSongs() {
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                     <span className="w-6 text-center font-mono text-[11px] font-bold text-slate-400 shrink-0">
-                      {activeTab === 'charts' && rankNum <= 3 
+                      {activeTab === 'top100' && rankNum <= 3 
                         ? ['🥇', '🥈', '🥉'][rankNum - 1] 
                         : `#${rankNum}`}
                     </span>
@@ -501,7 +513,7 @@ export default function AllSongs() {
                         ) : (
                           <span className="truncate">{song.artist || 'Unknown Artist'}</span>
                         )}
-                        {song.dailyPlays > 0 && period === 'daily' && activeTab === 'charts' && (
+                        {song.dailyPlays > 0 && period === 'daily' && activeTab === 'top100' && (
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0">
                             {song.dailyPlays} today
                           </span>
@@ -525,6 +537,12 @@ export default function AllSongs() {
                     >
                       <ListPlus size={16} />
                     </button>
+                    <HeartButton 
+                      song={song} 
+                      size={16} 
+                      compact 
+                      className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 active:scale-95 transition-all shadow-sm shrink-0"
+                    />
                     <button 
                       onClick={() => openAddToPlaylistModal(song.id)} 
                       className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-purple-500/25 text-slate-300 hover:text-purple-300 active:scale-95 transition-all"
@@ -586,7 +604,7 @@ export default function AllSongs() {
                       <td className="px-4 sm:px-5 py-3 text-xs text-slate-400 text-center w-14">
                         {isCurrent ? (
                           <Volume2 size={15} className={`text-purple-400 mx-auto ${isPlaying ? 'animate-pulse' : ''}`} />
-                        ) : activeTab === 'charts' && rankNum <= 3 ? (
+                        ) : activeTab === 'top100' && rankNum <= 3 ? (
                           <span className="text-sm">{['🥇', '🥈', '🥉'][rankNum - 1]}</span>
                         ) : (
                           <span className="font-mono">{rankNum}</span>
@@ -666,12 +684,12 @@ export default function AllSongs() {
 
                       {/* Plays Column */}
                       <td className="px-4 py-3 text-center">
-                        {activeTab === 'charts' && period === 'daily' && song.dailyPlays > 0 ? (
+                        {activeTab === 'top100' && period === 'daily' && song.dailyPlays > 0 ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
                             <Flame size={12} className="text-amber-400" />
                             {song.dailyPlays} {song.dailyPlays === 1 ? 'play' : 'plays'}
                           </span>
-                        ) : activeTab === 'charts' && period === 'weekly' && song.weeklyPlays > 0 ? (
+                        ) : activeTab === 'top100' && period === 'weekly' && song.weeklyPlays > 0 ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                             <TrendingUp size={12} />
                             {song.weeklyPlays} this week
@@ -700,6 +718,12 @@ export default function AllSongs() {
                           >
                             <ListPlus size={16} />
                           </button>
+                          <HeartButton 
+                            song={song} 
+                            size={16} 
+                            compact 
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-rose-500/25 text-slate-300 hover:text-rose-300 active:scale-95 transition-all shadow-sm shrink-0"
+                          />
                           <button 
                             onClick={() => openAddToPlaylistModal(song.id)} 
                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-purple-500/25 text-slate-300 hover:text-purple-300 active:scale-95 transition-all shadow-sm shrink-0"

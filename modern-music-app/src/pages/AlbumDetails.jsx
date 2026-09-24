@@ -1,11 +1,12 @@
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Play, Clock, Plus, ListPlus, Volume2, Disc, ArrowLeft } from 'lucide-react';
+import { Play, Clock, Plus, ListPlus, Volume2, Disc, ArrowLeft, GitMerge } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
 import { getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART } from '../utils/api';
+import { dedupeSongs } from '../utils/dedupeSongs';
 import HeartButton from '../components/HeartButton';
 import StarButton from '../components/StarButton';
 
@@ -25,12 +26,40 @@ export default function AlbumDetails() {
     const fetchAlbumDetails = async () => {
       setLoading(true);
       try {
-        const response = await fetch(getAmpacheUrl(`action=getAlbum&id=${id}&${getAuthParams(user)}`));
-        const data = await response.json();
-        if (data?.['subsonic-response']?.status === 'ok') {
-          if (isMounted) setAlbum(data['subsonic-response'].album);
+        if (id === 'unknown') {
+          // Bypass Subsonic getAlbum for missing tags
+          const response = await fetch(`/api/get_unknown_album_tracks.php`, {
+            headers: {
+              'Authorization': `Bearer ${user.token}`
+            }
+          });
+          const data = await response.json();
+          if (data?.status === 'success') {
+            if (isMounted) {
+              setAlbum({
+                id: 'unknown',
+                name: 'Unknown Album',
+                artist: 'Various Artists',
+                songCount: data.songs.length,
+                song: data.songs,
+                coverArt: 'unknown'
+              });
+            }
+          } else {
+            if (isMounted) setAlbum(null);
+          }
         } else {
-          if (isMounted) setAlbum(null);
+          const response = await fetch(getAmpacheUrl(`action=getAlbum&id=${id}&${getAuthParams(user)}`));
+          const data = await response.json();
+          if (data?.['subsonic-response']?.status === 'ok') {
+            const rawAlbum = data['subsonic-response'].album;
+            if (rawAlbum && rawAlbum.song) {
+              rawAlbum.song = dedupeSongs(Array.isArray(rawAlbum.song) ? rawAlbum.song : [rawAlbum.song]);
+            }
+            if (isMounted) setAlbum(rawAlbum);
+          } else {
+            if (isMounted) setAlbum(null);
+          }
         }
       } catch (err) {
         console.error('Error fetching album details:', err);
@@ -109,7 +138,18 @@ export default function AlbumDetails() {
           />
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-purple-400 block mb-0.5">Album</span>
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-purple-400">Album</span>
+            {user?.role === 'admin' && (
+              <button 
+                onClick={() => navigate(`/settings?tab=metadata&mergeType=album&mergeId=${album.id}`)}
+                className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-full backdrop-blur-sm transition-colors border border-white/10"
+              >
+                <GitMerge className="w-3.5 h-3.5" />
+                <span>Open in Merger</span>
+              </button>
+            )}
+          </div>
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-2 leading-tight truncate">{album.name}</h1>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-slate-300 text-xs sm:text-sm font-medium">
             {album.artistId ? (

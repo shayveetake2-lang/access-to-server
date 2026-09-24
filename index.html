@@ -177,7 +177,7 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400">IP:</span>
-                                    <span class="text-cyan-400 font-bold">10.247.192.231</span>
+                                    <span class="text-cyan-400 font-bold"><script>document.write(window.location.hostname);</script></span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400">Web Server:</span>
@@ -375,7 +375,7 @@
                     <!-- ── PROMINENT QUICK LAUNCHERS (Plex Media Server & Aether Music Portal) ── -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <!-- Plex Media Server Quick Launcher Card -->
-                        <a href="http://10.247.192.231:32400/web" target="_blank" rel="noopener noreferrer" class="p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-amber-950/20 border border-amber-500/30 hover:border-amber-400 shadow-xl shadow-amber-500/5 hover:shadow-amber-500/20 transition-all duration-300 group flex items-center justify-between">
+                        <a href="#" onclick="handlePlexRouting(event)" class="p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-amber-950/20 border border-amber-500/30 hover:border-amber-400 shadow-xl shadow-amber-500/5 hover:shadow-amber-500/20 transition-all duration-300 group flex items-center justify-between">
                             <div class="flex items-center gap-4 min-w-0">
                                 <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shadow-md shrink-0">
                                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/></svg>
@@ -543,7 +543,7 @@
                                         <tr>
                                             <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Host Node</td>
                                             <td class="py-2.5"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">● Online</span></td>
-                                            <td class="py-2.5 text-slate-400">10.247.192.231</td>
+                                            <td class="py-2.5 text-slate-400"><script>document.write(window.location.hostname);</script></td>
                                         </tr>
                                         <tr>
                                             <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Web Server</td>
@@ -592,38 +592,17 @@
                                         <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800/80"><span class="text-slate-400 text-[10px]">TOTAL</span><span id="srv-total-text" class="text-slate-200 font-bold">--</span></div>
                                     </div>
                                 </div>
-                            </div>
-                            <div id="srv-breakdown-list" class="space-y-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80"></div>
-                            
-                            <!-- External Storage Nodes (mac2 Music) — Movies & TV now lives in its own dedicated card below -->
-                            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
-                                <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                                    <span>External Storage Nodes</span>
-                                    <span id="net-nodes-count" class="text-cyan-400">0 Online</span>
-                                </div>
-                                <div class="grid grid-cols-1 gap-2 text-xs font-mono">
-                                    <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="font-sans font-bold text-slate-900 dark:text-white text-[11px] truncate">mac2 (Music)</span>
-                                            <span id="net-mac2-pill" class="px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-slate-800 text-slate-400">○ Offline</span>
-                                        </div>
-                                        <div class="text-[9px] text-slate-400 truncate">/Volumes/Music</div>
-                                        <div class="flex justify-between items-center text-[10px] pt-1 mt-1 border-t border-slate-200/60 dark:border-slate-800/40">
-                                            <span class="text-slate-400">Used: <span id="net-mac2-used" class="text-slate-200">--</span></span>
-                                            <span class="text-slate-400">Free: <span id="net-mac2-free" class="text-emerald-400">--</span></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                <div id="srv-breakdown-list" class="space-y-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80"></div>
+                        </div>
                         </div>
 
-                        <!-- CARD 4B: Movies & TV Network Storage (isolated from USB controller logic) -->
+                        <!-- CARD 4B: Unified Network Storage (mac2 Music & Movies) -->
                         <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
                             <div>
                                 <div class="flex items-start justify-between mb-4 gap-2">
                                     <div class="min-w-0">
-                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate">Movies &amp; TV Network Storage</h3>
-                                        <p class="text-[11px] font-mono text-slate-400 truncate">/Volumes/Movies</p>
+                                        <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate">Unified Network Storage</h3>
+                                        <p class="text-[11px] font-mono text-slate-400 truncate">/Volumes/Music + /Volumes/Movies</p>
                                     </div>
                                     <span id="movies-status-pill" class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400 shrink-0">Checking...</span>
                                 </div>
@@ -646,7 +625,7 @@
                                 </div>
                             </div>
                             <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[10px] font-mono text-slate-400">
-                                <span>Windows media node · Streamed via Plex on port 32400</span>
+                                <span>External nodes connected via SMB (mac2, plex)</span>
                             </div>
                         </div>
 
@@ -1197,63 +1176,6 @@
             </footer>
         </main>
     </div>
-
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!--  SERVERFLOW HELP AI CHATBOT OVERLAY WIDGET                  -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-        
-        <!-- Chat Drawer Floating Panel -->
-        <div id="sf-chat-widget" class="hidden mb-4 w-96 max-w-[calc(100vw-2rem)] rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex-col">
-            <!-- Chat Header -->
-            <div class="p-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">SF</div>
-                    <div>
-                        <div class="font-bold text-xs leading-none">ServerFlow Help</div>
-                        <div class="text-[10px] text-emerald-400 mt-0.5 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online
-                        </div>
-                    </div>
-                </div>
-                <button onclick="toggleServerFlowChat()" class="text-slate-400 hover:text-white text-base">✕</button>
-            </div>
-
-            <!-- Messages Area (Welcome Header updated to "Welcome — what do you need help with?") -->
-            <!-- Messages Area -->
-            <div id="sf-chat-messages" class="p-4 h-80 overflow-y-auto space-y-3 text-xs leading-relaxed bg-slate-50/50 dark:bg-slate-950/50">
-                <!-- Welcome Bot Message -->
-                <div class="flex items-start gap-2.5">
-                    <div class="w-7 h-7 rounded-full bg-cyan-600/20 text-cyan-400 flex items-center justify-center text-xs font-bold shrink-0">SF</div>
-                    <div class="px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-800 dark:text-slate-200 leading-relaxed max-w-[85%]">
-                        Welcome — what do you need help with? How can I help you with ServerFlow today?
-                    </div>
-                </div>
-
-                <!-- Suggested Chats / Quick Prompt Chips -->
-                <div class="flex flex-wrap gap-1.5 pt-1">
-                    <button onclick="sendQuickPrompt('Diagnose server health')" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-[11px] font-semibold transition-all">Diagnose server health</button>
-                    <button onclick="sendQuickPrompt('How do I deploy a website?')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">How do I deploy a website?</button>
-                    <button onclick="sendQuickPrompt('Check storage and USB')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Check storage and USB</button>
-                    <button onclick="sendQuickPrompt('Review recent errors')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Review recent errors</button>
-                    <button onclick="sendQuickPrompt('Where are the beginner guides?')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-all">Where are the beginner guides?</button>
-                </div>
-            </div>
-
-            <!-- Chat Input Footer -->
-            <div class="p-3 bg-white dark:bg-[#0f172a] border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
-                <input type="text" id="sf-chat-input" class="flex-1 px-3.5 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500" placeholder="Ask ServerFlow Help...">
-                <button onclick="submitServerFlowChat()" class="p-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white text-xs font-bold shadow-md transition-all">✈</button>
-            </div>
-        </div>
-
-        <button onclick="toggleServerFlowChat()" class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-2xl flex items-center justify-center hover:scale-105 transition-transform group">
-            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-        </button>
-    </div>
-
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- MODALS & POPUPS                                             -->
     <!-- ═══════════════════════════════════════════════════════════ -->
@@ -2558,49 +2480,28 @@
                         }
                     }
 
-                    // 2. External Network Storage Nodes
-                    const nodesCount = document.getElementById('net-nodes-count');
-                    if (nodesCount) {
-                        nodesCount.textContent = (summary.network_nodes_online || 0) + ' Online';
-                    }
-
-                    const mac2 = drives.mac2;
-                    if (mac2) {
-                        const mac2Pill = document.getElementById('net-mac2-pill');
-                        if (mac2Pill) {
-                            mac2Pill.textContent = mac2.mounted ? '● Connected' : '○ Offline';
-                            mac2Pill.className = mac2.mounted
-                                ? 'px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'px-1.5 py-0.5 rounded-full text-[9px] font-mono bg-slate-800 text-slate-400';
-                        }
-                        const mac2Used = document.getElementById('net-mac2-used');
-                        if (mac2Used) mac2Used.textContent = mac2.mounted ? mac2.used_formatted : '--';
-                        const mac2Free = document.getElementById('net-mac2-free');
-                        if (mac2Free) mac2Free.textContent = mac2.mounted ? mac2.free_formatted : '--';
-                    }
-
-                    const movies = drives.movies;
-                    if (movies) {
-                        const percent = Math.round(movies.percent_used || 0);
+                    const network = drives.network;
+                    if (network) {
+                        const percent = Math.round(network.percent_used || 0);
                         const donut = document.getElementById('movies-donut-segment');
-                        if (donut) donut.setAttribute('stroke-dasharray', movies.mounted ? `${percent}, 100` : '0, 100');
+                        if (donut) donut.setAttribute('stroke-dasharray', network.mounted ? `${percent}, 100` : '0, 100');
                         const percentText = document.getElementById('movies-percent-text');
-                        if (percentText) percentText.textContent = movies.mounted ? `${percent}%` : '--%';
+                        if (percentText) percentText.textContent = network.mounted ? `${percent}%` : '--%';
                         const usedText = document.getElementById('movies-used-text');
-                        if (usedText) usedText.textContent = movies.mounted ? movies.used_formatted : '--';
+                        if (usedText) usedText.textContent = network.mounted ? network.used_formatted : '--';
                         const freeText = document.getElementById('movies-free-text');
-                        if (freeText) freeText.textContent = movies.mounted ? movies.free_formatted : '--';
+                        if (freeText) freeText.textContent = network.mounted ? network.free_formatted : '--';
                         const totalText = document.getElementById('movies-total-text');
-                        if (totalText) totalText.textContent = movies.mounted ? movies.total_formatted : '--';
+                        if (totalText) totalText.textContent = network.mounted ? network.total_formatted : '--';
                         const moviesPill = document.getElementById('movies-status-pill');
                         if (moviesPill) {
-                            moviesPill.textContent = movies.mounted ? '● Online' : '○ Unmounted';
-                            moviesPill.className = movies.mounted
+                            moviesPill.textContent = network.mounted ? '● Online' : '○ Offline';
+                            moviesPill.className = network.mounted
                                 ? 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0'
                                 : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0';
                         }
                     }
-
+                    if (movies) {
                     // 3. Dual-Port USB Storage
                     const usb1 = drives.usb_port1;
                     const usb2 = drives.usb_port2;

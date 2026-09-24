@@ -73,43 +73,48 @@ document.addEventListener('click', (e) => {
 }, true); // Capture phase ensures execution before bubbling or element-level event listeners
 
 async function checkAuthOnLoad(loginPayload = null) {
-    // If explicit login payload passed (e.g. from submitAdminLogin)
     if (loginPayload) {
         currentAdminState.logged_in = true;
         currentAdminState.user = loginPayload.username || 'Admin';
         if (loginPayload.storage) updateUserStorageUI(loginPayload.storage);
-        updateAdminUI(true, currentAdminState.user, loginPayload.role || 'admin');
+        updateAdminUI(true, currentAdminState.user, loginPayload.role || 'user');
         return;
     }
 
     const activeToken = sessionStorage.getItem('active_session_token') || localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('user_name');
-    const storedRole = localStorage.getItem('user_role');
     const storedStorage = localStorage.getItem('user_storage');
     if (storedStorage) {
         try { updateUserStorageUI(JSON.parse(storedStorage)); } catch(e) {}
     }
 
-    // If neither token nor stored user exists, stay strictly in guest state
-    if (!activeToken && !storedUser) {
+    if (!activeToken) {
         currentAdminState.logged_in = false;
         currentAdminState.user = null;
         updateAdminUI(false, null, 'guest');
         return;
     }
 
-    // Optimistically render authenticated state if stored credentials exist (prevents flash of logged out UI)
-    if (storedUser) {
-        currentAdminState.logged_in = true;
-        currentAdminState.user = storedUser;
-        updateAdminUI(true, storedUser, storedRole || 'user');
+    // Decode JWT to trust only cryptographic payload, not local storage flags
+    let jwtRole = 'user';
+    let jwtUser = 'User';
+    try {
+        const payloadStr = atob(activeToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'));
+        const payloadObj = JSON.parse(decodeURIComponent(payloadStr.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+        if (payloadObj.role) jwtRole = payloadObj.role;
+        if (payloadObj.username) jwtUser = payloadObj.username;
+        if (payloadObj.exp && payloadObj.exp * 1000 < Date.now()) throw new Error('Token expired');
+    } catch (e) {
+        currentAdminState.logged_in = false;
+        updateAdminUI(false, null, 'guest');
+        return;
     }
 
-    // Query status endpoint to verify session / token with the backend
+    currentAdminState.logged_in = true;
+    currentAdminState.user = jwtUser;
+    updateAdminUI(true, jwtUser, jwtRole);
+
     try {
-        const url = activeToken 
-            ? `api/system/admin_auth.php?action=status&token=${encodeURIComponent(activeToken)}`
-            : 'api/system/admin_auth.php?action=status';
+        const url = `api/system/admin_auth.php?action=status&token=${encodeURIComponent(activeToken)}`;
         const res = await fetch(url, {
             headers: { 
                 'X-Requested-With': 'XMLHttpRequest',

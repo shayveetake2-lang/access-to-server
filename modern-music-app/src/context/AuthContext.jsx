@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import { getAmpacheUrl, getSubsonicAuthParams } from '../utils/api';
+import { getAmpacheUrl, getSubsonicAuthParams, getBaseUrl } from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -79,24 +79,32 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (username, password) => {
-    const authParams = getSubsonicAuthParams({ username, password });
-    const isValid = await verifyToken({ username, password });
-    if (isValid) {
-      const isAdmin = await resolveIsAdmin(username, authParams);
-
-      const credentials = { 
-        username, 
-        password, 
-        isAdmin,
-        role: isAdmin ? 'admin' : 'user'
-      };
-      setUser(credentials);
-      // Persist across devices and browser sessions
-      localStorage.setItem('ampache_user', JSON.stringify(credentials));
-      sessionStorage.setItem('ampache_user', JSON.stringify(credentials));
-      return { success: true };
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/auth/login.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        const credentials = {
+          username: data.username,
+          token: data.token,
+          role: data.role,
+          isAdmin: data.role === 'admin',
+          subsonic_token: data.subsonic_token,
+          subsonic_salt: data.subsonic_salt
+        };
+        setUser(credentials);
+        localStorage.setItem('ampache_user', JSON.stringify(credentials));
+        sessionStorage.setItem('ampache_user', JSON.stringify(credentials));
+        return { success: true };
+      } else {
+        return { success: false, error: data.message || 'Invalid username or password' };
+      }
+    } catch (err) {
+      return { success: false, error: 'Network error connecting to auth server' };
     }
-    return { success: false, error: 'Invalid username or password' };
   };
 
   const logout = () => {

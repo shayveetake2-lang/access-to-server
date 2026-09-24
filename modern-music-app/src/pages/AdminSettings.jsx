@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database, Music, X, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -10,9 +11,12 @@ import OrphanedMedia from '../components/admin/OrphanedMedia';
 import MusicRequestsManager from '../components/admin/MusicRequestsManager';
 
 export default function AdminSettings() {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'metadata';
+  
   const { user: currentUser, getAuthParams } = useAuth();
   const { showToast } = useToast();
-  const [adminTab, setAdminTab] = useState('metadata'); // 'metadata' | 'users'
+  const [adminTab, setAdminTab] = useState(initialTab);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

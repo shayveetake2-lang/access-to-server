@@ -27,35 +27,64 @@ function requireAuth() {
     $adminLogged = !empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
 
     if (!empty($token)) {
-        try {
-            require_once __DIR__ . '/../../config/config.php';
-            $dbConn = function_exists('getDBConnection') ? getDBConnection() : null;
-            if ($dbConn) {
-                $tokenHash = hash('sha256', $token);
-                $stmt = $dbConn->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :h OR auth_token = :h OR auth_token = :t) LIMIT 1");
-                $stmt->execute([':h' => $tokenHash, ':t' => $token]);
-                if ($u = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                    $isExpired = !empty($u['token_expires_at']) && (strtotime($u['token_expires_at']) < time());
-                    if ($isExpired) {
-                        $_SESSION = [];
+        $parts = explode('.', $token);
+        if (count($parts) === 3) {
+            $header = $parts[0];
+            $payload = $parts[1];
+            $signature_provided = $parts[2];
+            $jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
+            $signature_expected = base64_encode(hash_hmac('sha256', "$header.$payload", $jwt_secret, true));
+            if (!hash_equals($signature_expected, $signature_provided)) {
+                http_response_code(401);
+                echo json_encode(['status' => 'error', 'message' => 'Invalid JWT signature.']);
+                exit;
+            }
+            $decoded_payload = json_decode(base64_decode($payload), true);
+            if (isset($decoded_payload['exp']) && $decoded_payload['exp'] < time()) {
+                http_response_code(401);
+                echo json_encode(['status' => 'error', 'message' => 'JWT token expired.']);
+                exit;
+            }
+            // Populate session
+            $_SESSION['auth_token'] = $token;
+            $_SESSION['user_id'] = $decoded_payload['sub'] ?? 0;
+            $_SESSION['username'] = $decoded_payload['username'] ?? '';
+            $_SESSION['role'] = $decoded_payload['role'] ?? 'member';
+            $_SESSION['admin_logged_in'] = ($_SESSION['role'] === 'admin');
+            $sessionToken = $token;
+            $adminLogged = $_SESSION['admin_logged_in'];
+        } else {
+            // Legacy token fallback for DB check
+            try {
+                require_once __DIR__ . '/../../config/config.php';
+                $dbConn = function_exists('getDBConnection') ? getDBConnection() : null;
+                if ($dbConn) {
+                    $tokenHash = hash('sha256', $token);
+                    $stmt = $dbConn->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :h OR auth_token = :h OR auth_token = :t) LIMIT 1");
+                    $stmt->execute([':h' => $tokenHash, ':t' => $token]);
+                    if ($u = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                        $isExpired = !empty($u['token_expires_at']) && (strtotime($u['token_expires_at']) < time());
+                        if ($isExpired) {
+                            $_SESSION = [];
+                            http_response_code(401);
+                            echo json_encode(['status' => 'error', 'message' => 'Authentication token has expired. Please log in again.']);
+                            exit;
+                        }
+                        $_SESSION['auth_token'] = $token;
+                        $_SESSION['user_id'] = $u['id'];
+                        $_SESSION['username'] = $u['username'];
+                        $_SESSION['role'] = $u['role'];
+                        $_SESSION['admin_logged_in'] = ($u['role'] === 'admin');
+                        $sessionToken = $token;
+                        $adminLogged = ($u['role'] === 'admin');
+                    } else {
                         http_response_code(401);
-                        echo json_encode(['status' => 'error', 'message' => 'Authentication token has expired. Please log in again.']);
+                        echo json_encode(['status' => 'error', 'message' => 'Invalid authentication token.']);
                         exit;
                     }
-                    $_SESSION['auth_token'] = $token;
-                    $_SESSION['user_id'] = $u['id'];
-                    $_SESSION['username'] = $u['username'];
-                    $_SESSION['role'] = $u['role'];
-                    $_SESSION['admin_logged_in'] = ($u['role'] === 'admin');
-                    $sessionToken = $token;
-                    $adminLogged = ($u['role'] === 'admin');
-                } else {
-                    http_response_code(401);
-                    echo json_encode(['status' => 'error', 'message' => 'Invalid authentication token.']);
-                    exit;
                 }
-            }
-        } catch (\Exception $e) {}
+            } catch (\Exception $e) {}
+        }
     }
     
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';

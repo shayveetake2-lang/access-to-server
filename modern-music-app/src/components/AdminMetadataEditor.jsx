@@ -10,11 +10,24 @@ import { getMergeMetadataUrl } from '../utils/api';
 import { adminPost } from './admin/adminApi';
 import { deleteSong, mergeSongs } from '../utils/songAdminActions';
 
+import { useSearchParams } from 'react-router-dom';
+
 export default function AdminMetadataEditor() {
+  const [searchParams] = useSearchParams();
+  const initialMergeType = searchParams.get('mergeType');
+  const initialMergeId = searchParams.get('mergeId');
+
   const { user, getAuthParams } = useAuth();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('smart_merge'); // 'smart_merge' | 'artists' | 'albums' | 'songs' | 'create_artist'
+  const [activeTab, setActiveTab] = useState(initialMergeType ? `${initialMergeType}s` : 'smart_merge'); 
+  const [filterQuery, setFilterQuery] = useState('');
+
+  // We set the initial search directly if we are targeting an ID
+  // Wait, we need to find the name of the artist/album/song by ID, but that requires data to load first.
+  // We'll handle selection after data loads.
+  const [preselectTarget, setPreselectTarget] = useState(initialMergeId);
+
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [songs, setSongs] = useState([]);
@@ -24,7 +37,7 @@ export default function AdminMetadataEditor() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [targetArtistId, setTargetArtistId] = useState('');
   const [targetArtistSearch, setTargetArtistSearch] = useState('');
-  const [filterQuery, setFilterQuery] = useState('');
+
 
   const [loading, setLoading] = useState(false);
   const [merging, setMerging] = useState(false);
@@ -142,6 +155,22 @@ export default function AdminMetadataEditor() {
     setLinkResult(null);
   }, [activeTab, isAdmin]);
 
+  // Pre-select target once data loads
+  useEffect(() => {
+    if (preselectTarget) {
+      if (activeTab === 'artists' && artists.length > 0) {
+        setSelectedIds(new Set([preselectTarget]));
+        setPreselectTarget(null);
+      } else if (activeTab === 'albums' && albums.length > 0) {
+        setSelectedIds(new Set([preselectTarget]));
+        setPreselectTarget(null);
+      } else if (activeTab === 'songs' && songs.length > 0) {
+        setSelectedIds(new Set([preselectTarget]));
+        setPreselectTarget(null);
+      }
+    }
+  }, [artists, albums, songs, activeTab, preselectTarget]);
+
   // Debounced server-side re-search whenever the filter bar query changes, so
   // matches outside the initially-loaded page are still found (fixes missing
   // items in Artists / Albums / Songs merge search).
@@ -169,22 +198,22 @@ export default function AdminMetadataEditor() {
   const displayedItems = useMemo(() => {
     const q = filterQuery.toLowerCase().trim();
     if (activeTab === 'artists') {
-      if (!q) return artists;
-      return artists.filter(a => a.name && a.name.toLowerCase().includes(q));
+      if (!q) return artists.slice(0, 150);
+      return artists.filter(a => a.name && a.name.toLowerCase().includes(q)).slice(0, 150);
     }
     if (activeTab === 'albums') {
-      if (!q) return albums;
+      if (!q) return albums.slice(0, 150);
       return albums.filter(a => 
         (a.title && a.title.toLowerCase().includes(q)) || 
         (a.artist && a.artist.toLowerCase().includes(q))
-      );
+      ).slice(0, 150);
     }
     if (activeTab === 'songs') {
-      if (!q) return songs;
+      if (!q) return songs.slice(0, 150);
       return songs.filter(s => 
         (s.title && s.title.toLowerCase().includes(q)) || 
         (s.artist && s.artist.toLowerCase().includes(q))
-      );
+      ).slice(0, 150);
     }
     return [];
   }, [activeTab, artists, albums, songs, filterQuery]);

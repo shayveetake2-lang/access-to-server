@@ -376,15 +376,13 @@ export function PlayerProvider({ children }) {
   };
 
   const playSong = (song) => {
-    let newQueue = [...queueRef.current];
-    let newIndex = 0;
-    if (newQueue.length === 0) {
-      newQueue = [song];
-    } else {
-      newIndex = currentIndexRef.current + 1;
+    const activeIndex = currentIndexRef.current;
+    const newIndex = activeIndex >= 0 ? activeIndex + 1 : 0;
+    setQueue(prevQueue => {
+      const newQueue = [...prevQueue];
       newQueue.splice(newIndex, 0, song);
-    }
-    setQueue(newQueue);
+      return newQueue;
+    });
     setCurrentIndex(newIndex);
     loadTrack(song);
   };

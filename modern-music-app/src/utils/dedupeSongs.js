@@ -10,7 +10,7 @@ const normalizeTitle = (title) => (title || '').trim().toLowerCase().replace(/\s
  * @param {number} durationToleranceSeconds - max duration delta to still count as a duplicate
  * @returns {Array} deduped songs; merged entries gain `duplicateIds` and `mergedCount`
  */
-export function dedupeSongs(songs, durationToleranceSeconds = 3) {
+export function dedupeSongs(songs, durationToleranceSeconds = 1) {
   if (!Array.isArray(songs) || songs.length === 0) return [];
 
   const groups = [];
@@ -61,7 +61,7 @@ export function createDedupeIndex() {
  * @param {number} durationToleranceSeconds
  * @returns {Array} the new deduped result array (existingResult is not mutated)
  */
-export function dedupeAppend(existingResult, newSongs, index, durationToleranceSeconds = 3) {
+export function dedupeAppend(existingResult, newSongs, index, durationToleranceSeconds = 1) {
   const result = existingResult.slice();
 
   (newSongs || []).forEach((song) => {

@@ -386,7 +386,7 @@ export default function StickyPlayer() {
           {/* Clickable Album Cover Art */}
           <div 
             onClick={albumId ? handleNavigateAlbum : undefined}
-            className={`w-10 h-10 rounded-xl bg-slate-800 shrink-0 overflow-hidden shadow-sm flex items-center justify-center border border-white/5 relative group ${albumId ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
+            className={`w-10 h-10 min-w-[40px] rounded-xl bg-slate-800 shrink-0 overflow-hidden shadow-sm flex items-center justify-center border border-white/5 relative group ${albumId ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
             title={albumId ? `View Album (${currentTrack.album || 'Tracklist'})` : 'Cover Art'}
           >
             {currentTrack.coverArt ? (
@@ -424,7 +424,7 @@ export default function StickyPlayer() {
         </div>
 
         {/* Action Buttons: Output Selector + Like + Add to Playlist + Play/Pause & Next Button */}
-        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1 shrink-0 min-w-[120px]" onClick={(e) => e.stopPropagation()}>
           <OutputMenu compact align="right" />
           <HeartButton song={currentTrack} size={18} compact className="hidden sm:flex w-12 h-12 rounded-full hover:bg-white/5 items-center justify-center" />
           <button 
@@ -625,7 +625,7 @@ export default function StickyPlayer() {
         <div className="flex items-center gap-4 w-1/3 min-w-0">
           <div 
             onClick={albumId ? handleNavigateAlbum : () => setIsExpanded(true)}
-            className={`w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg flex items-center justify-center shrink-0 overflow-hidden border border-white/10 cursor-pointer group relative ${albumId ? 'hover:ring-2 hover:ring-purple-400 transition-all' : ''}`}
+            className={`w-12 h-12 min-w-[48px] rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg flex items-center justify-center shrink-0 overflow-hidden border border-white/10 cursor-pointer group relative ${albumId ? 'hover:ring-2 hover:ring-purple-400 transition-all' : ''}`}
             title={albumId ? `View Album (${currentTrack.album || 'Tracklist'})` : "Expand Fullscreen View"}
           >
              {currentTrack.coverArt ? (
@@ -696,7 +696,7 @@ export default function StickyPlayer() {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col items-center flex-1 max-w-md px-4">
+        <div className="flex flex-col items-center flex-1 max-w-md px-4 shrink-0 min-w-[200px]">
           <div className="flex items-center gap-5 mb-1.5">
             <button 
               onClick={toggleShuffle} 

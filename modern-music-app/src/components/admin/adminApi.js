@@ -20,7 +20,10 @@ export async function adminPost(action, payload = {}) {
   const url = `${getBaseUrl()}/api/manage_content.php`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${user?.token || ''}`
+    },
     body: JSON.stringify({
       action,
       ...payload,

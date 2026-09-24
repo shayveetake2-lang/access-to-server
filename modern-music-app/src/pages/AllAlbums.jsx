@@ -79,7 +79,19 @@ export default function AllAlbums() {
         const data = await response.json();
         if (data?.['subsonic-response']?.status === 'ok') {
           const raw = data['subsonic-response'].albumList?.album;
-          setAlbums(Array.isArray(raw) ? raw : (raw ? [raw] : []));
+          const albumList = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+          
+          // Add artificial Unknown Album block for orphaned tracks
+          albumList.push({
+            id: 'unknown',
+            name: 'Unknown Album',
+            artist: 'Various Artists',
+            songCount: '?',
+            coverArt: 'unknown',
+            year: 0
+          });
+
+          setAlbums(albumList);
         }
       } catch (err) {
         console.error("Browse fetch error:", err);
