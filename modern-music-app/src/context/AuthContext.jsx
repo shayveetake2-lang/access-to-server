@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { getAmpacheUrl, getSubsonicAuthParams, getBaseUrl } from '../utils/api';
+import { checkIsAdmin } from '../utils/auth';
 
 const AuthContext = createContext();
 
@@ -13,9 +14,7 @@ export function useAuth() {
 // the server is always honored — never just trusted from a stale local cache.
 async function resolveIsAdmin(username, authParams) {
   let isAdmin = ['admin', 'musicadmin', 'serveradmin'].includes((username || '').toLowerCase());
-  if (!isAdmin && userObj) {
-    isAdmin = userObj.adminRole === true || userObj.adminRole === 'true' || userObj.adminRole === 1;
-  }
+
   try {
     const userRes = await fetch(getAmpacheUrl(`action=getUser&username=${encodeURIComponent(username)}&${authParams}`));
     const userData = await userRes.json();

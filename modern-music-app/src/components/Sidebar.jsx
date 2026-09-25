@@ -1,4 +1,4 @@
-import { Home, Search, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, Volume2, Globe, Heart } from 'lucide-react';
+import { Home, Search, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, Volume2, Globe, Heart, Disc } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
