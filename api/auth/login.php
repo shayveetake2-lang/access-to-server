@@ -7,7 +7,6 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../config/db_connect.php';
 
-
 $rawInput = file_get_contents('php://input');
 $data = json_decode($rawInput, true) ?: [];
 
@@ -20,10 +19,73 @@ if (empty($username) || empty($password)) {
     exit;
 }
 
+function getAmpacheConnectionLogin() {
+    $ampCfgFile = __DIR__ . '/../../ampache/config/ampache.cfg.php';
+    $ampCfg = file_exists($ampCfgFile) ? @parse_ini_file($ampCfgFile) : [];
+    $ampHost = $ampCfg['database_hostname'] ?? '127.0.0.1';
+    $ampPort = $ampCfg['database_port'] ?? '8889';
+    $ampDb   = $ampCfg['database_name'] ?? 'ampache';
+    $ampUser = $ampCfg['database_username'] ?? 'server_app';
+    $ampPass = $ampCfg['database_password'] ?? 'password';
+    
+    $ampHosts = array_unique(array_filter([$ampHost, '127.0.0.1', 'localhost']));
+    $ampCreds = [
+        [$ampUser, $ampPass],
+        ['root', 'root'],
+        ['server_app', 'password']
+    ];
+    $ampPdo = null;
+    foreach ($ampHosts as $ah) {
+        foreach ($ampCreds as [$au, $ap]) {
+            try {
+                return new PDO("mysql:host={$ah};port={$ampPort};dbname={$ampDb};charset=utf8mb4", $au, $ap, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_TIMEOUT => 1
+                ]);
+            } catch (\Exception $e) {}
+        }
+    }
+    return null;
+}
+
 try {
     $stmt = $pdo->prepare("SELECT id, username, password_hash, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb FROM sys_users WHERE username = :identifier LIMIT 1");
     $stmt->execute([':identifier' => $username]);
     $user = $stmt->fetch();
+
+    if (!$user) {
+        // AUTO-REGISTER IF USER DOES NOT EXIST
+        if (strlen($password) < 6) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Password must be at least 6 characters.']);
+            exit;
+        }
+        
+        $pdo->beginTransaction();
+        
+        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
+        $email = $username . '@local.host'; // placeholder
+        
+        $insert = $pdo->prepare("INSERT INTO sys_users (username, email, password_hash, role, storage_limit_mb) VALUES (:u, :e, :h, 'member', 100)");
+        $insert->execute([':u' => $username, ':e' => $email, ':h' => $hash]);
+        $newId = $pdo->lastInsertId();
+        
+        // Ampache DB Sync
+        $ampPdo = getAmpacheConnectionLogin();
+        if ($ampPdo) {
+            $ampStmt = $ampPdo->prepare("INSERT INTO user (username, password, access, creation_date) VALUES (:username, :password, 25, :created)");
+            $ampStmt->execute([
+                ':username' => $username,
+                ':password' => hash('sha256', $password),
+                ':created' => time()
+            ]);
+        }
+        $pdo->commit();
+        
+        // Re-fetch the new user
+        $stmt->execute([':identifier' => $username]);
+        $user = $stmt->fetch();
+    }
 
     if ($user && password_verify($password, $user['password_hash'])) {
         session_regenerate_id(true);
@@ -41,34 +103,8 @@ try {
         $salt = bin2hex(random_bytes(6));
         $subsonic_token = md5($password . $salt);
 
-        // Harmonize with Ampache Subsonic API token auth which validates md5(apikey + salt)
         try {
-            $ampCfgFile = __DIR__ . '/../../ampache/config/ampache.cfg.php';
-            $ampCfg = file_exists($ampCfgFile) ? @parse_ini_file($ampCfgFile) : [];
-            $ampHost = $ampCfg['database_hostname'] ?? '127.0.0.1';
-            $ampPort = $ampCfg['database_port'] ?? '8889';
-            $ampDb   = $ampCfg['database_name'] ?? 'ampache';
-            $ampUser = $ampCfg['database_username'] ?? 'server_app';
-            $ampPass = $ampCfg['database_password'] ?? 'password';
-            
-            $ampHosts = array_unique(array_filter([$ampHost, '127.0.0.1', 'localhost']));
-            $ampCreds = [
-                [$ampUser, $ampPass],
-                ['root', 'root'],
-                ['server_app', 'password']
-            ];
-            $ampPdo = null;
-            foreach ($ampHosts as $ah) {
-                foreach ($ampCreds as [$au, $ap]) {
-                    try {
-                        $ampPdo = new PDO("mysql:host={$ah};port={$ampPort};dbname={$ampDb};charset=utf8mb4", $au, $ap, [
-                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                            PDO::ATTR_TIMEOUT => 1
-                        ]);
-                        break 2;
-                    } catch (\Exception $e) {}
-                }
-            }
+            $ampPdo = getAmpacheConnectionLogin();
             if ($ampPdo) {
                 $aStmt = $ampPdo->prepare("SELECT apikey FROM user WHERE username = :u LIMIT 1");
                 $aStmt->execute([':u' => $user['username']]);
@@ -84,10 +120,7 @@ try {
                 $subsonic_token = md5($adminKey . $salt);
             }
         } catch (\Exception $ae) {
-            if ($user['username'] === (getenv('AMPACHE_ADMIN_USER') ?: 'admin')) {
-                $adminKey = getenv('AMPACHE_ADMIN_API_KEY') ?: '18e499b984c75ad09e233f6d8fe0228d';
-                $subsonic_token = md5($adminKey . $salt);
-            }
+            // fallback
         }
         
         $_SESSION['auth_token'] = $jwt;
