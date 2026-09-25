@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Music, HelpCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getBaseUrl } from '../utils/api';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -29,7 +30,7 @@ export default function Register() {
     setIsRegistering(true);
     
     try {
-      const res = await fetch('/api/auth/register.php', {
+      const res = await fetch(`${getBaseUrl()}/api/auth/register.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password })
