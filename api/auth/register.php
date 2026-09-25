@@ -63,6 +63,9 @@ try {
 
     try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100"); } catch (\Exception $e) {}
     try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0"); } catch (\Exception $e) {}
+    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN auth_token VARCHAR(255) NULL"); } catch (\Exception $e) {}
+    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN token_hash VARCHAR(255) NULL"); } catch (\Exception $e) {}
+    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN token_expires_at DATETIME NULL"); } catch (\Exception $e) {}
 
     // Check if username exists
     $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username");
@@ -84,14 +87,21 @@ try {
     $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb, auth_token, token_hash, token_expires_at) VALUES (:username, :hash, 'member', 100, :token, :th, :exp)");
     $insert->execute([':username' => $username, ':hash' => $hash, ':token' => $hashedToken, ':th' => $hashedToken, ':exp' => $expiresAt]);
     $newUserId = $pdo->lastInsertId();
-    $_SESSION['auth_token'] = $token;
+
+    $jwt_header = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
+    $jwt_payload = base64_encode(json_encode(['user_id' => $newUserId, 'username' => $username, 'role' => 'member', 'exp' => time() + ($ttlDays * 86400)]));
+    $jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
+    $jwt_signature = base64_encode(hash_hmac('sha256', "$jwt_header.$jwt_payload", $jwt_secret, true));
+    $jwt = "$jwt_header.$jwt_payload.$jwt_signature";
+
+    $_SESSION['auth_token'] = $jwt;
     $_SESSION['user_id'] = $newUserId;
     $_SESSION['username'] = $username;
     $_SESSION['role'] = 'member';
 
     echo json_encode([
         'status'   => 'success',
-        'token'    => $token,
+        'token'    => $jwt,
         'role'     => 'member',
         'username' => $username,
         'storage'  => [

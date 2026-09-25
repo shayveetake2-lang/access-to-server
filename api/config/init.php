@@ -25,7 +25,6 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 $allowedOriginsList = [
     'serverflow.icu',
     'www.serverflow.icu',
-    '10.247.192.231',
     'localhost',
     '127.0.0.1'
 ];

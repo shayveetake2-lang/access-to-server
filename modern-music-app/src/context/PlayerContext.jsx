@@ -381,8 +381,10 @@ export function PlayerProvider({ children }) {
     setQueue(prevQueue => {
       const newQueue = [...prevQueue];
       newQueue.splice(newIndex, 0, song);
+      queueRef.current = newQueue;
       return newQueue;
     });
+    currentIndexRef.current = newIndex;
     setCurrentIndex(newIndex);
     loadTrack(song);
   };

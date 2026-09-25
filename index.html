@@ -1452,7 +1452,7 @@
             }
 
             try {
-                const res = await fetch(`api/system/get_hosted_sites.php?token=${encodeURIComponent(token)}`, {
+                const res = await fetch(`/api/system/get_hosted_sites.php?token=${encodeURIComponent(token)}`, {
                     headers: {
                         'Authorization': token ? `Bearer ${token}` : ''
                     }
@@ -1602,7 +1602,7 @@
             if (!dbName) return alert('Please enter a database name');
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
-                const res = await fetch('api/system/provision_db.php', {
+                const res = await fetch('/api/system/provision_db.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -1631,7 +1631,7 @@
             if (!token) return;
 
             try {
-                const res = await fetch('api/system/get_my_quota.php', {
+                const res = await fetch('/api/system/get_my_quota.php', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -1663,7 +1663,7 @@
 
         async function loadServerStorage() {
             try {
-                const res = await fetch('api/system/server_storage.php');
+                const res = await fetch('/api/system/server_storage.php');
                 const data = await res.json();
                 if (data && data.status === 'success') {
                     const percent = Math.round(data.percent_used || 0);
@@ -1722,7 +1722,7 @@
             }
 
             try {
-                const res = await fetch('api/media/submit_request.php', {
+                const res = await fetch('/api/media/submit_request.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1753,7 +1753,7 @@
             if (!token) return;
 
             try {
-                const res = await fetch('api/media/get_requests.php', {
+                const res = await fetch('/api/media/get_requests.php', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -1809,7 +1809,7 @@
                 formData.append('port', targetPort);
                 if (token) formData.append('token', token);
                 try {
-                    const res = await fetch('usb_manager.php?action=upload', { 
+                    const res = await fetch('/usb_manager.php?action=upload', { 
                         method: 'POST', 
                         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
                         body: formData 
@@ -1834,7 +1834,7 @@
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             const tbody = document.getElementById('db-tables-body');
             try {
-                const res = await fetch('api/system/get_databases.php', {
+                const res = await fetch('/api/system/get_databases.php', {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
                 if (!res.ok) {
@@ -1906,7 +1906,7 @@
 
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
-                const res = await fetch(`api/system/inspect_table.php?table=${encodeURIComponent(tableName)}`, {
+                const res = await fetch(`/api/system/inspect_table.php?table=${encodeURIComponent(tableName)}`, {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
                 if (!res.ok) {
@@ -1962,7 +1962,7 @@
 
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
-                const res = await fetch('api/system/get_activity.php', {
+                const res = await fetch('/api/system/get_activity.php', {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
                 if (!res.ok) throw new Error(`HTTP status ${res.status}`);
@@ -2072,11 +2072,11 @@
 
             try {
                 // Fetch user list from secure backend endpoint with Authorization header
-                let res = await fetch('api/get_users.php', {
+                let res = await fetch('/api/get_users.php', {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
                 if (!res.ok && res.status === 404) {
-                    res = await fetch('api/system/admin_accounts.php?action=list', {
+                    res = await fetch('/api/system/admin_accounts.php?action=list', {
                         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                     });
                 }
@@ -2187,7 +2187,7 @@
             }
 
             try {
-                const res = await fetch('api/update_role.php', {
+                const res = await fetch('/api/update_role.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2267,7 +2267,7 @@
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
 
             try {
-                const res = await fetch('api/system/admin_accounts.php?action=update_storage', {
+                const res = await fetch('/api/system/admin_accounts.php?action=update_storage', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2313,7 +2313,7 @@
             }
 
             try {
-                const res = await fetch('api/system/admin_accounts.php?action=change_password', {
+                const res = await fetch('/api/system/admin_accounts.php?action=change_password', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2360,7 +2360,7 @@
             }
 
             try {
-                const res = await fetch('api/system/admin_accounts.php?action=add', {
+                const res = await fetch('/api/system/admin_accounts.php?action=add', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2387,7 +2387,7 @@
             if (!confirm(`Are you sure you want to permanently delete the account '${username}'?`)) return;
             const token = localStorage.getItem('auth_token') || sessionStorage.getItem('active_session_token') || '';
             try {
-                const res = await fetch('api/system/admin_accounts.php?action=delete', {
+                const res = await fetch('/api/system/admin_accounts.php?action=delete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2417,7 +2417,7 @@
             if (action === 'ping_db') {
                 const start = performance.now();
                 try {
-                    const res = await fetch('api/v1/status.php');
+                    const res = await fetch('/api/v1/status.php');
                     const lat = Math.round(performance.now() - start);
                     const d = await res.json();
                     banner.className = 'p-3 rounded-xl text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
@@ -2448,7 +2448,7 @@
             if (usbSvg) usbSvg.classList.add('animate-spin');
 
             try {
-                const res = await fetch('api/drive_monitor.php');
+                const res = await fetch('/api/drive_monitor.php');
                 const text = await res.text();
                 console.log('Raw PHP Response:', text);
                 let data;
@@ -2509,7 +2509,7 @@
                                 : 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0';
                         }
                     }
-                    if (movies) {
+
                     // 3. Dual-Port USB Storage
                     const usb1 = drives.usb_port1;
                     const usb2 = drives.usb_port2;

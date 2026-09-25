@@ -133,7 +133,7 @@ if (!$is_admin) {
 // ── DB Connection ─────────────────────────────────────────────────────────────
 
 function getPdo(): PDO {
-    $hosts = ['127.0.0.1', '10.247.192.231'];
+    $hosts = ['127.0.0.1', 'localhost'];
     $port  = 8889;
     $db    = 'ampache';
 

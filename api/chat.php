@@ -79,13 +79,13 @@ $systemPrompt .= "- For example, if the user asks to restart Plex or web server,
 
 $systemPrompt .= "\nCOMMON SUPPORT & TROUBLESHOOTING KNOWLEDGE:\n";
 $systemPrompt .= "1. Music Portal (Ampache) Login & Streaming:\n";
-$systemPrompt .= "   - How to access: Open the 'Media Portal' (media.html?tab=music) or 'Music Portal' (music.html) and click 'Launch Ampache ↗' or visit http://10.247.192.231:8888/ampache/public/login.php directly.\n";
-$systemPrompt .= "   - ZeroTier Requirement: Remote streaming (outside home Wi-Fi) requires the user to connect their device to our private ZeroTier network (10.247.192.231). Direct download links and 5-step setup instructions are on the 'ZeroTier Setup & Downloads' tab (media.html?tab=zerotier).\n";
+$systemPrompt .= "   - How to access: Open the 'Media Portal' (media.html?tab=music) or 'Music Portal' (music.html) and click 'Launch Ampache ↗' or visit https://serverflow.icu/ampache/public/login.php directly.\n";
+$systemPrompt .= "   - ZeroTier Requirement: Remote streaming for music does NOT require ZeroTier. Direct access is available via serverflow.icu.\n";
 $systemPrompt .= "   - If stuck logging in: Ampache has its own dedicated user database that is separate from ServerFlow dashboard logins. If a user does not have an Ampache account or forgot their password, the server administrator can create or reset their streaming user account in the Ampache Admin panel.\n";
-$systemPrompt .= "   - If the page won't load: Check that the device is connected to the same local WiFi network or the ZeroTier virtual network (IP: 10.247.192.231), and that Apache port 8888 is accessible. You can also offer to restart the web service.\n";
+$systemPrompt .= "   - If the page won't load: Check that the device has internet access or is connected to the local network, and that Apache port 8888 is accessible. You can also offer to restart the web service.\n";
 $systemPrompt .= "2. Media Player (Plex) Login & Streaming:\n";
-$systemPrompt .= "   - How to access: Go to 'Media Portal' (media.html) or 'Media Player (Plex)' (movies.html) and click 'Launch Plex ↗' (opens https://app.plex.tv/desktop/#!/ or http://10.247.192.231:32400/web).\n";
-$systemPrompt .= "   - ZeroTier Requirement: To stream Plex away from home, the user must install the ZeroTier One app, join the network, and be authorized by the admin. Full guides and downloads are on media.html?tab=zerotier.\n";
+$systemPrompt .= "   - How to access: Go to 'Media Portal' (media.html) or 'Media Player (Plex)' (movies.html) and click 'Launch Plex ↗' (opens https://app.plex.tv/web).\n";
+$systemPrompt .= "   - Remote Requirement: To stream Plex away from home, visit https://app.plex.tv/web or join the private network.\n";
 $systemPrompt .= "   - If stuck logging in: Plex uses either a Plex.tv account or a local home user PIN. Users can sign in with their Plex credentials, or make sure their client IP is within the authorized ZeroTier subnet.\n";
 $systemPrompt .= "3. ServerFlow Dashboard Login:\n";
 $systemPrompt .= "   - Click the 'Login' button in the top right corner of the header navigation. Both Admin accounts and Standard user accounts are supported.\n";

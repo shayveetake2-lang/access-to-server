@@ -11,6 +11,8 @@ import { dedupeSongs } from '../utils/dedupeSongs';
 import { extractPrimaryArtistName, normalizeArtistKey } from '../utils/artistHelper';
 import StarButton from '../components/StarButton';
 import HeartButton from '../components/HeartButton';
+import { checkIsAdmin } from '../utils/auth';
+
 export default function ArtistDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -18,7 +20,7 @@ export default function ArtistDetails() {
   const [allAlbums, setAllAlbums] = useState([]);
   const [topSongs, setTopSongs] = useState([]);
   const [allSongs, setAllSongs] = useState([]);
-  // relatedArtists removed
+  const [relatedArtists, setRelatedArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [showAllTopSongs, setShowAllTopSongs] = useState(false);
@@ -267,7 +269,7 @@ export default function ArtistDetails() {
                   <Sparkles size={10} /> +{mergedAliasCount} featured appearance{mergedAliasCount === 1 ? '' : 's'} merged
                 </span>
               )}
-              {user?.role === 'admin' && (
+              {(checkIsAdmin(user) || user?.role === 'admin') && (
                 <button 
                   onClick={() => navigate(`/settings?tab=metadata&mergeType=artist&mergeId=${artist.id}`)}
                   className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-full backdrop-blur-sm transition-colors border border-white/10 ml-auto sm:ml-4"
@@ -373,7 +375,7 @@ export default function ArtistDetails() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-sm">
-                {displayedTopSongs.map((song, index) => {
+                {displayedTopSongs?.map((song, index) => {
                   const isCurrent = currentTrack?.id === song.id;
                   return (
                     <tr
@@ -490,7 +492,7 @@ export default function ArtistDetails() {
           <p className="text-slate-400 text-xs py-8 px-1">No albums found for this artist.</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
-            {allAlbums.map((album) => (
+            {allAlbums?.map((album) => (
               <Link
                 to={`/albums/${album.id}`}
                 key={album.id}
@@ -546,7 +548,7 @@ export default function ArtistDetails() {
             <User size={20} className="text-purple-400 sm:w-6 sm:h-6" /> Related Top Artists
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
-            {relatedArtists.map((relArtist) => (
+            {relatedArtists?.map((relArtist) => (
               <Link
                 to={`/artists/${relArtist.id}`}
                 key={relArtist.id}

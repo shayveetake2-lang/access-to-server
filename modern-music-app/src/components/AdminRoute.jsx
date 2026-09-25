@@ -1,11 +1,12 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { checkIsAdmin } from '../utils/auth';
 
 // Route wrapper that redirects non-admins away from admin-only pages.
 // Reads the same isAdmin/role flags AuthContext refreshes from the server
 // on every load, so it never blocks (or leaks access to) a stale local state.
 export default function AdminRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -15,8 +16,7 @@ export default function AdminRoute({ children }) {
     );
   }
 
-  const { isAdmin } = useAuth();
-  if (!isAdmin) {
+  if (!isAdmin && !checkIsAdmin(user)) {
     return <Navigate to="/" replace />;
   }
 

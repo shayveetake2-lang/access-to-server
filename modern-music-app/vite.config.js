@@ -11,15 +11,15 @@ export default defineConfig({
   server: {
     proxy: {
       '/ampache': {
-        target: 'http://10.247.192.231:8888',
+        target: 'http://127.0.0.1:8888',
         changeOrigin: true,
       },
       '/modern-music-app/api_proxy.php': {
-        target: 'http://10.247.192.231:8888',
+        target: 'http://127.0.0.1:8888',
         changeOrigin: true,
       },
       '/api': {
-        target: 'http://10.247.192.231:8888',
+        target: 'http://127.0.0.1:8888',
         changeOrigin: true,
       }
     }

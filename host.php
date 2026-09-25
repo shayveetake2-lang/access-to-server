@@ -201,7 +201,7 @@ if (!$isAdmin) {
                     <h3 class="text-sm font-bold text-slate-900 dark:text-white">Server Specs Overview</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono">
                         <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">OS / HARDWARE</span>macOS (MacBook Pro 2011)</div>
-                        <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">ZEROTIER NETWORK IP</span><span class="text-cyan-400 font-bold">10.247.192.231</span></div>
+                        <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">PUBLIC DOMAIN</span><span class="text-cyan-400 font-bold">serverflow.icu</span></div>
                         <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">WEB SERVER ENGINE</span><span class="text-emerald-400 font-bold">Apache 2.4 / PHP 8</span></div>
                         <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800"><span class="text-slate-400 block text-[10px]">DATABASE ENGINE</span>MySQL / SQLite PDO Engine</div>
                     </div>

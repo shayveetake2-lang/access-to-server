@@ -12,7 +12,7 @@ export default function Sidebar() {
     { icon: <Home size={19} />, label: 'Home', path: '/' },
     { icon: <Disc size={19} />, label: 'Browse Albums', path: '/albums' },
     { icon: <Mic2 size={19} />, label: 'Artists', path: '/artists' },
-    { icon: <Library size={19} />, label: 'Songs & Charts', path: '/songs?tab=top100' },
+    { icon: <Library size={19} />, label: 'All Songs', path: '/songs?tab=top100' },
     { icon: <Heart size={19} className="text-rose-400" />, label: 'Liked Songs', path: '/liked' },
     { icon: <ListMusic size={19} />, label: 'My Playlists', path: '/playlists' },
     { icon: <Globe size={19} />, label: 'Public Playlists', path: '/public-playlists' },

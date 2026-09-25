@@ -82,15 +82,15 @@ function App() {
     }
   }, []);
   return (
-    <ErrorBoundary>
-      <Router>
+    <Router>
+      <ErrorBoundary>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/*" element={<ProtectedLayout />} />
         </Routes>
-      </Router>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </Router>
   );
 }
 

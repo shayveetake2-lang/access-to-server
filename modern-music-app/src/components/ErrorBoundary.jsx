@@ -1,7 +1,8 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
-export default class ErrorBoundary extends React.Component {
+class ErrorBoundaryInner extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
@@ -14,6 +15,13 @@ export default class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('[Aether ErrorBoundary caught an unhandled render error]:', error, errorInfo);
     this.setState({ errorInfo });
+  }
+
+  componentDidUpdate(prevProps) {
+    // If the route location changes, automatically clear error state so navigation recovers
+    if (this.state.hasError && this.props.locationKey !== prevProps.locationKey) {
+      this.setState({ hasError: false, error: null, errorInfo: null });
+    }
   }
 
   handleReload = () => {
@@ -70,3 +78,14 @@ export default class ErrorBoundary extends React.Component {
   }
 }
 
+export default function ErrorBoundary(props) {
+  let locationKey = '';
+  try {
+    const location = useLocation();
+    locationKey = (location.pathname || '') + (location.search || '');
+  } catch (e) {
+    // Rendered outside Router context
+  }
+
+  return <ErrorBoundaryInner {...props} locationKey={locationKey} />;
+}

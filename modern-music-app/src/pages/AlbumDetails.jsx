@@ -27,38 +27,14 @@ export default function AlbumDetails() {
     const fetchAlbumDetails = async () => {
       setLoading(true);
       try {
-        if (id === 'unknown') {
-          // Bypass Subsonic getAlbum for missing tags
-          const response = await fetch(`/api/get_unknown_album_tracks.php`, {
-            headers: {
-              'Authorization': `Bearer ${user.token}`
-            }
-          });
-          const data = await response.json();
-          if (data?.status === 'success') {
-            if (isMounted) {
-              setAlbum({
-                id: 'unknown',
-                name: 'Unknown Album',
-                artist: 'Various Artists',
-                songCount: data.songs.length,
-                song: data.songs,
-                coverArt: 'unknown'
-              });
-            }
-          } else {
-            if (isMounted) setAlbum(null);
+        const rawAlbum = await fetchAlbumData(id, user);
+        if (rawAlbum) {
+          if (rawAlbum.song) {
+            rawAlbum.song = dedupeSongs(Array.isArray(rawAlbum.song) ? rawAlbum.song : [rawAlbum.song]);
           }
+          if (isMounted) setAlbum(rawAlbum);
         } else {
-          const rawAlbum = await fetchAlbumData(id, user);
-          if (rawAlbum) {
-            if (rawAlbum.song) {
-              rawAlbum.song = dedupeSongs(Array.isArray(rawAlbum.song) ? rawAlbum.song : [rawAlbum.song]);
-            }
-            if (isMounted) setAlbum(rawAlbum);
-          } else {
-            if (isMounted) setAlbum(null);
-          }
+          if (isMounted) setAlbum(null);
         }
       } catch (err) {
         console.error('Error fetching album details:', err);

@@ -71,7 +71,7 @@ try {
             $ampUser = $ampCfg['database_username'] ?? 'server_app';
             $ampPass = $ampCfg['database_password'] ?? 'password';
             
-            $ampHosts = array_unique(array_filter([$ampHost, '127.0.0.1', 'localhost', '10.247.192.231']));
+            $ampHosts = array_unique(array_filter([$ampHost, '127.0.0.1', 'localhost']));
             $ampCreds = [
                 [$ampUser, $ampPass],
                 ['root', 'root'],

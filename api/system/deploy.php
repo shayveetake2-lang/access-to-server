@@ -43,13 +43,9 @@ if ($decoded_payload === null) {
     exit;
 }
 
-// Strict Role-Based Access Control: Deployment requires admin privileges
+// Strict Role-Based Access Control: Relaxed to allow standard users to deploy (Friend Hosting)
 $userRole = $decoded_payload['role'] ?? 'user';
-if ($userRole !== 'admin') {
-    http_response_code(403);
-    echo "data: Error 403: Forbidden. Administrator privileges required to execute deployments.\n\n";
-    exit;
-}
+// Removed: Admin-only block to restore standard deployment capability
 
 // Set session for downstream quota & ownership handling
 $_SESSION['username'] = $decoded_payload['username'] ?? 'admin';

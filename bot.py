@@ -21,7 +21,7 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 # System prompt for Groq
-SYSTEM_PROMPT = """You are a fun, warm, and slightly witty AI assistant managing a MacBook Pro 2011 home server at 10.247.192.231.
+SYSTEM_PROMPT = """You are a fun, warm, and slightly witty AI assistant managing a MacBook Pro 2011 home server at serverflow.icu.
 You provide very simple, concise, and conversational answers. Strictly avoid walls of text.
 
 System Architecture & Services:

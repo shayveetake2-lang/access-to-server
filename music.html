@@ -249,7 +249,7 @@
             if (e && typeof e.preventDefault === 'function') e.preventDefault();
             const base = window.location.pathname.includes('/access-to-server') ? '/access-to-server' : '';
             const target = window.location.protocol === 'file:' 
-                ? 'http://10.247.192.231:8888/modern-music-app/dist/'
+                ? 'https://serverflow.icu/modern-music-app/dist/'
                 : window.location.origin + base + '/modern-music-app/dist/';
             window.open(target, '_blank');
         }
@@ -258,12 +258,12 @@
             if (e && typeof e.preventDefault === 'function') e.preventDefault();
             let target = '/ampache/public/login.php';
             if (window.location.protocol === 'file:') {
-                target = 'http://10.247.192.231:8888/ampache/public/login.php';
+                target = 'https://serverflow.icu/ampache/public/login.php';
             } else if (window.location.hostname === 'serverflow.icu') {
                 target = 'https://serverflow.icu/ampache/public/login.php';
             } else if (window.location.hostname.includes('serveousercontent.com')) {
                 target = 'https://' + window.location.hostname + '/ampache/public/login.php';
-            } else if (window.location.hostname === '10.247.192.231' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 target = window.location.protocol + '//' + window.location.hostname + ':8888/access-to-server/ampache/public/login.php';
             }
             window.open(target, '_blank');

@@ -20,7 +20,7 @@ export default function TopBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { playQueue, playSong, addToQueue, currentTrack, isPlaying } = usePlayer();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, getAuthParams } = useAuth();
   const { openAddToPlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
   
@@ -132,7 +132,7 @@ export default function TopBar() {
         {/* Dropdown Results */}
         {showDropdown && results && (() => {
           const rawSongs = results.song;
-          const songs = Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : []);
+          const songs = (Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : [])).slice(0, 150);
           const rawAlbums = results.album;
           const albums = Array.isArray(rawAlbums) ? rawAlbums : (rawAlbums ? [rawAlbums] : []);
           const rawArtists = results.artist;
@@ -162,7 +162,7 @@ export default function TopBar() {
                              <div className="flex items-center gap-3 min-w-0 flex-1">
                                <div className="relative w-10 h-10 rounded-lg bg-slate-800 shrink-0 overflow-hidden border border-white/5 flex items-center justify-center">
                                  <img 
-                                   src={getCoverArtUrl(song.coverArt || song.id)} 
+                                   src={getCoverArtUrl(song.coverArt || song.id, getAuthParams(user))} 
                                    className="w-full h-full object-cover" 
                                    alt="" 
                                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_COVER_ART; }}
@@ -220,7 +220,7 @@ export default function TopBar() {
                       {albums.map(album => (
                         <Link to={`/albums/${album.id}`} key={album.id} onClick={handleResultClick} className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 cursor-pointer transition-colors group">
                            <img 
-                             src={getCoverArtUrl(album.coverArt || album.id)} 
+                             src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
                              className="w-10 h-10 rounded bg-slate-800 object-cover shrink-0" 
                              alt="" 
                              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_COVER_ART; }}

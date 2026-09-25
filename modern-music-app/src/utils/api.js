@@ -115,11 +115,13 @@ export function getSubsonicAuthParams(user = null, forceNew = false) {
 }
 
 export function getCoverArtUrl(coverArtId, authParams = '') {
-  if (!coverArtId || String(coverArtId).trim() === '' || String(coverArtId) === '0') {
+  if (!coverArtId || String(coverArtId).trim() === '' || String(coverArtId) === '0' || String(coverArtId) === 'unknown') {
     return DEFAULT_COVER_ART;
   }
   const cleanId = String(coverArtId).trim();
-  return `${getApiProxyUrl()}?action=getCoverArt&id=${encodeURIComponent(cleanId)}`;
+  const auth = authParams || getSubsonicAuthParams();
+  const authStr = auth ? (auth.startsWith('&') ? auth : `&${auth}`) : '';
+  return `${getAmpacheUrl(`action=getCoverArt&id=${encodeURIComponent(cleanId)}`)}${authStr}`;
 }
 
 export function getStreamUrl(trackId, authParams = '') {
@@ -190,7 +192,7 @@ export async function searchSubsonic(query, user = null) {
   const trimmedQuery = query.trim();
   if (trimmedQuery.length < 2) return {};
 
-  const auth = getSubsonicAuthParams(user, true);
+  const auth = getSubsonicAuthParams(user);
   const variants = getSearchVariants(trimmedQuery);
   const [responses, unknownArtistId] = await Promise.all([
     Promise.allSettled(variants.map(variant => (
@@ -351,6 +353,29 @@ export async function fetchAllAlbums(user = null) {
 
 export async function fetchAlbumDetails(albumId, user = null) {
   if (!albumId) return null;
+
+  // Virtual route handling for unassigned / missing album tags
+  if (albumId === 'unknown') {
+    try {
+      const headers = user?.token ? { 'Authorization': `Bearer ${user.token}` } : {};
+      const res = await fetch(`${getBaseUrl()}/api/get_unknown_album_tracks.php`, { headers });
+      const data = await res.json();
+      if (data?.status === 'success' && Array.isArray(data.songs)) {
+        return {
+          id: 'unknown',
+          name: 'Unknown Album',
+          artist: 'Various Artists',
+          songCount: data.songs.length,
+          song: data.songs,
+          coverArt: 'unknown'
+        };
+      }
+    } catch (e) {
+      console.debug("fetchAlbumDetails unknown album fallback:", e);
+    }
+    return null;
+  }
+
   const cacheBust = `_t=${Date.now()}`;
   // 1. Try proxy first
   try {
@@ -489,9 +514,12 @@ export async function toggleStarredItem({ albumId, artistId, songId } = {}, star
   // 1. Try high-speed database proxy first
   try {
     let pUrl = `${getApiProxyUrl()}?action=${action}${uParam}`;
-    if (songId) pUrl += `&id=${encodeURIComponent(songId)}`;
-    if (albumId) pUrl += `&albumId=${encodeURIComponent(albumId)}`;
-    if (artistId) pUrl += `&artistId=${encodeURIComponent(artistId)}`;
+    if (songId) {
+      pUrl += `&id=${encodeURIComponent(songId)}`;
+    } else {
+      if (albumId) pUrl += `&albumId=${encodeURIComponent(albumId)}`;
+      if (artistId) pUrl += `&artistId=${encodeURIComponent(artistId)}`;
+    }
 
     const res = await fetch(pUrl);
     const data = await res.json();
@@ -504,9 +532,12 @@ export async function toggleStarredItem({ albumId, artistId, songId } = {}, star
   try {
     const auth = getSubsonicAuthParams(user, true);
     let url = getAmpacheUrl(`action=${action}&${auth}`);
-    if (songId) url += `&id=${encodeURIComponent(songId)}`;
-    if (albumId) url += `&albumId=${encodeURIComponent(albumId)}`;
-    if (artistId) url += `&artistId=${encodeURIComponent(artistId)}`;
+    if (songId) {
+      url += `&id=${encodeURIComponent(songId)}`;
+    } else {
+      if (albumId) url += `&albumId=${encodeURIComponent(albumId)}`;
+      if (artistId) url += `&artistId=${encodeURIComponent(artistId)}`;
+    }
     const res = await fetch(url);
     const data = await res.json();
     return data?.['subsonic-response']?.status === 'ok';
