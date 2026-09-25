@@ -1,3 +1,4 @@
+import { formatDuration } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -212,7 +213,7 @@ export default function AlbumDetails() {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span className="text-[11px] text-slate-400 font-mono">
-                    {Math.floor(dur / 60)}:{(dur % 60).toString().padStart(2, '0')}
+                    {formatDuration(dur)}
                   </span>
                   <button 
                     onClick={(e) => { 
@@ -287,7 +288,7 @@ export default function AlbumDetails() {
                   </td>
                   <td className="px-4 sm:px-6 py-3 text-right w-36 sm:w-44 shrink-0">
                     <div className="flex items-center justify-end gap-1.5 font-mono text-xs">
-                      <span className="text-slate-400 mr-1 text-[11px] sm:text-xs">{Math.floor(dur / 60)}:{(dur % 60).toString().padStart(2, '0')}</span>
+                      <span className="text-slate-400 mr-1 text-[11px] sm:text-xs">{formatDuration(dur)}</span>
                       <button 
                         onClick={(e) => { 
                           e.stopPropagation(); 

@@ -31,7 +31,7 @@ export default function Playlists() {
             (p.id ? !String(p.id).startsWith('400000') : true) && 
             (!p.owner || p.owner === '' || (user?.username && p.owner.toLowerCase() === user.username.toLowerCase()))
           );
-          setPlaylists(userPlaylists.slice(0, 9));
+          setPlaylists(userPlaylists);
         } else {
           setPlaylists([]);
         }
@@ -84,7 +84,7 @@ export default function Playlists() {
       <div className="flex items-center gap-2 mb-6 border-b border-white/10 pb-4">
         <div className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center gap-1.5 shadow-sm">
           <span>My Playlists</span>
-          <span className="ml-1 text-[10px] px-1.5 py-0.2 bg-purple-500/30 text-purple-200 rounded-full font-bold">
+          <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-purple-500/30 text-purple-200 rounded-full font-bold">
             {playlists.length}
           </span>
         </div>
@@ -100,9 +100,9 @@ export default function Playlists() {
       <div className="flex items-center justify-between mb-5 sm:mb-8 mt-1 px-1">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold text-white mb-0.5">My Playlists</h1>
-          <p className="text-xs text-slate-400">{playlists.length} / 9 playlists used</p>
+          <p className="text-xs text-slate-400">{playlists.length} playlist{playlists.length === 1 ? '' : 's'}</p>
         </div>
-        {playlists.length < 9 && (
+        {true && (
           <button 
             onClick={handleCreatePlaylist} 
             className="bg-purple-500 hover:bg-purple-400 text-white px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 flex items-center gap-1.5"

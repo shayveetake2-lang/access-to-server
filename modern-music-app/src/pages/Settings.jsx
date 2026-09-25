@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Moon, Sun, Mail, Music, HelpCircle, Send } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
-import { getMediaRequestsUrl, getSubsonicAuthParams } from '../utils/api';
+import { submitSongRequest } from '../utils/api';
 
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(true);
@@ -15,13 +15,8 @@ export default function Settings() {
   const [submitting, setSubmitting] = useState(false);
   
   useEffect(() => {
-    const stored = localStorage.getItem('aether_theme');
-    if (stored === 'light') {
-      setDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
+    const stored = localStorage.getItem('aether_theme') || 'dark';
+    setDarkMode(stored === 'dark');
   }, []);
 
   const toggleTheme = () => {

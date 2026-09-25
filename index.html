@@ -2449,7 +2449,15 @@
 
             try {
                 const res = await fetch('api/drive_monitor.php');
-                const data = await res.json();
+                const text = await res.text();
+                console.log('Raw PHP Response:', text);
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('JSON Parse Error. Server might have returned a 500 or timeout string:', parseError);
+                    return;
+                }
                 
                 if (data && data.status === 'success' && data.drives) {
                     const drives = data.drives;
@@ -2488,11 +2496,11 @@
                         const percentText = document.getElementById('movies-percent-text');
                         if (percentText) percentText.textContent = network.mounted ? `${percent}%` : '--%';
                         const usedText = document.getElementById('movies-used-text');
-                        if (usedText) usedText.textContent = network.mounted ? network.used_formatted : '--';
+                        if (usedText) usedText.textContent = network.used_formatted;
                         const freeText = document.getElementById('movies-free-text');
-                        if (freeText) freeText.textContent = network.mounted ? network.free_formatted : '--';
+                        if (freeText) freeText.textContent = network.free_formatted;
                         const totalText = document.getElementById('movies-total-text');
-                        if (totalText) totalText.textContent = network.mounted ? network.total_formatted : '--';
+                        if (totalText) totalText.textContent = network.total_formatted;
                         const moviesPill = document.getElementById('movies-status-pill');
                         if (moviesPill) {
                             moviesPill.textContent = network.mounted ? '● Online' : '○ Offline';
@@ -2525,11 +2533,11 @@
                         const bar1 = document.getElementById('usb1-bar-fill');
                         if (bar1) bar1.style.width = usb1.mounted ? `${Math.min(100, usb1.percent_used || 0)}%` : '0%';
                         const used1 = document.getElementById('usb1-used-text');
-                        if (used1) used1.textContent = usb1.mounted ? usb1.used_formatted : '0 B';
+                        if (used1) used1.textContent = usb1.used_formatted;
                         const free1 = document.getElementById('usb1-free-text');
-                        if (free1) free1.textContent = usb1.mounted ? usb1.free_formatted : '0 B';
+                        if (free1) free1.textContent = usb1.free_formatted;
                         const total1 = document.getElementById('usb1-total-text');
-                        if (total1) total1.textContent = usb1.mounted ? usb1.total_formatted : '0 B';
+                        if (total1) total1.textContent = usb1.total_formatted;
                     }
 
                     // Port 2 UI
@@ -2550,11 +2558,11 @@
                         const bar2 = document.getElementById('usb2-bar-fill');
                         if (bar2) bar2.style.width = usb2.mounted ? `${Math.min(100, usb2.percent_used || 0)}%` : '0%';
                         const used2 = document.getElementById('usb2-used-text');
-                        if (used2) used2.textContent = usb2.mounted ? usb2.used_formatted : '0 B';
+                        if (used2) used2.textContent = usb2.used_formatted;
                         const free2 = document.getElementById('usb2-free-text');
-                        if (free2) free2.textContent = usb2.mounted ? usb2.free_formatted : '0 B';
+                        if (free2) free2.textContent = usb2.free_formatted;
                         const total2 = document.getElementById('usb2-total-text');
-                        if (total2) total2.textContent = usb2.mounted ? usb2.total_formatted : '0 B';
+                        if (total2) total2.textContent = usb2.total_formatted;
                     }
 
                     // Overall USB Hardware Ports Pill

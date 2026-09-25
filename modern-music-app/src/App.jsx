@@ -1,5 +1,6 @@
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import StickyPlayer from './components/StickyPlayer';
@@ -72,6 +73,14 @@ function ProtectedLayout() {
 }
 
 function App() {
+  useEffect(() => {
+    const theme = localStorage.getItem('aether_theme');
+    if (theme === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
   return (
     <ErrorBoundary>
       <Router>

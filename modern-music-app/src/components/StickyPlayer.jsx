@@ -1,3 +1,4 @@
+import { formatDuration } from '../utils/formatters';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, ListVideo, Music, Repeat1, ChevronUp, ChevronDown, Trash2, X, Volume2, Volume1, VolumeX, Plus } from 'lucide-react';
@@ -197,7 +198,13 @@ export default function StickyPlayer() {
     }
     let nextIndex;
     if (isShuffle) {
-      nextIndex = Math.floor(Math.random() * queue.length);
+      if (queue.length > 1) {
+        do {
+          nextIndex = Math.floor(Math.random() * queue.length);
+        } while (nextIndex === currentIndex);
+      } else {
+        nextIndex = 0;
+      }
     } else {
       nextIndex = currentIndex + 1;
       if (nextIndex >= queue.length) {
@@ -907,7 +914,7 @@ export default function StickyPlayer() {
                       <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
                         {track.duration > 0 && (
                           <span className="text-[11px] text-slate-300 font-mono mr-2 hidden sm:inline-block">
-                            {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
+                            {formatDuration(track.duration)}
                           </span>
                         )}
                         <div className="flex flex-col mr-1">

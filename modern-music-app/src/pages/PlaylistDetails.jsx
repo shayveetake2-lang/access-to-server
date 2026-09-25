@@ -1,3 +1,4 @@
+import { formatDuration } from '../utils/formatters';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Clock, ListMusic, Trash2, ListPlus, Volume2, Globe, Lock, BookmarkPlus, User } from 'lucide-react';
@@ -204,7 +205,16 @@ export default function PlaylistDetails() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-5 sm:gap-8 items-center sm:items-end mb-6 sm:mb-8 mt-2 text-center sm:text-left bg-gradient-to-b from-purple-900/20 to-transparent p-4 sm:p-6 rounded-3xl border border-white/5">
         <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.7)] shrink-0 bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center border border-white/10">
-          <ListMusic size={56} className="text-white/40" />
+          {tracks[0]?.coverArt ? (
+            <img
+              src={getCoverArtUrl(tracks[0].coverArt, authParams)}
+              className="w-full h-full object-cover"
+              alt=""
+              onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) e.currentTarget.src = DEFAULT_COVER_ART; }}
+            />
+          ) : (
+            <ListMusic size={56} className="text-white/40" />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-purple-400 block mb-0.5">Playlist</span>
@@ -212,7 +222,7 @@ export default function PlaylistDetails() {
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-slate-300 text-xs sm:text-sm font-medium">
             <span>{playlist.songCount || tracks.length} tracks</span>
             <span>•</span>
-            <span>{Math.floor((playlist.duration || 0) / 60)} minutes</span>
+            <span>{formatDuration((playlist.duration || 0) / 60)} minutes</span>
             {playlist.owner && (
               <>
                 <span>•</span>
@@ -324,7 +334,7 @@ export default function PlaylistDetails() {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span className="text-[11px] text-slate-400 font-mono">
-                    {Math.floor(dur / 60)}:{(dur % 60).toString().padStart(2, '0')}
+                    {Math.floor(dur)}
                   </span>
                   <button 
                     onClick={(e) => {
@@ -423,7 +433,7 @@ export default function PlaylistDetails() {
                   <td className="px-4 py-3 text-slate-400 truncate hidden xl:table-cell">{song.album || '—'}</td>
                   <td className="px-4 sm:px-6 py-3 text-right w-36 sm:w-44 shrink-0">
                     <div className="flex items-center justify-end gap-1.5 font-mono text-xs">
-                      <span className="text-slate-400 mr-1 text-[11px] sm:text-xs">{Math.floor(dur / 60)}:{(dur % 60).toString().padStart(2, '0')}</span>
+                      <span className="text-slate-400 mr-1 text-[11px] sm:text-xs">{formatDuration(dur)}</span>
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();

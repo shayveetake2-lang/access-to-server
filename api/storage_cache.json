@@ -1,0 +1,107 @@
+{
+    "status": "success",
+    "timestamp": 1790297209,
+    "time_str": "00:46:49",
+    "summary": {
+        "total_drives_monitored": 5,
+        "total_connected": 1,
+        "usb_connected_count": 0,
+        "network_nodes_online": 0,
+        "detected_usb_list": []
+    },
+    "drives": {
+        "ssd": {
+            "name": "Internal SSD",
+            "path": "/",
+            "type": "internal",
+            "mounted": true,
+            "status": "online",
+            "status_text": "Mounted / Connected",
+            "free": 70860800000,
+            "total": 245107195904,
+            "used": 174246395904,
+            "percent_used": 71.1,
+            "free_formatted": "65.99 GB",
+            "total_formatted": "228.27 GB",
+            "used_formatted": "162.28 GB"
+        },
+        "usb_port1": {
+            "name": "USB Port 1",
+            "path": "/Volumes/USBDrive",
+            "type": "usb",
+            "mounted": false,
+            "status": "offline",
+            "status_text": "Empty",
+            "free": 0,
+            "total": 0,
+            "used": 0,
+            "percent_used": 0,
+            "free_formatted": "Empty",
+            "total_formatted": "Empty",
+            "used_formatted": "Empty",
+            "port_number": 1,
+            "volume_label": null
+        },
+        "usb_port2": {
+            "name": "USB Port 2",
+            "path": "/Volumes/USBDrive 1",
+            "type": "usb",
+            "mounted": false,
+            "status": "offline",
+            "status_text": "Empty",
+            "free": 0,
+            "total": 0,
+            "used": 0,
+            "percent_used": 0,
+            "free_formatted": "Empty",
+            "total_formatted": "Empty",
+            "used_formatted": "Empty",
+            "port_number": 2,
+            "volume_label": null
+        },
+        "network": {
+            "name": "Unified Network Storage",
+            "status": "offline",
+            "mounted": false,
+            "free": 0,
+            "total": 0,
+            "used": 0,
+            "percent_used": 0,
+            "free_formatted": "0 B",
+            "total_formatted": "0 B",
+            "used_formatted": "0 B",
+            "nodes": {
+                "mac2": {
+                    "name": "mac2 (Music Node)",
+                    "path": "/Volumes/Music",
+                    "type": "network",
+                    "mounted": false,
+                    "status": "offline",
+                    "status_text": "Offline/Sleeping",
+                    "free": 0,
+                    "total": 0,
+                    "used": 0,
+                    "percent_used": 0,
+                    "free_formatted": "Offline/Sleeping",
+                    "total_formatted": "Offline/Sleeping",
+                    "used_formatted": "Offline/Sleeping"
+                },
+                "movies": {
+                    "name": "Movie Storage Drive",
+                    "path": "/Volumes/Movie",
+                    "type": "network",
+                    "mounted": false,
+                    "status": "offline",
+                    "status_text": "Offline/Sleeping",
+                    "free": 0,
+                    "total": 0,
+                    "used": 0,
+                    "percent_used": 0,
+                    "free_formatted": "Offline/Sleeping",
+                    "total_formatted": "Offline/Sleeping",
+                    "used_formatted": "Offline/Sleeping"
+                }
+            }
+        }
+    }
+}

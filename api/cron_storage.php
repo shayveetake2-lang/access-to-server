@@ -14,7 +14,41 @@ if (!function_exists('formatBytes')) {
     }
 }
 
+function isDriveResponsive($path, $timeoutSeconds = 1) {
+    $desc = [ 0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"] ];
+    $proc = @proc_open("ls -d " . escapeshellarg($path) . " 2>/dev/null", $desc, $pipes);
+    if (!is_resource($proc)) return false;
+    
+    stream_set_blocking($pipes[1], 0);
+    $start = microtime(true);
+    $isResponsive = false;
+    
+    while (microtime(true) - $start < $timeoutSeconds) {
+        $status = proc_get_status($proc);
+        if (!$status['running']) {
+            $isResponsive = ($status['exitcode'] === 0);
+            break;
+        }
+        usleep(50000); // 50ms
+    }
+    
+    $status = proc_get_status($proc);
+    if ($status['running']) {
+        @proc_terminate($proc, 9);
+    }
+    foreach ($pipes as $p) @fclose($p);
+    @proc_close($proc);
+    
+    return $isResponsive;
+}
+
 function getVolumeStats($name, $path, $type, $isMounted = null) {
+    if ($type === 'network' || $type === 'usb') {
+        if (!isDriveResponsive($path, 1)) {
+            $isMounted = false;
+        }
+    }
+
     if ($isMounted === null) {
         $isMounted = @is_dir($path);
     }
@@ -23,9 +57,9 @@ function getVolumeStats($name, $path, $type, $isMounted = null) {
     $totalBytes = 0;
     $usedBytes  = 0;
     $percent    = 0.0;
+    $statusText = 'Unmounted / Offline';
 
     if ($isMounted) {
-        // Strict error suppression and short timeouts implicitly handled by @ and OS limits
         $free  = @disk_free_space($path);
         $total = @disk_total_space($path);
         if ($free !== false && $total !== false && $total > 0) {
@@ -33,7 +67,19 @@ function getVolumeStats($name, $path, $type, $isMounted = null) {
             $totalBytes = (float)$total;
             $usedBytes  = max(0, $totalBytes - $freeBytes);
             $percent    = round(($usedBytes / $totalBytes) * 100, 1);
+            $statusText = 'Mounted / Connected';
+        } else {
+            $isMounted = false;
         }
+    }
+    
+    if (!$isMounted) {
+        if ($type === 'network') {
+            $statusText = 'Offline/Sleeping';
+        } elseif ($type === 'usb') {
+            $statusText = 'Empty';
+        }
+        $formattedFallback = $statusText;
     }
 
     return [
@@ -42,14 +88,14 @@ function getVolumeStats($name, $path, $type, $isMounted = null) {
         'type'            => $type,
         'mounted'         => (bool)$isMounted,
         'status'          => $isMounted ? 'online' : 'offline',
-        'status_text'     => $isMounted ? 'Mounted / Connected' : 'Unmounted / Offline',
+        'status_text'     => $statusText,
         'free'            => $freeBytes,
         'total'           => $totalBytes,
         'used'            => $usedBytes,
         'percent_used'    => $percent,
-        'free_formatted'  => formatBytes($freeBytes),
-        'total_formatted' => formatBytes($totalBytes),
-        'used_formatted'  => formatBytes($usedBytes)
+        'free_formatted'  => $isMounted ? formatBytes($freeBytes) : $formattedFallback,
+        'total_formatted' => $isMounted ? formatBytes($totalBytes) : $formattedFallback,
+        'used_formatted'  => $isMounted ? formatBytes($usedBytes) : $formattedFallback
     ];
 }
 
@@ -134,9 +180,9 @@ $networkStorage = [
     'total' => $networkTotal,
     'used' => $networkUsed,
     'percent_used' => $networkPercent,
-    'free_formatted' => formatBytes($networkFree),
-    'total_formatted' => formatBytes($networkTotal),
-    'used_formatted' => formatBytes($networkUsed),
+    'free_formatted' => ($mac2Mounted || $movieMounted) ? formatBytes($networkFree) : 'Offline/Sleeping',
+    'total_formatted' => ($mac2Mounted || $movieMounted) ? formatBytes($networkTotal) : 'Offline/Sleeping',
+    'used_formatted' => ($mac2Mounted || $movieMounted) ? formatBytes($networkUsed) : 'Offline/Sleeping',
     'nodes' => [
         'mac2' => $mac2Stats,
         'movies' => $movieStats

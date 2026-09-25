@@ -531,6 +531,29 @@ export function getMediaPortalUrl() {
   return `${getBaseUrl()}/media.html`;
 }
 
+export async function submitSongRequest({ title, artist, notes }, user) {
+  if (!user) throw new Error("Must be logged in to request a song.");
+  const authParams = new URLSearchParams(getSubsonicAuthParams(user, true));
+  
+  const res = await fetch(getMediaRequestsUrl('submit_request.php'), {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${user?.token || ''}`
+    },
+    body: JSON.stringify({
+      trackTitle: (title || '').trim(),
+      artistName: (artist || '').trim(),
+      notes: (notes || '').trim(),
+      mediaType: 'Song',
+      u: authParams.get('u') || user.username || '',
+      t: authParams.get('t') || '',
+      s: authParams.get('s') || '',
+    }),
+  });
+  return await res.json();
+}
+
 export function getMediaRequestsUrl(endpoint) {
   return `${getBaseUrl()}/api/media/${endpoint}`;
 }

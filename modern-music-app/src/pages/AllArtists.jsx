@@ -23,15 +23,17 @@ export default function AllArtists() {
   }, [selectedLetter]);
 
   useLayoutEffect(() => {
+    const mainEl = document.querySelector('main');
+    if (!mainEl) return;
     const savedScroll = sessionStorage.getItem('allArtists_scroll');
     if (savedScroll) {
-      window.scrollTo(0, parseInt(savedScroll, 10));
+      mainEl.scrollTop = parseInt(savedScroll, 10);
     }
     const handleScroll = () => {
-      sessionStorage.setItem('allArtists_scroll', window.scrollY.toString());
+      sessionStorage.setItem('allArtists_scroll', mainEl.scrollTop.toString());
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    mainEl.addEventListener('scroll', handleScroll);
+    return () => mainEl.removeEventListener('scroll', handleScroll);
   }, []);
   const [selectedGenre, setSelectedGenre] = useState('All');
 

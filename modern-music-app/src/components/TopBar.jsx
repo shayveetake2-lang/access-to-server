@@ -20,11 +20,12 @@ export default function TopBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { playQueue, playSong, addToQueue, currentTrack, isPlaying } = usePlayer();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { openAddToPlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
   
-  const canGoBack = location.pathname !== '/';
+  const PRIMARY_PATHS = new Set(['/', '/albums', '/artists', '/songs', '/liked', '/playlists', '/public-playlists', '/settings', '/help', '/admin']);
+  const canGoBack = !PRIMARY_PATHS.has(location.pathname);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -267,7 +268,7 @@ export default function TopBar() {
             <div className="hidden md:flex flex-col items-start text-left">
               <span className="text-sm font-medium text-slate-200">{user?.username}</span>
               <span className="text-xs text-purple-400 uppercase tracking-wider font-semibold">
-                [{user?.role === 'admin' || user?.isAdmin || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase()) ? 'Admin' : 'Standard'}]
+                [{isAdmin ? 'Admin' : 'Standard'}]
               </span>
             </div>
           </button>
@@ -277,11 +278,11 @@ export default function TopBar() {
               <div className="px-4 py-2.5 border-b border-white/10">
                 <p className="text-sm font-semibold text-white truncate">{user?.username}</p>
                 <p className="text-[11px] text-purple-400 uppercase tracking-wider mt-0.5">
-                  {user?.role === 'admin' || user?.isAdmin || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase()) ? 'Administrator' : 'Standard User'}
+                  {isAdmin ? 'Administrator' : 'Standard User'}
                 </p>
               </div>
 
-              {(user?.role === 'admin' || user?.isAdmin || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase())) && (
+              {(isAdmin) && (
                 <Link 
                   to="/admin" 
                   onClick={() => setShowProfileMenu(false)}

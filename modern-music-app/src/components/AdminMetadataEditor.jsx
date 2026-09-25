@@ -56,7 +56,7 @@ export default function AdminMetadataEditor() {
   const [linkResult, setLinkResult] = useState(null);
 
 
-  const isAdmin = user?.role === 'admin' || user?.isAdmin === true || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase());
+  const { isAdmin } = useAuth();
 
   const getAuthToken = () => {
     if (user?.token) return user.token;

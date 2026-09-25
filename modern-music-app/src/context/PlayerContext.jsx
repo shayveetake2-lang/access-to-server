@@ -388,14 +388,15 @@ export function PlayerProvider({ children }) {
   };
 
   const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        window.resumeAetherAudio?.();
-        audioRef.current.play().catch(e => console.log("Play error"));
-      }
-      setIsPlaying(!isPlaying);
+    if (!audioRef.current) return;
+    if (!audioRef.current.paused) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      window.resumeAetherAudio?.();
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(e => { console.log("Play error", e); setIsPlaying(false); });
     }
   };
 
@@ -452,6 +453,7 @@ export function PlayerProvider({ children }) {
     const activeQueue = queueRef.current;
     const activeIndex = currentIndexRef.current;
     if (activeQueue.length === 0) return;
+    if (!audioRef.current) return;
     
     if (audioRef.current.currentTime > 3) {
       audioRef.current.currentTime = 0;

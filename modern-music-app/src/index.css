@@ -58,3 +58,61 @@ body {
   background: rgba(168, 85, 247, 0.6);
 }
 
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* Light Theme Overrides */
+html:not(.dark) body {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9, #e2e8f0);
+  color: #0f172a;
+}
+html:not(.dark) .bg-slate-950,
+html:not(.dark) [class*="bg-slate-950"] {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900\/50,
+html:not(.dark) .bg-slate-900\/40,
+html:not(.dark) .bg-slate-900 {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/80,
+html:not(.dark) .bg-slate-800\/60 {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+html:not(.dark) .text-white {
+  color: #0f172a !important;
+}
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-300 {
+  color: #1e293b !important;
+}
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-500 {
+  color: #64748b !important;
+}
+html:not(.dark) .border-white\/5,
+html:not(.dark) .border-white\/10,
+html:not(.dark) .border-slate-800 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+/* Exclude buttons with white text from turning dark */
+html:not(.dark) .bg-purple-500.text-white,
+html:not(.dark) button.bg-purple-500,
+html:not(.dark) a.bg-purple-500,
+html:not(.dark) button.bg-rose-500,
+html:not(.dark) button.bg-red-500 {
+  color: #ffffff !important;
+}
+

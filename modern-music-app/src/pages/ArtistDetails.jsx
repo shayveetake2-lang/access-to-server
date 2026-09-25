@@ -1,3 +1,4 @@
+import { formatDuration } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -17,7 +18,7 @@ export default function ArtistDetails() {
   const [allAlbums, setAllAlbums] = useState([]);
   const [topSongs, setTopSongs] = useState([]);
   const [allSongs, setAllSongs] = useState([]);
-  const [relatedArtists, setRelatedArtists] = useState([]);
+  // relatedArtists removed
   const [loading, setLoading] = useState(true);
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [showAllTopSongs, setShowAllTopSongs] = useState(false);
@@ -433,7 +434,7 @@ export default function ArtistDetails() {
                         <div className="flex items-center justify-end gap-1.5 font-mono text-xs">
                           {song.duration > 0 && (
                             <span className="text-slate-400 mr-1 text-[11px] sm:text-xs">
-                              {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
+                              {formatDuration(song.duration)}
                             </span>
                           )}
                           <button

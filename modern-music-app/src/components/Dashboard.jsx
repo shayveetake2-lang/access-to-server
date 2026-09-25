@@ -161,28 +161,15 @@ export default function Dashboard() {
     setIsSubmittingRequest(true);
     
     try {
-      const res = await fetch('/api/request_media.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
-        },
-        body: JSON.stringify({
-          title: requestTitle,
-          artist: requestArtist,
-          notes: requestNotes
-        })
-      });
-      
-      if (res.ok) {
-        showToast('Song request submitted successfully!', 'success');
+      const data = await submitSongRequest({ title: requestTitle, artist: requestArtist, notes: requestNotes }, user);
+      if (data?.status === 'success') {
+        showToast(data.message || 'Request submitted successfully!', 'success');
         setIsRequestModalOpen(false);
         setRequestTitle('');
         setRequestArtist('');
         setRequestNotes('');
       } else {
-        const err = await res.json();
-        showToast(err.error || 'Failed to submit request', 'error');
+        showToast(data?.message || 'Failed to submit request', 'error');
       }
     } catch (error) {
       showToast('Network error while submitting request', 'error');
@@ -266,15 +253,11 @@ export default function Dashboard() {
       }
 
       const copyName = `${playlist.name} (Saved)`;
-      const resCreate = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(copyName)}&${getAuthParams(user)}`));
-      const dataCreate = await resCreate.json();
+      const songIds = tracks.map(t => t.id);
+      const dataCreate = await createSubsonicPlaylist(copyName, songIds, false, user);
       
       if (dataCreate?.['subsonic-response']?.status === 'ok') {
-        const newId = dataCreate['subsonic-response']?.playlist?.id;
-        if (newId) {
-          const songIds = tracks.map(t => t.id).join(',');
-          await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&songIdToAdd=${songIds}&${getAuthParams(user)}`));
-        }
+        // Tracks are already added during createSubsonicPlaylist
         showToast(`Saved "${playlist.name}" to My Playlists!`, 'success');
       } else {
         showToast('Failed to save playlist', 'error');
@@ -552,7 +535,7 @@ export default function Dashboard() {
       {/* Floating "Request a Song" Button */}
       <button
         onClick={() => setIsRequestModalOpen(true)}
-        className="fixed bottom-24 right-4 md:bottom-32 md:right-8 w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-500 text-white shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-40 border border-purple-400/30"
+        className="fixed bottom-44 right-4 md:bottom-32 md:right-8 w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-500 text-white shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-40 border border-purple-400/30"
         title="Request a Song"
       >
         <MessageSquare size={24} />

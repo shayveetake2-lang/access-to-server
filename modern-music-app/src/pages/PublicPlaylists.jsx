@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getSubsonicAuthParams } from '../utils/api';
+import { getAmpacheUrl, getSubsonicAuthParams, createSubsonicPlaylist } from '../utils/api';
 
 export default function PublicPlaylists() {
   const { user } = useAuth();
@@ -116,15 +116,10 @@ export default function PublicPlaylists() {
 
       // 2. Create personal playlist copy
       const copyName = `${playlist.name} (Saved)`;
-      const resCreate = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(copyName)}&${auth}`));
-      const dataCreate = await resCreate.json();
+      const songIds = tracks.map(t => t.id);
+      const dataCreate = await createSubsonicPlaylist(copyName, songIds, false, user);
       
       if (dataCreate?.['subsonic-response']?.status === 'ok') {
-        const newId = dataCreate['subsonic-response']?.playlist?.id;
-        if (newId) {
-          const songIds = tracks.map(t => t.id).join(',');
-          await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&songIdToAdd=${songIds}&${auth}`));
-        }
         showToast(`Saved "${playlist.name}" to My Playlists!`, 'success');
       } else {
         showToast('Failed to save playlist', 'error');
@@ -149,7 +144,7 @@ export default function PublicPlaylists() {
         <div className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center gap-1.5 shadow-sm">
           <Globe size={14} />
           <span>Public Playlists</span>
-          <span className="ml-1 text-[10px] px-1.5 py-0.2 bg-purple-500/30 text-purple-200 rounded-full font-bold">
+          <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-purple-500/30 text-purple-200 rounded-full font-bold">
             {playlists.length}
           </span>
         </div>
@@ -263,7 +258,7 @@ export default function PublicPlaylists() {
                     <User size={13} className="text-purple-400 shrink-0" />
                     <span className="truncate font-medium">@{playlist.owner || 'Community'}</span>
                     {isOwner && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 shrink-0">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 shrink-0">
                         You
                       </span>
                     )}

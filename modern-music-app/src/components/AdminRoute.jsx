@@ -15,7 +15,7 @@ export default function AdminRoute({ children }) {
     );
   }
 
-  const isAdmin = user?.isAdmin === true || user?.role === 'admin';
+  const { isAdmin } = useAuth();
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }

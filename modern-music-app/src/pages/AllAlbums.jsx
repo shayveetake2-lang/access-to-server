@@ -53,15 +53,17 @@ export default function AllAlbums() {
   }, [selectedLetter]);
 
   useLayoutEffect(() => {
+    const mainEl = document.querySelector('main');
+    if (!mainEl) return;
     const savedScroll = sessionStorage.getItem('allAlbums_scroll');
     if (savedScroll) {
-      window.scrollTo(0, parseInt(savedScroll, 10));
+      mainEl.scrollTop = parseInt(savedScroll, 10);
     }
     const handleScroll = () => {
-      sessionStorage.setItem('allAlbums_scroll', window.scrollY.toString());
+      sessionStorage.setItem('allAlbums_scroll', mainEl.scrollTop.toString());
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    mainEl.addEventListener('scroll', handleScroll);
+    return () => mainEl.removeEventListener('scroll', handleScroll);
   }, []);
   const [onlyWithCovers, setOnlyWithCovers] = useState(false);
   const [viewMode, setViewMode] = useState('showcases'); // 'showcases' | 'grid'

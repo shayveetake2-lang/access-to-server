@@ -10,16 +10,16 @@ export default function Sidebar() {
   
   const navItems = [
     { icon: <Home size={19} />, label: 'Home', path: '/' },
-    { icon: <Search size={19} />, label: 'Browse', path: '/albums' },
+    { icon: <Disc size={19} />, label: 'Browse Albums', path: '/albums' },
     { icon: <Mic2 size={19} />, label: 'Artists', path: '/artists' },
-    { icon: <Library size={19} />, label: 'All Songs', path: '/songs?tab=top100' },
+    { icon: <Library size={19} />, label: 'Songs & Charts', path: '/songs?tab=top100' },
     { icon: <Heart size={19} className="text-rose-400" />, label: 'Liked Songs', path: '/liked' },
     { icon: <ListMusic size={19} />, label: 'My Playlists', path: '/playlists' },
     { icon: <Globe size={19} />, label: 'Public Playlists', path: '/public-playlists' },
     { icon: <Settings size={19} />, label: 'Settings', path: '/settings' },
   ];
 
-  const isAdmin = user?.role === 'admin' || user?.isAdmin === true || ['admin', 'musicadmin'].includes(user?.username?.toLowerCase());
+  const { isAdmin } = useAuth();
   if (isAdmin) {
     navItems.push({ icon: <ShieldAlert size={19} />, label: 'Admin Panel', path: '/admin' });
   }
