@@ -86,26 +86,7 @@ function getAmpacheConnection() {
 }
 
 try {
-    // Ensure table exists just in case
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS sys_users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(50) NOT NULL UNIQUE,
-            email VARCHAR(255) NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            role VARCHAR(20) DEFAULT 'member',
-            storage_limit_mb INT DEFAULT 100,
-            storage_used_mb FLOAT DEFAULT 0.0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ");
 
-    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) NULL"); } catch (\Exception $e) {}
-    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100"); } catch (\Exception $e) {}
-    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0"); } catch (\Exception $e) {}
-    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN auth_token VARCHAR(255) NULL"); } catch (\Exception $e) {}
-    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN token_hash VARCHAR(255) NULL"); } catch (\Exception $e) {}
-    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN token_expires_at DATETIME NULL"); } catch (\Exception $e) {}
 
     // Check if username exists
     $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username OR email = :email");
@@ -190,7 +171,7 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Username or email already taken.']);
     } else {
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Database error.']);
+        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
     }
     exit;
 }

@@ -7,26 +7,6 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../config/db_connect.php';
 
-// Ensure sys_users exists for unified login
-try {
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS sys_users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(50) NOT NULL UNIQUE,
-            password_hash VARCHAR(255) NOT NULL,
-            role VARCHAR(20) DEFAULT 'user',
-            storage_limit_mb INT DEFAULT 100,
-            storage_used_mb FLOAT DEFAULT 0.0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ");
-
-    @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100");
-    @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0");
-
-    } catch (Exception $e) {
-    // Ignore schema errors here
-}
 
 $rawInput = file_get_contents('php://input');
 $data = json_decode($rawInput, true) ?: [];
