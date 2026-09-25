@@ -73,7 +73,7 @@ try {
         // Ampache DB Sync
         $ampPdo = getAmpacheConnectionLogin();
         if ($ampPdo) {
-            $ampStmt = $ampPdo->prepare("INSERT INTO user (username, password, access, creation_date) VALUES (:username, :password, 25, :created)");
+            $ampStmt = $ampPdo->prepare("INSERT INTO user (username, password, access, create_date) VALUES (:username, :password, 25, :created)");
             $ampStmt->execute([
                 ':username' => $username,
                 ':password' => hash('sha256', $password),
@@ -176,6 +176,6 @@ try {
     }
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Database error.']);
+    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
     exit;
 }

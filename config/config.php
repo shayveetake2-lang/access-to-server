@@ -185,6 +185,10 @@ function initSQLiteSchema(PDO $pdo) {
         @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0");
     } catch (\Exception $e) {}
     try {
+    try {
+        @$pdo->exec("ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
+    } catch (\Exception $e) {}
+
         @$pdo->exec("ALTER TABLE sys_users ADD COLUMN auth_token VARCHAR(64) DEFAULT NULL");
     } catch (\Exception $e) {}
     try {

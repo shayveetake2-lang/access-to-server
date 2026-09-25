@@ -121,7 +121,7 @@ try {
     // Ampache DB Sync
     $ampPdo = getAmpacheConnection();
     if ($ampPdo) {
-        $ampStmt = $ampPdo->prepare("INSERT INTO user (username, password, access, creation_date) VALUES (:username, :password, 25, :created)");
+        $ampStmt = $ampPdo->prepare("INSERT INTO user (username, password, access, create_date) VALUES (:username, :password, 25, :created)");
         $ampStmt->execute([
             ':username' => $username,
             ':password' => hash('sha256', $password),
