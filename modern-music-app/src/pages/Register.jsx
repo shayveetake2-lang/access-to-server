@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Music, HelpCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getApiProxyUrl } from '../utils/api';
 
 export default function Register() {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
@@ -16,28 +16,33 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (username.includes('@')) {
+      setError('Username cannot contain an @ symbol.');
+      return;
+    }
+    
+    if (password.length < 10) {
+      setError('Password must be at least 10 characters.');
       return;
     }
 
     setIsRegistering(true);
     
     try {
-      const res = await fetch(getApiProxyUrl(), {
+      const res = await fetch('/api/auth/register.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'register', username, password })
+        body: JSON.stringify({ username, email, password })
       });
 
-      let data = null;
+      let data;
       try {
         data = await res.json();
       } catch (jsonErr) {
         throw new Error("Invalid response received from server registration service.");
       }
       
-      if (data?.['subsonic-response']?.status === 'ok') {
+      if (res.ok && data.status === 'success') {
         // Auto log in
         const loginRes = await login(username, password);
         if (loginRes.success) {
@@ -46,8 +51,11 @@ export default function Register() {
           navigate('/login');
         }
       } else {
-        const errMsg = data?.['subsonic-response']?.error?.message || data?.message || "Registration failed. Username may already exist.";
-        setError(errMsg);
+        if (res.status === 409) {
+          setError(data.message || 'Username or email already taken.');
+        } else {
+          setError(data.message || 'Registration failed.');
+        }
       }
     } catch (err) {
       setError(err.message || "Network error connecting to server.");
@@ -79,13 +87,25 @@ export default function Register() {
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Username</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Username (No @ symbol)</label>
             <input 
               type="text" 
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+              className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder-slate-500"
+              placeholder="e.g. musicfan99"
               autoComplete="username"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder-slate-500"
+              placeholder="you@example.com"
               required
             />
           </div>
@@ -95,7 +115,8 @@ export default function Register() {
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+              className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder-slate-500"
+              placeholder="••••••••"
               autoComplete="new-password"
               required
             />
@@ -113,14 +134,6 @@ export default function Register() {
         <div className="mt-8 text-center text-sm text-slate-400">
           Already have an account? <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium">Log in</Link>
         </div>
-      </div>
-      
-      <div className="mt-12 w-full max-w-md bg-slate-800/30 backdrop-blur-md border border-white/5 p-6 rounded-2xl relative z-10 text-center">
-         <HelpCircle className="mx-auto text-purple-400 mb-2" size={24} />
-         <h3 className="text-white font-medium mb-1">Registration Help</h3>
-         <p className="text-slate-400 text-sm">
-           Choose any username and password to create a local account on this server. This will allow you to save your own playlists!
-         </p>
       </div>
     </div>
   );

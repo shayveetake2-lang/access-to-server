@@ -18,20 +18,18 @@ if (isset($_POST['isAdmin'])) unset($_POST['isAdmin']);
 
 $username = trim($data['username'] ?? $_POST['username'] ?? '');
 $password = trim($data['password'] ?? $_POST['password'] ?? '');
+$email = trim($data['email'] ?? $_POST['email'] ?? '');
 
-if (empty($username) || empty($password)) {
+if (empty($username) || empty($password) || empty($email)) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Username and password are required.']);
+    echo json_encode(['status' => 'error', 'message' => 'Username, email, and password are required.']);
     exit;
 }
 
-// Admin-only registration policy for personal server
-$isAdmin = (!empty($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true)
-        || (!empty($_SESSION['role']) && $_SESSION['role'] === 'admin');
-
-if (!$isAdmin) {
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Public registration is disabled on this server. Contact the administrator to create an account.']);
+// Ensure username doesn't contain '@'
+if (strpos($username, '@') !== false) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Username cannot contain an @ symbol.']);
     exit;
 }
 
@@ -47,12 +45,53 @@ if (strlen($password) < 10) {
     exit;
 }
 
+function getAmpacheConnection() {
+    $host = defined('AMPACHE_DB_HOST') ? AMPACHE_DB_HOST : '127.0.0.1';
+    $port = defined('AMPACHE_DB_PORT') ? AMPACHE_DB_PORT : '8889';
+    $dbname = defined('AMPACHE_DB_NAME') ? AMPACHE_DB_NAME : 'ampache';
+    $user = defined('AMPACHE_DB_USER') ? AMPACHE_DB_USER : 'ampache_user';
+    $pass = defined('AMPACHE_DB_PASS') ? AMPACHE_DB_PASS : 'password';
+
+    $hosts = array_unique([$host, '127.0.0.1', 'localhost']);
+    $creds = [
+        [$user, $pass],
+        ['server_app', 'password'],
+        ['root', 'root'],
+        ['root', '']
+    ];
+
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT => 2
+    ];
+
+    foreach ($hosts as $h) {
+        foreach ($creds as [$u, $pwd]) {
+            try {
+                return new PDO("mysql:host={$h};port={$port};dbname={$dbname};charset=utf8mb4", $u, $pwd, $options);
+            } catch (\Exception $e) {}
+        }
+    }
+
+    $socket = '/Applications/MAMP/tmp/mysql/mysql.sock';
+    if (file_exists($socket)) {
+        foreach ($creds as [$u, $pwd]) {
+            try {
+                return new PDO("mysql:unix_socket={$socket};dbname={$dbname};charset=utf8mb4", $u, $pwd, $options);
+            } catch (\Exception $e) {}
+        }
+    }
+    return null;
+}
+
 try {
     // Ensure table exists just in case
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS sys_users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(50) NOT NULL UNIQUE,
+            email VARCHAR(255) NULL,
             password_hash VARCHAR(255) NOT NULL,
             role VARCHAR(20) DEFAULT 'member',
             storage_limit_mb INT DEFAULT 100,
@@ -61,6 +100,7 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ");
 
+    try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) NULL"); } catch (\Exception $e) {}
     try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100"); } catch (\Exception $e) {}
     try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0"); } catch (\Exception $e) {}
     try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN auth_token VARCHAR(255) NULL"); } catch (\Exception $e) {}
@@ -68,13 +108,15 @@ try {
     try { @$pdo->exec("ALTER TABLE sys_users ADD COLUMN token_expires_at DATETIME NULL"); } catch (\Exception $e) {}
 
     // Check if username exists
-    $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username");
-    $stmt->execute([':username' => $username]);
+    $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username OR email = :email");
+    $stmt->execute([':username' => $username, ':email' => $email]);
     if ($stmt->fetch()) {
         http_response_code(409); // Conflict
-        echo json_encode(['status' => 'error', 'message' => 'Username already exists. Please choose another.']);
+        echo json_encode(['status' => 'error', 'message' => 'Username or email already exists.']);
         exit;
     }
+
+    $pdo->beginTransaction();
 
     // Auto-authenticate newly registered user
     $token = bin2hex(random_bytes(32));
@@ -84,9 +126,29 @@ try {
 
     // Insert new user with token and hashed token
     $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
-    $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb, auth_token, token_hash, token_expires_at) VALUES (:username, :hash, 'member', 100, :token, :th, :exp)");
-    $insert->execute([':username' => $username, ':hash' => $hash, ':token' => $hashedToken, ':th' => $hashedToken, ':exp' => $expiresAt]);
+    $insert = $pdo->prepare("INSERT INTO sys_users (username, email, password_hash, role, storage_limit_mb, auth_token, token_hash, token_expires_at) VALUES (:username, :email, :hash, 'member', 100, :token, :th, :exp)");
+    $insert->execute([
+        ':username' => $username, 
+        ':email' => $email,
+        ':hash' => $hash, 
+        ':token' => $hashedToken, 
+        ':th' => $hashedToken, 
+        ':exp' => $expiresAt
+    ]);
     $newUserId = $pdo->lastInsertId();
+
+    // Ampache DB Sync
+    $ampPdo = getAmpacheConnection();
+    if ($ampPdo) {
+        $ampStmt = $ampPdo->prepare("INSERT INTO user (username, password, access, creation_date) VALUES (:username, :password, 25, :created)");
+        $ampStmt->execute([
+            ':username' => $username,
+            ':password' => hash('sha256', $password),
+            ':created' => time()
+        ]);
+    }
+
+    $pdo->commit();
 
     $jwt_header = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
     $jwt_payload = base64_encode(json_encode(['user_id' => $newUserId, 'username' => $username, 'role' => 'member', 'exp' => time() + ($ttlDays * 86400)]));
@@ -99,6 +161,7 @@ try {
     $_SESSION['username'] = $username;
     $_SESSION['role'] = 'member';
 
+    http_response_code(201);
     echo json_encode([
         'status'   => 'success',
         'token'    => $jwt,
@@ -116,9 +179,19 @@ try {
         'message'  => 'Account created successfully! Logging you in...'
     ]);
     exit;
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Database error.']);
+
+} catch (PDOException $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    
+    if ($e->getCode() == 23000) {
+        http_response_code(409);
+        echo json_encode(['status' => 'error', 'message' => 'Username or email already taken.']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database error.']);
+    }
     exit;
 }
 ?>
