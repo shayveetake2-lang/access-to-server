@@ -7,9 +7,20 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../config/db_connect.php';
 
+// Self-healing schema validation: Ensure 'email' column exists in sys_users
+$hasEmailColumn = false;
 try {
-    @$pdo->exec("ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
-} catch (\Exception $e) {}
+    $pdo->query("SELECT email FROM sys_users LIMIT 1");
+    $hasEmailColumn = true;
+} catch (\Exception $colCheckErr) {
+    try {
+        $pdo->exec("ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
+        $hasEmailColumn = true;
+    } catch (\Exception $alterErr) {
+        error_log("Notice: Unable to auto-add 'email' column to sys_users: " . $alterErr->getMessage());
+        $hasEmailColumn = false;
+    }
+}
 
 
 $rawInput = file_get_contents('php://input');
@@ -93,9 +104,15 @@ function getAmpacheConnection() {
 try {
 
 
-    // Check if username exists
-    $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username OR email = :email");
-    $stmt->execute([':username' => $username, ':email' => $email]);
+    // Check if username/email already exists
+    if ($hasEmailColumn) {
+        $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username OR email = :email LIMIT 1");
+        $stmt->execute([':username' => $username, ':email' => $email]);
+    } else {
+        $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username LIMIT 1");
+        $stmt->execute([':username' => $username]);
+    }
+
     if ($stmt->fetch()) {
         http_response_code(409); // Conflict
         echo json_encode(['status' => 'error', 'message' => 'Username or email already exists.']);
@@ -110,17 +127,28 @@ try {
     $ttlDays = (int)(getenv('AUTH_TOKEN_TTL_DAYS') ?: 7);
     $expiresAt = date('Y-m-d H:i:s', time() + ($ttlDays * 86400));
 
-    // Insert new user with token and hashed token
+    // Insert new user with strictly enforced 'member' role
     $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
-    $insert = $pdo->prepare("INSERT INTO sys_users (username, email, password_hash, role, storage_limit_mb, auth_token, token_hash, token_expires_at) VALUES (:username, :email, :hash, 'member', 100, :token, :th, :exp)");
-    $insert->execute([
-        ':username' => $username, 
-        ':email' => $email,
-        ':hash' => $hash, 
-        ':token' => $hashedToken, 
-        ':th' => $hashedToken, 
-        ':exp' => $expiresAt
-    ]);
+    if ($hasEmailColumn) {
+        $insert = $pdo->prepare("INSERT INTO sys_users (username, email, password_hash, role, storage_limit_mb, auth_token, token_hash, token_expires_at) VALUES (:username, :email, :hash, 'member', 100, :token, :th, :exp)");
+        $insert->execute([
+            ':username' => $username, 
+            ':email' => $email,
+            ':hash' => $hash, 
+            ':token' => $hashedToken, 
+            ':th' => $hashedToken, 
+            ':exp' => $expiresAt
+        ]);
+    } else {
+        $insert = $pdo->prepare("INSERT INTO sys_users (username, password_hash, role, storage_limit_mb, auth_token, token_hash, token_expires_at) VALUES (:username, :hash, 'member', 100, :token, :th, :exp)");
+        $insert->execute([
+            ':username' => $username, 
+            ':hash' => $hash, 
+            ':token' => $hashedToken, 
+            ':th' => $hashedToken, 
+            ':exp' => $expiresAt
+        ]);
+    }
     $newUserId = $pdo->lastInsertId();
 
     // Ampache DB Sync

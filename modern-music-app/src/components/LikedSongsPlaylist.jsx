@@ -115,8 +115,8 @@ export default function LikedSongsPlaylist() {
                   src={cover}
                   alt={song.album}
                   className="w-full h-full object-cover"
-                  onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) e.currentTarget.src = DEFAULT_COVER_ART; }}
-                />
+                  onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
                   <Play size={14} fill="white" className="text-white ml-0.5" />
                 </div>

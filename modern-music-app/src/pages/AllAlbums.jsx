@@ -549,12 +549,8 @@ export default function AllAlbums() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                         decoding="async"
-                        onError={(e) => {
-                          if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                            e.currentTarget.src = DEFAULT_COVER_ART;
-                          }
-                        }}
-                      />
+                        onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                       {/* Quick Play Overlay */}
                       <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
                         <button 
@@ -611,12 +607,8 @@ export default function AllAlbums() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                     decoding="async"
-                    onError={(e) => {
-                      if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                        e.currentTarget.src = DEFAULT_COVER_ART;
-                      }
-                    }}
-                  />
+                    onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                   {/* Quick Play Overlay */}
                   <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
                     <button 

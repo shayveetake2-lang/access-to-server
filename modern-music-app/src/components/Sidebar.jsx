@@ -75,12 +75,8 @@ export default function Sidebar() {
                   src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
                   className="w-full h-full object-cover" 
                   alt="" 
-                  onError={(e) => {
-                    if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                      e.currentTarget.src = DEFAULT_COVER_ART;
-                    }
-                  }}
-                />
+                  onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
               ) : (
                 <Music size={16} className="text-purple-400" />
               )}

@@ -110,8 +110,8 @@ export default function LikedSongsPage() {
                     src={cover}
                     alt={song.album}
                     className="w-full h-full object-cover"
-                    onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) e.currentTarget.src = DEFAULT_COVER_ART; }}
-                  />
+                    onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                 </div>
 
                 {/* Track info */}

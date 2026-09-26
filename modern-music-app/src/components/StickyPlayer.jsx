@@ -410,12 +410,8 @@ export default function StickyPlayer() {
                 src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
                 className="w-full h-full object-cover" 
                 alt="" 
-                onError={(e) => {
-                  if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                    e.currentTarget.src = DEFAULT_COVER_ART;
-                  }
-                }}
-              />
+                onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
             ) : (
               <Music size={18} className="text-purple-400" />
             )}
@@ -519,12 +515,8 @@ export default function StickyPlayer() {
                   src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                   alt="" 
-                  onError={(e) => {
-                    if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                      e.currentTarget.src = DEFAULT_COVER_ART;
-                    }
-                  }}
-                />
+                  onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
               ) : (
                 <Music size={72} className="text-purple-400/50" />
               )}
@@ -649,12 +641,8 @@ export default function StickyPlayer() {
                  src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
                  className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
                  alt="Cover" 
-                 onError={(e) => {
-                   if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                     e.currentTarget.src = DEFAULT_COVER_ART;
-                   }
-                 }}
-               />
+                 onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
              ) : (
                <Music size={20} className="text-white/50" />
              )}
@@ -880,12 +868,8 @@ export default function StickyPlayer() {
                               className="w-full h-full object-cover" 
                               alt="" 
                               loading="lazy" 
-                              onError={(e) => {
-                                if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                                  e.currentTarget.src = DEFAULT_COVER_ART;
-                                }
-                              }}
-                            />
+                              onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                           ) : (
                             <Music size={16} className="text-slate-300" />
                           )}

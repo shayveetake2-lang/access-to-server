@@ -49,6 +49,15 @@ if (!empty($origin)) {
         }
     }
 
+    // Allow ZeroTier and private local mesh subnets dynamically
+    if (!$isAllowed && $parsedOriginHost) {
+        if (strncmp($parsedOriginHost, '10.', 3) === 0 ||
+            strncmp($parsedOriginHost, '192.168.', 8) === 0 ||
+            strncmp($parsedOriginHost, '172.', 4) === 0) {
+            $isAllowed = true;
+        }
+    }
+
     if ($isAllowed) {
         header("Access-Control-Allow-Origin: " . $origin);
         header("Access-Control-Allow-Credentials: true");

@@ -100,8 +100,8 @@ export default function Recommendations() {
                 src={song.coverArt ? getCoverArtUrl(song.coverArt, getAuthParams(user)) : DEFAULT_COVER_ART}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 alt={song.title}
-                onError={(e) => { e.currentTarget.src = DEFAULT_COVER_ART; }}
-              />
+                onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button 
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); playQueue([song], 0); }}

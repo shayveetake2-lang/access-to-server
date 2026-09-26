@@ -207,10 +207,10 @@ export default function PlaylistDetails() {
         <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden shadow-[0_16px_40px_rgba(0,0,0,0.7)] shrink-0 bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center border border-white/10">
           {tracks[0]?.coverArt ? (
             <img
-              src={getCoverArtUrl(tracks[0].coverArt, authParams)}
+              src={getCoverArtUrl(tracks[0].coverArt, getAuthParams(user))}
               className="w-full h-full object-cover"
               alt=""
-              onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) e.currentTarget.src = DEFAULT_COVER_ART; }}
+              onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
             />
           ) : (
             <ListMusic size={56} className="text-white/40" />
@@ -311,12 +311,8 @@ export default function PlaylistDetails() {
                       className="w-11 h-11 rounded-xl bg-slate-800 object-cover shadow-sm border border-white/5" 
                       alt="" 
                       loading="lazy"
-                      onError={(e) => {
-                        if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                          e.currentTarget.src = DEFAULT_COVER_ART;
-                        }
-                      }}
-                    />
+                      onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                     {isCurrent && (
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
                         <Volume2 size={16} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} />
@@ -411,12 +407,8 @@ export default function PlaylistDetails() {
                         className="w-10 h-10 rounded-lg bg-slate-800 object-cover shrink-0 border border-white/5 shadow-sm" 
                         alt="" 
                         loading="lazy" 
-                        onError={(e) => {
-                          if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                            e.currentTarget.src = DEFAULT_COVER_ART;
-                          }
-                        }}
-                      />
+                        onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                       <div className="min-w-0 flex-1">
                         <div className={`font-medium transition-colors truncate ${
                           isCurrent ? 'text-purple-300 font-semibold' : 'text-white group-hover:text-purple-400'

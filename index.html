@@ -176,8 +176,17 @@
                                     <span class="text-slate-200 font-semibold">MacBook Pro 2011</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-slate-400">IP:</span>
-                                    <span class="text-cyan-400 font-bold"><script>document.write(window.location.hostname);</script></span>
+                                    <span class="text-slate-400">Network:</span>
+                                    <span class="text-cyan-400 font-bold"><script>
+                                        const h = window.location.hostname;
+                                        if (h === '127.0.0.1' || h === 'localhost') {
+                                            document.write('Localhost');
+                                        } else if (h.startsWith('10.') || h.startsWith('192.168.')) {
+                                            document.write('ZeroTier Mesh (Protected)');
+                                        } else {
+                                            document.write(h);
+                                        }
+                                    </script></span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400">Web Server:</span>
@@ -543,7 +552,14 @@
                                         <tr>
                                             <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Host Node</td>
                                             <td class="py-2.5"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">● Online</span></td>
-                                            <td class="py-2.5 text-slate-400"><script>document.write(window.location.hostname);</script></td>
+                                            <td class="py-2.5 text-slate-400"><script>
+                                                const hostNode = window.location.hostname;
+                                                if (hostNode.startsWith('10.') || hostNode.startsWith('192.168.')) {
+                                                    document.write('ZeroTier (Protected)');
+                                                } else {
+                                                    document.write(hostNode);
+                                                }
+                                            </script></td>
                                         </tr>
                                         <tr>
                                             <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Web Server</td>
@@ -2661,13 +2677,13 @@
         });
     </script>
     <script>
-        // Dynamically routes users to the direct IP if on the local/virtual network,
-        // otherwise redirects to the official Plex portal if accessed via Cloudflare Tunnel.
+        // Dynamically routes users to the direct IP if strictly on localhost,
+        // otherwise redirects to the official Plex portal if accessed via ZeroTier or Cloudflare Tunnel.
         function handlePlexRouting(e) {
             if (e && e.preventDefault) e.preventDefault();
             const host = window.location.hostname;
-            const isLocal = host === "127.0.0.1" || host === "localhost" || host.startsWith("192.168.") || host.startsWith("10.");
-            if (!isLocal || host.includes('serverflow') || host.includes('cloudflare')) {
+            const isLocal = host === "127.0.0.1" || host === "localhost";
+            if (!isLocal || host.includes('serverflow') || host.includes('cloudflare') || host.startsWith("10.") || host.startsWith("192.168.")) {
                 window.open('https://app.plex.tv/web', '_blank');
             } else {
                 window.open('http://' + host + ':32400/web', '_blank');

@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Disc3, Mic2, Play, Sparkles } from 'lucide-r
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
-import { getCoverArtUrl } from '../utils/api';
+import { getCoverArtUrl , DEFAULT_COVER_ART} from '../utils/api';
 
 function getWeekSeed(date = new Date()) {
   const thursday = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -135,8 +135,8 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
               src={getCoverArtUrl(desktopSlideData.coverId, getAuthParams(user))}
               alt=""
               className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${slide.type === 'artist' ? 'rounded-full p-2' : ''}`}
-              onError={() => setCoverFailed(true)}
-            />
+              onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
           )}
         </button>
 
@@ -189,8 +189,8 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
                     src={getCoverArtUrl(coverId, getAuthParams(user))}
                     alt=""
                     className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${currentSlide.type === 'artist' ? 'rounded-full p-2' : ''}`}
-                    onError={() => setCoverFailed(true)}
-                  />
+                    onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                 )}
               </button>
               

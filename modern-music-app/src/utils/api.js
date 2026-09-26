@@ -96,7 +96,12 @@ export function getSubsonicAuthParams(user = null, forceNew = false) {
   }
 
   // Fallback to legacy random salt and MD5 token (Subsonic Token Auth standard)
-  const salt = Math.random().toString(36).substring(2, 12);
+  // CRITICAL CACHING FIX: Use a stable static salt for the session so image caching works
+  let salt = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('aether_salt') : null;
+  if (!salt) {
+    salt = Math.random().toString(36).substring(2, 12);
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('aether_salt', salt);
+  }
   const password = credentials.password || '';
   const token = md5(password + salt);
 
@@ -118,16 +123,61 @@ export function getCoverArtUrl(coverArtId, authParams = '') {
   if (!coverArtId || String(coverArtId).trim() === '' || String(coverArtId) === '0' || String(coverArtId) === 'unknown') {
     return DEFAULT_COVER_ART;
   }
-  const cleanId = String(coverArtId).trim();
+  const raw = String(coverArtId).trim();
+  let normalizedId = raw;
+
+  // Normalize ID into Ampache's canonical Subsonic ranges:
+  // Artists: 100000000+, Albums: 200000000+, Songs: 300000000+
+  if (raw.startsWith('al-')) {
+    const num = parseInt(raw.slice(3), 10);
+    if (!isNaN(num)) {
+      normalizedId = num < 100000000 ? String(200000000 + num) : String(num);
+    }
+  } else if (raw.startsWith('ar-')) {
+    const num = parseInt(raw.slice(3), 10);
+    if (!isNaN(num)) {
+      normalizedId = num < 100000000 ? String(100000000 + num) : String(num);
+    }
+  } else if (raw.startsWith('sg-')) {
+    const num = parseInt(raw.slice(3), 10);
+    if (!isNaN(num)) {
+      normalizedId = num < 100000000 ? String(300000000 + num) : String(num);
+    }
+  } else {
+    const num = parseInt(raw, 10);
+    if (!isNaN(num)) {
+      // Unprefixed raw ID from album context maps to album offset
+      normalizedId = num < 100000000 ? String(200000000 + num) : String(num);
+    }
+  }
+
   const auth = authParams || getSubsonicAuthParams();
-  const authStr = auth ? (auth.startsWith('&') ? auth : `&${auth}`) : '';
-  return `${getAmpacheUrl(`action=getCoverArt&id=${encodeURIComponent(cleanId)}`)}${authStr}`;
+  if (!auth || !auth.includes('u=')) {
+    return DEFAULT_COVER_ART;
+  }
+  const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
+  return `${getBaseUrl()}/ampache/public/rest/index.php?action=getCoverArt&id=${encodeURIComponent(normalizedId)}&${authClean}`;
 }
 
 export function getStreamUrl(trackId, authParams = '') {
   if (!trackId) return '';
-  const cleanId = String(trackId).trim();
-  return `${getApiProxyUrl()}?action=stream&id=${encodeURIComponent(cleanId)}`;
+  const raw = String(trackId).trim();
+  let normalizedId = raw;
+  if (raw.startsWith('sg-')) {
+    normalizedId = raw.slice(3);
+  }
+  const num = parseInt(normalizedId, 10);
+  if (!isNaN(num)) {
+    // Canonical 300000000 song offset for Ampache Subsonic stream & transcode engine
+    normalizedId = num < 100000000 ? String(300000000 + num) : (num >= 300000000 && num < 400000000 ? String(num) : String(300000000 + (num % 100000000)));
+  }
+
+  const auth = authParams || getSubsonicAuthParams();
+  if (!auth || !auth.includes('u=')) {
+    return '';
+  }
+  const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
+  return `${getBaseUrl()}/ampache/public/rest/index.php?action=stream&id=${encodeURIComponent(normalizedId)}&${authClean}`;
 }
 
 function getSearchVariants(query) {
@@ -189,41 +239,52 @@ export function applyUnknownArtistFallback(items = [], unknownArtistId = null) {
 }
 
 export async function searchSubsonic(query, user = null) {
-  const trimmedQuery = query.trim();
+  const trimmedQuery = (query || '').trim();
   if (trimmedQuery.length < 2) return {};
 
   const auth = getSubsonicAuthParams(user);
-  const variants = getSearchVariants(trimmedQuery);
-  const [responses, unknownArtistId] = await Promise.all([
-    Promise.allSettled(variants.map(variant => (
-      fetch(getAmpacheUrl(`action=search3&query=${encodeURIComponent(variant)}&songCount=200&albumCount=5&artistCount=5&${auth}&_t=${Date.now()}`), { cache: 'no-store' })
-        .then(response => response.json())
-    ))),
-    resolveUnknownArtistId(user)
-  ]);
-  const merged = { song: [], album: [], artist: [] };
-  const seen = { song: new Set(), album: new Set(), artist: new Set() };
+  if (!auth || !auth.includes('u=')) return {};
+  const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
 
-  responses.forEach(result => {
-    if (result.status !== 'fulfilled') return;
-    const found = result.value?.['subsonic-response']?.searchResult3 || {};
-    Object.keys(merged).forEach(type => {
-      const items = Array.isArray(found[type]) ? found[type] : (found[type] ? [found[type]] : []);
-      items.forEach(item => {
-        const key = String(item.id || `${type}-${item.name || item.title}`);
-        const limit = type === 'song' ? 200 : 5;
-        if (!seen[type].has(key) && merged[type].length < limit) {
-          seen[type].add(key);
-          merged[type].push(item);
-        }
-      });
-    });
-  });
+  try {
+    const [searchRes, unknownArtistId] = await Promise.all([
+      fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=50&albumCount=15&artistCount=15&${authClean}&_t=${Date.now()}`, { cache: 'no-store' })
+        .then(res => res.json())
+        .catch(() => null),
+      resolveUnknownArtistId(user)
+    ]);
 
-  merged.song = dedupeSongs(applyUnknownArtistFallback(merged.song, unknownArtistId));
-  merged.album = applyUnknownArtistFallback(merged.album, unknownArtistId);
+    const found = searchRes?.['subsonic-response']?.searchResult3 || {};
+    let songList = Array.isArray(found.song) ? found.song : (found.song ? [found.song] : []);
+    let albumList = Array.isArray(found.album) ? found.album : (found.album ? [found.album] : []);
+    let artistList = Array.isArray(found.artist) ? found.artist : (found.artist ? [found.artist] : []);
 
-  return merged;
+    // If exact query returns empty, perform a single wildcard fallback (* suffix)
+    if (songList.length === 0 && albumList.length === 0 && artistList.length === 0 && !trimmedQuery.endsWith('*')) {
+      try {
+        const fallbackRes = await fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery + '*')}&songCount=50&albumCount=15&artistCount=15&${authClean}&_t=${Date.now()}`, { cache: 'no-store' });
+        const fallbackData = await fallbackRes.json();
+        const fbFound = fallbackData?.['subsonic-response']?.searchResult3 || {};
+        if (Array.isArray(fbFound.song)) songList = fbFound.song;
+        else if (fbFound.song) songList = [fbFound.song];
+        if (Array.isArray(fbFound.album)) albumList = fbFound.album;
+        else if (fbFound.album) albumList = [fbFound.album];
+        if (Array.isArray(fbFound.artist)) artistList = fbFound.artist;
+        else if (fbFound.artist) artistList = [fbFound.artist];
+      } catch (fbErr) {}
+    }
+
+    const merged = {
+      song: dedupeSongs(applyUnknownArtistFallback(songList, unknownArtistId)),
+      album: applyUnknownArtistFallback(albumList, unknownArtistId),
+      artist: artistList
+    };
+
+    return merged;
+  } catch (err) {
+    console.error("searchSubsonic error:", err);
+    return {};
+  }
 }
 
 export function getApiProxyUrl() {

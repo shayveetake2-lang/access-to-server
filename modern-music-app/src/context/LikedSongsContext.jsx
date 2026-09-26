@@ -87,7 +87,12 @@ export function LikedSongsProvider({ children }) {
   }, [user]);
 
   const isLiked = useCallback((songId) => {
-    return likedIds.has(String(songId));
+    if (!songId) return false;
+    const strId = String(songId).trim();
+    const cleanNum = parseInt(strId.replace(/\D/g, ''), 10);
+    const normalized = cleanNum > 0 && cleanNum < 100000000 ? String(300000000 + cleanNum) : strId;
+    const rawNum = cleanNum >= 300000000 ? String(cleanNum % 100000000) : strId;
+    return likedIds.has(strId) || likedIds.has(normalized) || likedIds.has(rawNum);
   }, [likedIds]);
 
   const toggleLike = useCallback(async (song) => {

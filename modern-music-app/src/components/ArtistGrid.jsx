@@ -42,16 +42,12 @@ export function ArtistCard({ artist, user, getAuthParams }) {
       >
         {artist.coverArt ? (
           <img
-            src={getCoverArtUrl(artist.coverArt, getAuthParams(user))}
+            src={getCoverArtUrl(artist.coverArt, typeof getAuthParams === 'function' ? getAuthParams(user) : '')}
             className="w-full h-full object-cover"
             alt={artist.name}
             loading="lazy"
-            onError={(e) => {
-              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                e.currentTarget.src = DEFAULT_COVER_ART;
-              }
-            }}
-          />
+            onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
         ) : unknown ? (
           <UserX size={28} className="text-slate-400/70" />
         ) : (

@@ -253,8 +253,8 @@
         function handlePlexRouting(e) {
             if (e && e.preventDefault) e.preventDefault();
             const host = window.location.hostname;
-            const isLocal = host === "127.0.0.1" || host === "localhost" || host.startsWith("192.168.") || host.startsWith("10.");
-            if (!isLocal || host.includes('serverflow') || host.includes('cloudflare')) {
+            const isLocal = host === "127.0.0.1" || host === "localhost";
+            if (!isLocal || host.includes('serverflow') || host.includes('cloudflare') || host.startsWith("10.") || host.startsWith("192.168.")) {
                 window.open('https://app.plex.tv/web', '_blank');
             } else {
                 window.open('http://' + host + ':32400/web', '_blank');

@@ -165,8 +165,8 @@ export default function TopBar() {
                                    src={getCoverArtUrl(song.coverArt || song.id, getAuthParams(user))} 
                                    className="w-full h-full object-cover" 
                                    alt="" 
-                                   onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_COVER_ART; }}
-                                 />
+                                   onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                                  {isCurrent && (
                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                      <Volume2 size={14} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} />
@@ -223,8 +223,8 @@ export default function TopBar() {
                              src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
                              className="w-10 h-10 rounded bg-slate-800 object-cover shrink-0" 
                              alt="" 
-                             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_COVER_ART; }}
-                           />
+                             onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                            <div className="min-w-0 flex-1">
                              <div className="text-sm font-medium text-slate-200 truncate group-hover:text-purple-400 transition-colors">{album.name}</div>
                              <div className="text-xs text-slate-400 truncate">{album.artist}</div>

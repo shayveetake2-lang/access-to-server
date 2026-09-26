@@ -484,12 +484,8 @@ export default function AllSongs() {
                         className="w-full h-full object-cover" 
                         alt="" 
                         loading="lazy" 
-                        onError={(e) => {
-                          if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                            e.currentTarget.src = DEFAULT_COVER_ART;
-                          }
-                        }}
-                      />
+                        onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                       {isCurrent && (
                         <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
                           <Volume2 size={16} className={`text-purple-400 ${isPlaying ? 'animate-pulse' : ''}`} />
@@ -625,12 +621,8 @@ export default function AllSongs() {
                               className="w-full h-full object-cover" 
                               alt="" 
                               loading="lazy" 
-                              onError={(e) => {
-                                if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                                  e.currentTarget.src = DEFAULT_COVER_ART;
-                                }
-                              }}
-                            />
+                              onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                           </div>
 
                           <div className="min-w-0 flex-1">

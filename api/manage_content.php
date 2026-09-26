@@ -65,6 +65,10 @@ function verifyAmpacheAdmin(string $username, string $token, string $salt): bool
 
     $ctx = stream_context_create(['http' => ['timeout' => 4, 'ignore_errors' => true]]);
     $raw = @file_get_contents("{$base}?{$qs}", false, $ctx);
+    if (!$raw) {
+        $fallbackBase = "{$scheme}://{$host}/ampache/public/rest/index.php";
+        $raw = @file_get_contents("{$fallbackBase}?{$qs}", false, $ctx);
+    }
     if (!$raw) return false;
 
     $data = json_decode($raw, true);

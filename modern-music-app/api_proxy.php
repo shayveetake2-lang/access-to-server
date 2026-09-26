@@ -1128,7 +1128,7 @@ if ($action === 'getArtists' || $action === 'getAllArtists') {
         $indexMap = [];
 
         foreach ($rows as $r) {
-            $subArtId = (string)$r['id'];
+            $subArtId = (string)(100000000 + (int)$r['id']);
             $genres = !empty($r['genres']) ? explode('||', $r['genres']) : [];
             $artObj = [
                 'id' => $subArtId,
@@ -1203,8 +1203,8 @@ if ($action === 'getAlbums' || $action === 'getAllAlbums' || $action === 'getAlb
 
         $albums = [];
         foreach ($rows as $r) {
-            $subAlbId = (string)$r['id'];
-            $subArtId = (string)($r['artistId'] ?? 0);
+            $subAlbId = (string)(200000000 + (int)$r['id']);
+            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
             $genres = !empty($r['genres']) ? explode('||', $r['genres']) : [];
             $albums[] = [
                 'id' => $subAlbId,
@@ -1288,28 +1288,31 @@ if ($action === 'getAlbum') {
 
         $songs = [];
         foreach ($songRows as $s) {
+            $sSubId = (string)(300000000 + (int)$s['id']);
+            $sSubAlbId = (string)(200000000 + (int)$s['albumId']);
+            $sSubArtId = (string)(100000000 + (int)($s['artistId'] ?? 0));
             $songs[] = [
-                'id' => (string)$s['id'],
-                'parent' => (string)$s['albumId'],
+                'id' => $sSubId,
+                'parent' => $sSubAlbId,
                 'title' => $s['title'],
                 'artist' => $s['artist'] ?: 'Unknown Artist',
-                'artistId' => (string)$s['artistId'],
+                'artistId' => $sSubArtId,
                 'album' => $s['album'],
-                'albumId' => (string)$s['albumId'],
+                'albumId' => $sSubAlbId,
                 'duration' => (int)$s['duration'],
                 'track' => (int)$s['track'],
-                'coverArt' => 'al-' . $s['albumId'],
+                'coverArt' => 'al-' . $sSubAlbId,
                 'year' => (int)$s['year'],
                 'playCount' => (int)$s['playCount']
             ];
         }
 
-        $subAlbId = (string)$albumRow['id'];
+        $subAlbId = (string)(200000000 + (int)$albumRow['id']);
         $albumData = [
             'id' => $subAlbId,
             'name' => $albumRow['name'],
             'artist' => $albumRow['artist'] ?: 'Various Artists',
-            'artistId' => (string)($albumRow['artistId'] ?? 0),
+            'artistId' => (string)(100000000 + (int)($albumRow['artistId'] ?? 0)),
             'coverArt' => 'al-' . $subAlbId,
             'songCount' => count($songs),
             'year' => (int)$albumRow['year'],
@@ -1378,18 +1381,20 @@ if ($action === 'getArtist') {
 
         $albums = [];
         foreach ($albRows as $a) {
+            $aSubAlbId = (string)(200000000 + (int)$a['id']);
+            $aSubArtId = (string)(100000000 + (int)$artRow['id']);
             $albums[] = [
-                'id' => (string)$a['id'],
+                'id' => $aSubAlbId,
                 'name' => $a['name'],
                 'artist' => $artRow['name'],
-                'artistId' => (string)$artRow['id'],
-                'coverArt' => 'al-' . $a['id'],
+                'artistId' => $aSubArtId,
+                'coverArt' => 'al-' . $aSubAlbId,
                 'songCount' => (int)$a['songCount'],
                 'year' => (int)$a['year']
             ];
         }
 
-        $subArtId = (string)$artRow['id'];
+        $subArtId = (string)(100000000 + (int)$artRow['id']);
         $artistData = [
             'id' => $subArtId,
             'name' => $artRow['name'],

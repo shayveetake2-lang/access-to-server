@@ -247,12 +247,8 @@ export default function ArtistDetails() {
                 src={getCoverArtUrl(artist.coverArt, getAuthParams(user))}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 alt={artist.name}
-                onError={(e) => {
-                  if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                    e.currentTarget.src = DEFAULT_COVER_ART;
-                  }
-                }}
-              />
+                onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
             ) : (
               <User size={56} className="text-white/50" />
             )}
@@ -405,12 +401,8 @@ export default function ArtistDetails() {
                             className="w-10 h-10 rounded-lg bg-slate-800 object-cover shrink-0 border border-white/5 shadow-sm"
                             alt=""
                             loading="lazy"
-                            onError={(e) => {
-                              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                                e.currentTarget.src = DEFAULT_COVER_ART;
-                              }
-                            }}
-                          />
+                            onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                           <div className="min-w-0 flex-1">
                             <div className={`font-medium transition-colors truncate ${
                               isCurrent ? 'text-purple-300 font-semibold' : 'text-white group-hover:text-purple-400'
@@ -504,12 +496,8 @@ export default function ArtistDetails() {
                     alt={album.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
-                    onError={(e) => {
-                      if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                        e.currentTarget.src = DEFAULT_COVER_ART;
-                      }
-                    }}
-                  />
+                    onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                   <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
                     <button
                       className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white shadow-lg transform translate-y-3 group-hover:translate-y-0 transition-all duration-200"
@@ -560,12 +548,8 @@ export default function ArtistDetails() {
                       src={getCoverArtUrl(relArtist.coverArt, getAuthParams(user))}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       alt={relArtist.name}
-                      onError={(e) => {
-                        if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                          e.currentTarget.src = DEFAULT_COVER_ART;
-                        }
-                      }}
-                    />
+                      onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
                   ) : (
                     <div className="w-full h-full bg-slate-800 flex items-center justify-center">
                       <User size={24} className="text-slate-500" />

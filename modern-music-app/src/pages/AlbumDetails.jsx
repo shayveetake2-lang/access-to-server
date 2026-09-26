@@ -105,12 +105,8 @@ export default function AlbumDetails() {
             src={coverUrl} 
             alt={album.name} 
             className="w-full h-full object-cover" 
-            onError={(e) => {
-              if (e.currentTarget.src !== DEFAULT_COVER_ART) {
-                e.currentTarget.src = DEFAULT_COVER_ART;
-              }
-            }}
-          />
+            onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
+/>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-0.5">
