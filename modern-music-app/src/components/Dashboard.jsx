@@ -68,7 +68,7 @@ export default function Dashboard() {
         // Process Library Albums
         let loadedAlbums = [];
         if (albumRes.status === 'fulfilled' && albumRes.value?.albums) {
-          loadedAlbums = albumRes.value.albums;
+          loadedAlbums = albumRes.value.albums.filter(album => album.hasArt === true || album.hasArt === 1 || album.hasArt === '1');
         }
 
         // Process Public Playlists

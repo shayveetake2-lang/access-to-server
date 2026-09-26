@@ -1204,6 +1204,12 @@ if ($action === 'getAlbums' || $action === 'getAllAlbums' || $action === 'getAlb
         $stmt = $pdo->prepare("
             SELECT alb.id, alb.name, alb.year, alb.disk_count, alb.song_count, alb.total_count as playCount,
                    COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId,
+                     EXISTS(
+                      SELECT 1 FROM image art_img
+                      WHERE art_img.object_type = 'album'
+                        AND art_img.object_id = alb.id
+                        AND LENGTH(art_img.image) > 0
+                     ) as hasArt,
                    GROUP_CONCAT(DISTINCT t.name SEPARATOR '||') as genres
             FROM album alb
             LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
@@ -1229,6 +1235,7 @@ if ($action === 'getAlbums' || $action === 'getAllAlbums' || $action === 'getAlb
                 'artist' => $r['artist'] ?: 'Various Artists',
                 'artistId' => $subArtId,
                 'coverArt' => 'al-' . $subAlbId,
+                'hasArt' => (bool)$r['hasArt'],
                 'songCount' => (int)($r['song_count'] ?: 0),
                 'playCount' => (int)($r['playCount'] ?: 0),
                 'year' => (int)$r['year'],
