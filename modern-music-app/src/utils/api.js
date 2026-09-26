@@ -57,6 +57,10 @@ let _cachedAuthParams = null;
 let _cachedAuthUserKey = '';
 let _cachedAuthTimestamp = 0;
 
+// CRITICAL FIX: Static module-level salt generated strictly once per session.
+// This prevents infinite render loops and cache-busting on every component mount.
+const _staticSessionSalt = Math.random().toString(36).substring(2, 12);
+
 /**
  * Dynamically resolves active user credentials from argument, localStorage, or sessionStorage,
  * and generates standard Subsonic REST API token auth parameters: u, t, s, v=1.16.1, c=Aether, f=json.
@@ -65,6 +69,7 @@ let _cachedAuthTimestamp = 0;
 export function getSubsonicAuthParams(user = null, forceNew = false) {
   let credentials = user;
 
+  // Aggressive local storage fetch if context is not yet populated
   if ((!credentials || !credentials.username) && typeof window !== 'undefined') {
     const rawStored = localStorage.getItem('ampache_user') || sessionStorage.getItem('ampache_user');
     if (rawStored) {
@@ -80,104 +85,87 @@ export function getSubsonicAuthParams(user = null, forceNew = false) {
     return 'v=1.16.1&c=Aether&f=json';
   }
 
-  const userKey = `${credentials.username}:${credentials.password || ''}`;
-  const now = Date.now();
-  if (!forceNew && _cachedAuthParams && _cachedAuthUserKey === userKey && (now - _cachedAuthTimestamp < 15 * 60 * 1000)) {
+  const userKey = `${credentials.username}:${credentials.token || credentials.password || ''}`;
+  
+  // CRITICAL CACHING FIX: Remove 15 minute expiry to ensure completely stable auth payload 
+  // for the session. This guarantees native browser image caching for 10k artwork files.
+  if (!forceNew && _cachedAuthParams && _cachedAuthUserKey === userKey) {
     return _cachedAuthParams;
   }
 
+  let params = '';
+
   // Phase 1: Secure Pre-Computed Subsonic Hash (No Plaintext Password Required)
   if (credentials.subsonic_token && credentials.subsonic_salt) {
-    const params = `u=${encodeURIComponent(credentials.username)}&t=${credentials.subsonic_token}&s=${credentials.subsonic_salt}&v=1.16.1&c=Aether&f=json`;
-    _cachedAuthParams = params;
-    _cachedAuthUserKey = userKey;
-    _cachedAuthTimestamp = now;
-    return params;
+    params = `u=${encodeURIComponent(credentials.username)}&t=${credentials.subsonic_token}&s=${credentials.subsonic_salt}&v=1.16.1&c=Aether&f=json`;
+  } 
+  // Phase 2: Session Bearer Token Fallback (If subsonic hash generation failed backend-side)
+  else if (credentials.token) {
+    params = `u=${encodeURIComponent(credentials.username)}&p=${encodeURIComponent(credentials.token)}&v=1.16.1&c=Aether&f=json`;
+  } 
+  // Phase 3: Legacy random salt and MD5 token (requires plaintext password)
+  else if (credentials.password) {
+    let salt = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('aether_salt') : null;
+    if (!salt) {
+      salt = _staticSessionSalt;
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('aether_salt', salt);
+    }
+    const token = md5(credentials.password + salt);
+    const hexPass = Array.from(credentials.password).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+    params = `u=${encodeURIComponent(credentials.username)}&t=${token}&s=${salt}&p=enc:${hexPass}&v=1.16.1&c=Aether&f=json`;
+  } 
+  // Unauthenticated safe fallback
+  else {
+    params = `u=${encodeURIComponent(credentials.username)}&v=1.16.1&c=Aether&f=json`;
   }
 
-  // Fallback to legacy random salt and MD5 token (Subsonic Token Auth standard)
-  // CRITICAL CACHING FIX: Use a stable static salt for the session so image caching works
-  let salt = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('aether_salt') : null;
-  if (!salt) {
-    salt = Math.random().toString(36).substring(2, 12);
-    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('aether_salt', salt);
-  }
-  const password = credentials.password || '';
-  const token = md5(password + salt);
-
-  // Provide enc:hex password parameter for Ampache backwards-compatibility
-  const hexPass = password
-    ? Array.from(password).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
-    : '';
-  const pParam = hexPass ? `&p=enc:${hexPass}` : '';
-
-  const params = `u=${encodeURIComponent(credentials.username)}&t=${token}&s=${salt}${pParam}&v=1.16.1&c=Aether&f=json`;
   _cachedAuthParams = params;
   _cachedAuthUserKey = userKey;
-  _cachedAuthTimestamp = now;
+  _cachedAuthTimestamp = Date.now();
 
   return params;
 }
 
-export function getCoverArtUrl(coverArtId, authParams = '') {
+export function getCoverArtUrl(coverArtId) {
   if (!coverArtId || String(coverArtId).trim() === '' || String(coverArtId) === '0' || String(coverArtId) === 'unknown') {
     return DEFAULT_COVER_ART;
   }
+  
   const raw = String(coverArtId).trim();
   let normalizedId = raw;
 
-  // Normalize ID into Ampache's canonical Subsonic ranges:
-  // Artists: 100000000+, Albums: 200000000+, Songs: 300000000+
   if (raw.startsWith('al-')) {
     const num = parseInt(raw.slice(3), 10);
-    if (!isNaN(num)) {
-      normalizedId = num < 100000000 ? String(200000000 + num) : String(num);
-    }
+    if (!isNaN(num)) normalizedId = num < 100000000 ? String(200000000 + num) : String(num);
   } else if (raw.startsWith('ar-')) {
     const num = parseInt(raw.slice(3), 10);
-    if (!isNaN(num)) {
-      normalizedId = num < 100000000 ? String(100000000 + num) : String(num);
-    }
+    if (!isNaN(num)) normalizedId = num < 100000000 ? String(100000000 + num) : String(num);
   } else if (raw.startsWith('sg-')) {
     const num = parseInt(raw.slice(3), 10);
-    if (!isNaN(num)) {
-      normalizedId = num < 100000000 ? String(300000000 + num) : String(num);
-    }
+    if (!isNaN(num)) normalizedId = num < 100000000 ? String(300000000 + num) : String(num);
   } else {
     const num = parseInt(raw, 10);
-    if (!isNaN(num)) {
-      // Unprefixed raw ID from album context maps to album offset
-      normalizedId = num < 100000000 ? String(200000000 + num) : String(num);
-    }
+    if (!isNaN(num)) normalizedId = num < 100000000 ? String(200000000 + num) : String(num);
   }
 
-  const auth = authParams || getSubsonicAuthParams();
-  if (!auth || !auth.includes('u=')) {
-    return DEFAULT_COVER_ART;
-  }
-  const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
-  return `${getBaseUrl()}/ampache/public/rest/index.php?action=getCoverArt&id=${encodeURIComponent(normalizedId)}&${authClean}`;
+  return `${getApiProxyUrl()}?action=getCoverArt&id=${encodeURIComponent(normalizedId)}`;
 }
 
-export function getStreamUrl(trackId, authParams = '') {
+export function getStreamUrl(trackId) {
   if (!trackId) return '';
+  
   const raw = String(trackId).trim();
   let normalizedId = raw;
   if (raw.startsWith('sg-')) {
     normalizedId = raw.slice(3);
   }
+  
   const num = parseInt(normalizedId, 10);
   if (!isNaN(num)) {
-    // Canonical 300000000 song offset for Ampache Subsonic stream & transcode engine
     normalizedId = num < 100000000 ? String(300000000 + num) : (num >= 300000000 && num < 400000000 ? String(num) : String(300000000 + (num % 100000000)));
   }
 
-  const auth = authParams || getSubsonicAuthParams();
-  if (!auth || !auth.includes('u=')) {
-    return '';
-  }
-  const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
-  return `${getBaseUrl()}/ampache/public/rest/index.php?action=stream&id=${encodeURIComponent(normalizedId)}&${authClean}`;
+  return `${getApiProxyUrl()}?action=stream&id=${encodeURIComponent(normalizedId)}`;
 }
 
 function getSearchVariants(query) {

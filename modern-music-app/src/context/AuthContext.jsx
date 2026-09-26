@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { getAmpacheUrl, getSubsonicAuthParams, getBaseUrl } from '../utils/api';
 import { checkIsAdmin } from '../utils/auth';
+import md5 from '../utils/md5';
 
 const AuthContext = createContext();
 
@@ -89,13 +90,23 @@ export function AuthProvider({ children }) {
       });
       const data = await res.json();
       if (data.status === 'success') {
+        let subToken = data.subsonic_token;
+        let subSalt = data.subsonic_salt;
+        
+        // CRITICAL CACHING FIX: Generate salt and hashed token ONCE during login if backend missed it.
+        // This permanently binds the Subsonic token to the user's session without exposing plaintext password.
+        if (!subToken || !subSalt) {
+          subSalt = Math.random().toString(36).substring(2, 12);
+          subToken = md5(password + subSalt);
+        }
+
         const credentials = {
           username: data.username,
           token: data.token,
           role: data.role,
           isAdmin: data.role === 'admin',
-          subsonic_token: data.subsonic_token,
-          subsonic_salt: data.subsonic_salt
+          subsonic_token: subToken,
+          subsonic_salt: subSalt
         };
         setUser(credentials);
         localStorage.setItem('ampache_user', JSON.stringify(credentials));

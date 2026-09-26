@@ -1783,6 +1783,7 @@
 
                     let pendingCount = 0;
                     tbody.innerHTML = data.requests.map(req => {
+                        req.media_title = req.media_title || req.track_title || '';
                         if (req.status === 'Pending') pendingCount++;
                         let statusColor = 'text-slate-400';
                         if (req.status === 'Pending') statusColor = 'text-amber-400';
@@ -1791,7 +1792,7 @@
 
                         return `
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                <td class="py-3 px-4 font-medium text-slate-900 dark:text-slate-200">${escapeHtml(req.track_title)}</td>
+                                <td class="py-3 px-4 font-medium text-slate-900 dark:text-slate-200">${escapeHtml(req.media_title)}</td>
                                 <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${escapeHtml(req.media_type)}</td>
                                 <td class="py-3 px-4 font-mono text-[10px] text-cyan-400">${escapeHtml(req.username)}</td>
                                 <td class="py-3 px-4 font-semibold ${statusColor}">${escapeHtml(req.status)}</td>

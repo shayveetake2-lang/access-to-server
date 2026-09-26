@@ -166,17 +166,19 @@ export default function OutputMenu({ compact = false }) {
   useEffect(() => {
     if (!selectedDeviceId) return;
 
+    const sinkId = selectedDeviceId === 'default' ? '' : selectedDeviceId;
+    const reportSinkError = (label, error) => {
+      if (error?.name === 'AbortError') return;
+      console.warn(`[Aether Audio] Failed to set output destination on ${label}:`, error);
+    };
+
     if (isSinkSupported && audioRef?.current && typeof audioRef.current.setSinkId === 'function') {
-      audioRef.current.setSinkId(selectedDeviceId).catch((e) => {
-        console.warn('[Aether Audio] setSinkId notice on <audio>:', e);
-      });
+      audioRef.current.setSinkId(sinkId).catch((e) => reportSinkError('<audio>', e));
     }
 
     const ctx = typeof window !== 'undefined' ? window._aetherAudioContext : null;
     if (ctx && typeof ctx.setSinkId === 'function') {
-      ctx.setSinkId(selectedDeviceId === 'default' ? '' : selectedDeviceId).catch((e) => {
-        console.warn('[Aether Audio] setSinkId notice on AudioContext:', e);
-      });
+      ctx.setSinkId(sinkId).catch((e) => reportSinkError('AudioContext', e));
     }
   }, [selectedDeviceId, audioRef?.current, isSinkSupported]);
 
@@ -199,6 +201,7 @@ export default function OutputMenu({ compact = false }) {
 
   const handleSelectDevice = async (deviceId) => {
     setSelectedDeviceId(deviceId);
+    const sinkId = deviceId === 'default' ? '' : deviceId;
     if (typeof window !== 'undefined') {
       localStorage.setItem('aether_audio_sink_id', deviceId);
     }
@@ -206,9 +209,11 @@ export default function OutputMenu({ compact = false }) {
     // 1. Set on HTMLAudioElement
     if (audioRef?.current && typeof audioRef.current.setSinkId === 'function') {
       try {
-        await audioRef.current.setSinkId(deviceId);
+        await audioRef.current.setSinkId(sinkId);
       } catch (err) {
-        console.warn('[Aether Audio] Failed to switch output destination on <audio>:', err);
+        if (err?.name !== 'AbortError') {
+          console.warn('[Aether Audio] Failed to switch output destination on <audio>:', err);
+        }
       }
     }
 
@@ -216,9 +221,11 @@ export default function OutputMenu({ compact = false }) {
     const ctx = typeof window !== 'undefined' ? window._aetherAudioContext : null;
     if (ctx && typeof ctx.setSinkId === 'function') {
       try {
-        await ctx.setSinkId(deviceId === 'default' ? '' : deviceId);
+        await ctx.setSinkId(sinkId);
       } catch (err) {
-        console.warn('[Aether Audio] Failed to switch output destination on AudioContext:', err);
+        if (err?.name !== 'AbortError') {
+          console.warn('[Aether Audio] Failed to switch output destination on AudioContext:', err);
+        }
       }
     }
 

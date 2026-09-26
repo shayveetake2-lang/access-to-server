@@ -1,7 +1,16 @@
 <?php
 // modern-music-app/api_proxy.php — Public Registration Proxy for Ampache Subsonic Backend
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+
+// CRITICAL PERFORMANCE FIX: Skip session_start() for media requests.
+// PHP sessions use file locking — only ONE request at a time can hold the lock.
+// With 100+ concurrent getCoverArt requests, they serialize and queue for minutes
+// on the 2011 MacBook Pro. Media endpoints don't need sessions at all.
+$_action = $_GET['action'] ?? '';
+$_mediaActions = ['getCoverArt', 'coverArt', 'stream', 'download'];
+if (!in_array($_action, $_mediaActions)) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 }
 
 header('Content-Type: application/json');
@@ -33,7 +42,12 @@ function getProxyEnv($key, $default = null) {
     return $default;
 }
 
-require_once __DIR__ . '/../config/config.php';
+// Only load heavyweight config.php for non-media requests.
+// Media requests (getCoverArt, stream) only need getProxyPdo() which reads
+// ampache.cfg.php directly — skipping config.php avoids SQLite setup overhead.
+if (!in_array($_action, $_mediaActions)) {
+    require_once __DIR__ . '/../config/config.php';
+}
 
 function getProxyPdo() {
     static $pdo = null;
@@ -926,8 +940,8 @@ if ($action === 'recordPlay' || $action === 'scrobble') {
 
     $pdo = getProxyPdo();
     if (!$pdo) {
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        error_log('[Aether] recordPlay skipped: database connection failed.');
+        echo json_encode(['status' => 'skipped', 'message' => 'Playback logging unavailable.']);
         exit;
     }
 
@@ -948,7 +962,7 @@ if ($action === 'recordPlay' || $action === 'scrobble') {
         $now = time();
         // 1. Insert stream event into Ampache's object_count table
         $ins = $pdo->prepare("
-            INSERT INTO object_count (object_type, object_id, date, user, agent, count_type)
+            INSERT IGNORE INTO object_count (object_type, object_id, date, user, agent, count_type)
             VALUES ('song', :sid, :ts, :uid, 'Aether', 'stream')
         ");
         $ins->execute([
@@ -957,13 +971,15 @@ if ($action === 'recordPlay' || $action === 'scrobble') {
             ':uid' => $userId
         ]);
 
-        // 2. Increment song total_count and ensure played is marked true
-        $upd = $pdo->prepare("
-            UPDATE song 
-            SET total_count = total_count + 1, played = 1
-            WHERE id = :sid
-        ");
-        $upd->execute([':sid' => $cleanSongId]);
+        // Increment totals only when this play event was newly recorded.
+        if ($ins->rowCount() > 0) {
+            $upd = $pdo->prepare("
+                UPDATE song
+                SET total_count = total_count + 1, played = 1
+                WHERE id = :sid
+            ");
+            $upd->execute([':sid' => $cleanSongId]);
+        }
 
         echo json_encode([
             'status' => 'ok',
@@ -973,8 +989,8 @@ if ($action === 'recordPlay' || $action === 'scrobble') {
         ]);
         exit;
     } catch (\Exception $e) {
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        error_log('[Aether] recordPlay failed: ' . $e->getMessage());
+        echo json_encode(['status' => 'skipped', 'message' => 'Playback logging unavailable.']);
         exit;
     }
 }
@@ -1109,16 +1125,16 @@ if ($action === 'getArtists' || $action === 'getAllArtists') {
         $stmt = $pdo->prepare("
             SELECT art.id, art.name,
                    COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount,
-                   img.object_id as hasArt,
+                   MAX(img.object_id) as hasArt,
                    GROUP_CONCAT(DISTINCT t.name SEPARATOR '||') as genres
             FROM artist art
             LEFT JOIN album alb ON alb.album_artist = art.id
-            LEFT JOIN image img ON img.object_type = 'artist' AND img.object_id = art.id AND img.size = 'original'
+            LEFT JOIN image img ON img.object_type = 'artist' AND img.object_id = art.id AND LENGTH(img.image) > 0
             LEFT JOIN song s ON s.artist = art.id AND s.enabled = 1
             LEFT JOIN tag_map tm ON tm.object_type = 'song' AND tm.object_id = s.id
             LEFT JOIN tag t ON t.id = tm.tag_id
             WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
-            GROUP BY art.id, art.name, art.album_count, img.object_id
+            GROUP BY art.id, art.name, art.album_count
             ORDER BY art.name ASC
         ");
         $stmt->execute();
@@ -1353,9 +1369,9 @@ if ($action === 'getArtist') {
 
     try {
         $stmtArt = $pdo->prepare("
-            SELECT art.id, art.name, img.object_id as hasArt
+            SELECT art.id, art.name, MAX(img.object_id) as hasArt
             FROM artist art
-            LEFT JOIN image img ON img.object_type = 'artist' AND img.object_id = art.id AND img.size = 'original'
+            LEFT JOIN image img ON img.object_type = 'artist' AND img.object_id = art.id AND LENGTH(img.image) > 0
             WHERE art.id = :id
             LIMIT 1
         ");

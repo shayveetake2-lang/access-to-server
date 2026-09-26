@@ -241,7 +241,7 @@ export default function StickyPlayer() {
           prefetchAudioRef.current = null;
         }
 
-        const streamUrl = getStreamUrl(nextTrack.id, getSubsonicAuthParams(user));
+        const streamUrl = getStreamUrl(nextTrack.id, getAuthParams(user));
         const prefetchAudio = configureAudioElement ? configureAudioElement(new Audio()) : new Audio();
         prefetchAudio.preload = 'auto';
         prefetchAudio.src = streamUrl;
