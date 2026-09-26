@@ -225,8 +225,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Legacy: php cli.inc -c update
         $subCmd = "-c update";
     } else {
-        // Ampache v6: php bin/cli run:updateCatalog -a
-        $subCmd = "run:updateCatalog -a";
+        // Ampache v6: add new media and gather embedded/remote artwork.
+        $subCmd = "run:updateCatalog -a -g";
     }
 
     // Initialize log header
@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status'  => 'success',
             'running' => true,
             'pid'     => (int)$spawnedPid,
-            'message' => 'Catalog scan started gently in background. New tracks on mac2 will index automatically.'
+            'message' => 'Catalog scan started gently in background. New tracks and artwork on mac2 will index automatically.'
         ]);
     } else {
         http_response_code(500);
