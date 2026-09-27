@@ -167,6 +167,12 @@ if (is_resource($handle)) {
     $returnCode = pclose($handle);
     
     if ($returnCode === 0) {
+        // SECURITY PATCH: HARDEN WEBROOT (Prevent PHP RCE in deployed sites)
+        $htaccessPath = $targetDir . '/.htaccess';
+        if (!file_exists($htaccessPath)) {
+            @file_put_contents($htaccessPath, "<IfModule mod_php7.c>\n    php_flag engine off\n</IfModule>\nOptions -Indexes\n");
+        }
+
         // Tag site ownership to current authenticated user
         @file_put_contents($targetDir . '/.serverflow_owner', $username);
         $metaFile = $sitesBase . '/.site_owners.json';

@@ -11,12 +11,14 @@ $cacheFile = __DIR__ . '/storage_cache.json';
 if (file_exists($cacheFile)) {
     echo file_get_contents($cacheFile);
 } else {
-    // If not generated yet, try generating it on-the-fly once
-    // Alternatively, just return an error so as not to hang the frontend.
-    include_once __DIR__ . '/cron_storage.php';
-    if (file_exists($cacheFile)) {
-        echo file_get_contents($cacheFile);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Storage cache not available']);
-    }
+    // SECURITY/PERFORMANCE PATCH: Async spawn to prevent worker blocking
+    $cronScript = escapeshellarg(__DIR__ . '/cron_storage.php');
+    exec("php {$cronScript} > /dev/null 2>&1 &");
+    
+    http_response_code(202);
+    echo json_encode([
+        'status' => 'processing', 
+        'message' => 'Storage cache is generating in the background. Please retry shortly.',
+        'drives' => [] 
+    ]);
 }

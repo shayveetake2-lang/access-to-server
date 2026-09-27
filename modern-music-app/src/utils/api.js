@@ -226,34 +226,46 @@ export function applyUnknownArtistFallback(items = [], unknownArtistId = null) {
   });
 }
 
-export async function searchSubsonic(query, user = null) {
-  const trimmedQuery = (query || '').trim();
-  if (trimmedQuery.length < 2) return {};
+let _searchTimeout = null;
+let _searchAbortController = null;
 
-  const cacheKey = `aether_search_${trimmedQuery.toLowerCase()}`;
-  if (typeof window !== 'undefined' && window.sessionStorage) {
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
-          return parsed.data;
-        }
+export function searchSubsonic(query, user = null) {
+  return new Promise((resolve) => {
+    const trimmedQuery = (query || '').trim();
+    if (trimmedQuery.length < 2) return resolve({});
+
+    // PERFORMANCE PATCH: 300ms Debounce & AbortController to prevent API hammering
+    if (_searchTimeout) clearTimeout(_searchTimeout);
+    if (_searchAbortController) _searchAbortController.abort();
+    
+    _searchAbortController = new AbortController();
+    const signal = _searchAbortController.signal;
+
+    _searchTimeout = setTimeout(async () => {
+      const cacheKey = `aether_search_${trimmedQuery.toLowerCase()}`;
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+              return resolve(parsed.data);
+            }
+          }
+        } catch (e) {}
       }
-    } catch (e) {}
-  }
 
-  const auth = getSubsonicAuthParams(user);
-  if (!auth || !auth.includes('u=')) return {};
-  const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
+      const auth = getSubsonicAuthParams(user);
+      if (!auth || !auth.includes('u=')) return resolve({});
+      const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
 
-  try {
-    const [searchRes, unknownArtistId] = await Promise.all([
-      fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=150&albumCount=20&artistCount=20&${authClean}&_t=${Date.now()}`, { cache: 'no-store' })
-        .then(res => res.json())
-        .catch(() => null),
-      resolveUnknownArtistId(user)
-    ]);
+      try {
+        const [searchRes, unknownArtistId] = await Promise.all([
+          fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=150&albumCount=20&artistCount=20&${authClean}&_t=${Date.now()}`, { cache: 'no-store', signal })
+            .then(res => res.json())
+            .catch((e) => { if (e.name !== 'AbortError') return null; throw e; }),
+          resolveUnknownArtistId(user)
+        ]);
 
     const found = searchRes?.['subsonic-response']?.searchResult3 || {};
     let songList = Array.isArray(found.song) ? found.song : (found.song ? [found.song] : []);
@@ -290,11 +302,15 @@ export async function searchSubsonic(query, user = null) {
       } catch (e) {}
     }
 
-    return merged;
+    resolve(merged);
   } catch (err) {
-    console.error("searchSubsonic error:", err);
-    return {};
+    if (err.name !== 'AbortError') {
+      console.error("searchSubsonic error:", err);
+    }
+    resolve({});
   }
+    }, 300);
+  });
 }
 
 export function getApiProxyUrl() {

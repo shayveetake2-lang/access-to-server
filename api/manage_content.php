@@ -144,7 +144,6 @@ function getPdo(): PDO {
     // Try credentials in order: dedicated user → root
     $credPairs = [
         ['ampache_user', 'password'],
-        ['root', 'root'],
     ];
 
     foreach ($hosts as $host) {

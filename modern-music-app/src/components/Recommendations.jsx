@@ -34,9 +34,15 @@ export default function Recommendations() {
       try {
         const auth = getAuthParams(user);
         
-        // 1. Fetch user's top/frequent albums to determine favorite genres
-        const freqRes = await fetch(getAmpacheUrl(`action=getAlbumList2&type=frequent&size=15&${auth}`));
-        const freqData = await freqRes.json();
+        // PERFORMANCE PATCH: Break sequential waterfall with Promise.all
+        const [freqRes, recRes] = await Promise.all([
+          fetch(getAmpacheUrl(`action=getAlbumList2&type=frequent&size=15&${auth}`)).catch(() => null),
+          fetch(getAmpacheUrl(`action=getRandomSongs&size=50&${auth}`)).catch(() => null)
+        ]);
+
+        const freqData = freqRes ? await freqRes.json().catch(() => ({})) : {};
+        const recData = recRes ? await recRes.json().catch(() => ({})) : {};
+
         const topAlbums = freqData?.['subsonic-response']?.albumList2?.album || [];
         const albums = Array.isArray(topAlbums) ? topAlbums : (topAlbums ? [topAlbums] : []);
         
@@ -44,18 +50,24 @@ export default function Recommendations() {
         if (albums.length > 0) {
           const genres = albums.map(a => a.genre).filter(Boolean);
           if (genres.length > 0) {
-            // Find most frequent genre
             const counts = genres.reduce((acc, g) => ({ ...acc, [g]: (acc[g] || 0) + 1 }), {});
             targetGenre = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
           }
         }
         
-        // 2. Fetch random songs of that genre as "unplayed/discovery" recommendations
-        const query = targetGenre ? `&genre=${encodeURIComponent(targetGenre)}` : '';
-        const recRes = await fetch(getAmpacheUrl(`action=getRandomSongs&size=12${query}&${auth}`));
-        const recData = await recRes.json();
         const rawSongs = recData?.['subsonic-response']?.randomSongs?.song || [];
-        const recommendedSongs = Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : []);
+        let recommendedSongs = Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : []);
+
+        // Locally surface songs matching the target genre first
+        if (targetGenre && recommendedSongs.length > 0) {
+          recommendedSongs.sort((a, b) => {
+            const aMatch = a.genre === targetGenre ? -1 : 1;
+            const bMatch = b.genre === targetGenre ? -1 : 1;
+            return aMatch - bMatch;
+          });
+        }
+        
+        recommendedSongs = recommendedSongs.slice(0, 12);
         
         setRecommendations(recommendedSongs);
         const cachePayload = JSON.stringify({

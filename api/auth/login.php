@@ -59,37 +59,10 @@ try {
     $user = $stmt->fetch();
 
     if (!$user) {
-        // AUTO-REGISTER IF USER DOES NOT EXIST
-        if (strlen($password) < 6) {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Password must be at least 6 characters.']);
-            exit;
-        }
-        
-        $pdo->beginTransaction();
-        
-        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 10]);
-        $email = $username . '@local.host'; // placeholder
-        
-        $insert = $pdo->prepare("INSERT INTO sys_users (username, email, password_hash, role, storage_limit_mb) VALUES (:u, :e, :h, 'member', 100)");
-        $insert->execute([':u' => $username, ':e' => $email, ':h' => $hash]);
-        $newId = $pdo->lastInsertId();
-        
-        // Ampache DB Sync
-        $ampPdo = getAmpacheConnectionLogin();
-        if ($ampPdo) {
-            $ampStmt = $ampPdo->prepare("INSERT INTO user (username, password, access, create_date) VALUES (:username, :password, 25, :created)");
-            $ampStmt->execute([
-                ':username' => $username,
-                ':password' => hash('sha256', $password),
-                ':created' => time()
-            ]);
-        }
-        $pdo->commit();
-        
-        // Re-fetch the new user
-        $stmt->execute([':identifier' => $username]);
-        $user = $stmt->fetch();
+        // SECURITY PATCH: AUTO-REGISTRATION DISABLED
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'User not found. Public registration is disabled.']);
+        exit;
     }
 
     if ($user && password_verify($password, $user['password_hash'])) {
@@ -98,7 +71,7 @@ try {
         $token = bin2hex(random_bytes(32));
         $hashedToken = hash('sha256', $token);
         $ttlDays = (int)(getenv('AUTH_TOKEN_TTL_DAYS') ?: 7);
-        $expiresAt = date('Y-m-d H:i:s', time() + ($ttlDays * 86400));
+        $expiresAt = gmdate('Y-m-d H:i:s', time() + ($ttlDays * 86400)); // Fixed timezone drift
         
         require_once __DIR__ . '/jwt_utils.php';
         $jwt = createSignedJwt([

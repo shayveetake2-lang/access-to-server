@@ -74,10 +74,8 @@ function getProxyPdo() {
 
     $creds = [
         [!empty($cfg['database_username']) ? $cfg['database_username'] : 'server_app', !empty($cfg['database_password']) ? $cfg['database_password'] : 'password'],
-        ['root', 'root'],
         ['server_app', 'password'],
         ['ampache_user', 'password'],
-        ['root', '']
     ];
 
     $options = [
@@ -381,7 +379,7 @@ if ($action === 'getCoverArt' || $action === 'coverArt') {
     while (ob_get_level()) { ob_end_clean(); }
     header('Content-Type: image/svg+xml', true);
     header('Cache-Control: public, max-age=86400');
-    echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#131722"/><circle cx="150" cy="150" r="50" fill="#1e2230"/><path d="M145 136 L145 156 A7 7 0 1 0 152 163 L152 143 L162 146 L162 138 Z" fill="#6366f1"/></svg>';
+    echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"><rect width="300" height="300" fill="#131722"/><circle cx="150" cy="150" r="50" fill="#1e2230"/><path d="M145 136 L145 156 A7 7 0 1 0 152 163 L152 143 L162 146 L162 138 Z" fill="#6366f1"/></svg>';
     exit;
 }
 
