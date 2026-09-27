@@ -1,7 +1,7 @@
 {
     "status": "success",
-    "timestamp": 1790484962,
-    "time_str": "04:56:02",
+    "timestamp": 1790485081,
+    "time_str": "04:58:01",
     "summary": {
         "total_drives_monitored": 5,
         "total_connected": 1,
@@ -17,11 +17,11 @@
             "mounted": true,
             "status": "online",
             "status_text": "Mounted / Connected",
-            "free": 65799991296,
+            "free": 65805975552,
             "total": 245107195904,
-            "used": 179307204608,
+            "used": 179301220352,
             "percent_used": 73.2,
-            "free_formatted": "61.28 GB",
+            "free_formatted": "61.29 GB",
             "total_formatted": "228.27 GB",
             "used_formatted": "166.99 GB"
         },
