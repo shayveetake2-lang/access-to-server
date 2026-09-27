@@ -21,12 +21,20 @@ const GENRE_CATEGORIES = [
   { id: 'indie', label: 'Indie & Acoustic', match: ['indie', 'folk', 'acoustic'] },
 ];
 
+let _dashboardMemoryCache = {
+  allAlbums: [],
+  allArtists: [],
+  featuredSongs: [],
+  publicPlaylists: [],
+  loaded: false
+};
+
 export default function Dashboard() {
-  const [allAlbums, setAllAlbums] = useState([]);
-  const [allArtists, setAllArtists] = useState([]);
-  const [featuredSongs, setFeaturedSongs] = useState([]);
-  const [publicPlaylists, setPublicPlaylists] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [allAlbums, setAllAlbums] = useState(() => _dashboardMemoryCache.allAlbums);
+  const [allArtists, setAllArtists] = useState(() => _dashboardMemoryCache.allArtists);
+  const [featuredSongs, setFeaturedSongs] = useState(() => _dashboardMemoryCache.featuredSongs);
+  const [publicPlaylists, setPublicPlaylists] = useState(() => _dashboardMemoryCache.publicPlaylists);
+  const [loading, setLoading] = useState(() => !_dashboardMemoryCache.loaded);
   const [error, setError] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [isQuickListening, setIsQuickListening] = useState(false);
@@ -51,7 +59,9 @@ export default function Dashboard() {
     const fetchData = async () => {
       if (!user) return;
       try {
-        setLoading(true);
+        if (!_dashboardMemoryCache.loaded) {
+          setLoading(true);
+        }
 
         // Render the catalog as soon as it arrives; secondary dashboard content hydrates afterward.
         const albumsPromise = fetchAllAlbums(user);
@@ -93,10 +103,22 @@ export default function Dashboard() {
         }
 
         setPublicPlaylists(loadedPlaylists);
+        let featuredSongsList = featuredSongs;
+        let allArtistsList = allArtists;
         if (featuredRes.status === 'fulfilled') {
-          setFeaturedSongs(featuredRes.value.songs);
-          setAllArtists(featuredRes.value.artists);
+          featuredSongsList = featuredRes.value.songs;
+          allArtistsList = featuredRes.value.artists;
+          setFeaturedSongs(featuredSongsList);
+          setAllArtists(allArtistsList);
         }
+
+        _dashboardMemoryCache = {
+          allAlbums: loadedAlbums,
+          allArtists: allArtistsList,
+          featuredSongs: featuredSongsList,
+          publicPlaylists: loadedPlaylists,
+          loaded: true
+        };
       } catch (err) {
         console.error("Dashboard fetch error:", err);
         setError("Could not load music catalog.");

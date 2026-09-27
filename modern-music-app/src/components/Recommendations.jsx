@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 
 export default function Recommendations() {
   const { user, getAuthParams } = useAuth();
-  const { playQueue } = usePlayer();
+  const { playQueue, playSong } = usePlayer();
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -118,7 +118,7 @@ export default function Recommendations() {
 />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button 
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); playQueue([song], 0); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); playSong(song); }}
                   className="w-12 h-12 rounded-full bg-purple-500 hover:bg-purple-400 text-white flex items-center justify-center shadow-xl hover:scale-105 transition-transform"
                 >
                   <Play size={24} className="ml-1" fill="currentColor" />

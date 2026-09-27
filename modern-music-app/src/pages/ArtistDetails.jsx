@@ -28,7 +28,7 @@ export default function ArtistDetails() {
   const [mergedAliasCount, setMergedAliasCount] = useState(0);
 
   const { user, getAuthParams } = useAuth();
-  const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
+  const { playQueue, playSong, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { openAddToPlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
 
@@ -207,8 +207,10 @@ export default function ArtistDetails() {
 
   // Handler: Play from Top Songs list
   const handlePlayFromTopSong = (index) => {
-    if (topSongs.length > 0) {
-      playQueue(topSongs, index);
+    const song = displayedTopSongs?.[index] || topSongs[index];
+    if (song) {
+      playSong(song);
+      showToast(`▶ Playing "${song.title}" by ${artist?.name || song.artist}`, 'success');
     }
   };
 

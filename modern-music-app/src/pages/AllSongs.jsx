@@ -56,7 +56,7 @@ export default function AllSongs() {
   const [isChartLoading, setIsChartLoading] = useState(true);
 
   const { user, getAuthParams } = useAuth();
-  const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
+  const { playQueue, playSong, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { openAddToPlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -159,8 +159,8 @@ export default function AllSongs() {
         if (data?.status === 'ok' && Array.isArray(data.songs)) {
           fetchedSongs = data.songs;
           totalCount = data.total || 0;
-          hasMore = data.hasMore !== undefined ? data.hasMore : (fetchedSongs.length === limit);
-          if (fetchedSongs.length < limit) hasMore = false;
+          hasMore = data.hasMore !== undefined ? Boolean(data.hasMore) : (fetchedSongs.length === limit);
+          if (fetchedSongs.length < limit || fetchedSongs.length === 0) hasMore = false;
         } else {
           proxyFailed = true;
         }
@@ -189,7 +189,7 @@ export default function AllSongs() {
             fetchedSongs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
             totalCount = fetchedSongs.length;
             hasMore = fetchedSongs.length === limit;
-            if (fetchedSongs.length < limit) hasMore = false;
+            if (fetchedSongs.length < limit || fetchedSongs.length === 0) hasMore = false;
           }
         } catch (se) {
           console.debug("Subsonic fallback error:", se);
@@ -214,13 +214,18 @@ export default function AllSongs() {
 
       setLibrarySongs(prev => {
         if (reset) dedupeIndexRef.current = createDedupeIndex();
-        return dedupeAppend(reset ? [] : prev, fetchedSongs, dedupeIndexRef.current);
+        const next = dedupeAppend(reset ? [] : prev, fetchedSongs, dedupeIndexRef.current);
+        if (!reset && next.length === prev.length && fetchedSongs.length > 0) {
+          hasMore = false;
+        }
+        return next;
       });
       setLibraryTotal(totalCount);
       setHasMoreLibrary(hasMore);
       libraryOffsetRef.current = offset + limit;
     } catch (err) {
       console.error("Failed to load library tracks:", err);
+      setHasMoreLibrary(false);
     } finally {
       setIsLibraryLoading(false);
       setIsLoadingMore(false);
@@ -371,7 +376,11 @@ export default function AllSongs() {
   };
 
   const playFromTrack = (index) => {
-    playQueue(currentActiveSongs, index);
+    const song = currentActiveSongs[index];
+    if (song) {
+      playSong(song);
+      showToast(`▶ Playing "${song.title}"`, "success");
+    }
   };
 
   const navigateToArtist = (artistId, e) => {
@@ -912,7 +921,9 @@ export default function AllSongs() {
           {/* Infinite Scroll Sentinel for 10k+ Songs */}
           {activeTab === 'library' && hasMoreLibrary && (
             <div ref={librarySentinelRef} className="py-8 flex justify-center items-center text-xs text-slate-400 gap-2.5">
-              <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+              {isLoadingMore && (
+                <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+              )}
               <span>
                 {isLoadingMore 
                   ? `Loading more songs (${librarySongs.length} of ${libraryTotal.toLocaleString()})...` 

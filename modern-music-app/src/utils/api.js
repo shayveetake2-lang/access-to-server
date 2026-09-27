@@ -247,7 +247,7 @@ export function searchSubsonic(query, user = null) {
           if (cached) {
             const parsed = JSON.parse(cached);
             const hasCachedResults = (parsed.data?.song?.length > 0) || (parsed.data?.album?.length > 0) || (parsed.data?.artist?.length > 0);
-            if (hasCachedResults && (Date.now() - parsed.timestamp < 600000)) { // 5-minute TTL
+            if (hasCachedResults && (Date.now() - parsed.timestamp < 20000)) { // 20-second fresh search cache
               return resolve(parsed.data);
             }
           }
@@ -623,19 +623,30 @@ export async function fetchFeaturedLibrary(user = null, albumsPromise = null) {
     resolveUnknownArtistId(user)
   ]);
 
-  const isValidArt = (item) => {
-    const art = item.coverArt;
-    if (!art) return false;
-    const strArt = String(art).trim();
-    if (strArt === '' || strArt === '0' || strArt === 'unknown') return false;
-    if (strArt === DEFAULT_COVER_ART) return false;
-    return true;
-  };
+  // 1. Only include albums that explicitly have verified binary artwork in the database
+  const validAlbums = (albumsResult.albums || []).filter(album => album && album.hasArt === true);
 
-  const albums = (albumsResult.albums || []).filter(album => isValidArt(album));
-  const artists = (artistsResult.artists || []).filter(artist => isValidArt(artist));
+  // Build lookup Set of album IDs that have real artwork
+  const validAlbumIdsWithArt = new Set();
+  validAlbums.forEach(a => {
+    if (a.id) {
+      validAlbumIdsWithArt.add(String(a.id));
+      const clean = String(a.id).replace(/\D/g, '');
+      if (clean) validAlbumIdsWithArt.add(clean);
+    }
+  });
+
+  // 2. Only include artists that have real profile art
+  const validArtists = (artistsResult.artists || []).filter(artist => {
+    if (!artist) return false;
+    if (artist.hasArt === false) return false;
+    const art = artist.coverArt;
+    if (!art || String(art).trim() === '' || String(art) === '0' || String(art) === 'unknown') return false;
+    return true;
+  });
+
+  // 3. Only include songs whose parent album has verified artwork
   let songs = songsRes?.['subsonic-response']?.searchResult3?.song || [];
-  
   if (!songs.length) {
     try {
       const fallback = await fetch(getAmpacheUrl(`action=getRandomSongs&size=200&${auth}&${cacheBust}`), { cache: 'no-store' });
@@ -645,14 +656,20 @@ export async function fetchFeaturedLibrary(user = null, albumsPromise = null) {
       console.debug('Featured song fallback unavailable:', error);
     }
   }
-  
+
+  const rawSongList = Array.isArray(songs) ? songs : [songs].filter(Boolean);
+  const validSongs = rawSongList.filter(song => {
+    if (!song) return false;
+    if (song.hasArt === false) return false;
+    const albId = String(song.albumId || song.parent || '').replace(/\D/g, '');
+    const rawAlb = String(song.albumId || song.parent || '');
+    return validAlbumIdsWithArt.has(rawAlb) || (albId && validAlbumIdsWithArt.has(albId));
+  }).map(s => ({ ...s, hasArt: true }));
+
   const result = {
-    albums: applyUnknownArtistFallback(Array.isArray(albums) ? albums : [albums].filter(Boolean), unknownArtistId),
-    artists,
-    songs: applyUnknownArtistFallback(
-      (Array.isArray(songs) ? songs : [songs].filter(Boolean)).filter(song => isValidArt(song)),
-      unknownArtistId
-    )
+    albums: applyUnknownArtistFallback(validAlbums, unknownArtistId),
+    artists: validArtists,
+    songs: applyUnknownArtistFallback(validSongs, unknownArtistId)
   };
 
   if (typeof window !== 'undefined' && window.sessionStorage) {

@@ -26,7 +26,7 @@ export default function RecentlyAdded() {
   const [playingAlbumId, setPlayingAlbumId] = useState(null);
 
   const { user, getAuthParams } = useAuth();
-  const { playQueue, addToQueue } = usePlayer();
+  const { playQueue, playSong, addToQueue } = usePlayer();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -80,11 +80,7 @@ export default function RecentlyAdded() {
 
   const handlePlaySong = (song, index, e) => {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (songs.length > 0) {
-      playQueue(songs, index);
-    } else {
-      playQueue([song], 0);
-    }
+    playSong(song);
     showToast(`▶ Playing "${song.title}" by ${song.artist}`, 'success');
   };
 
