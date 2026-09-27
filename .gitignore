@@ -13,3 +13,4 @@ ampache/
 */.DS_Store
 ampache_debug.log/
 storage/
+api/storage_cache.json
