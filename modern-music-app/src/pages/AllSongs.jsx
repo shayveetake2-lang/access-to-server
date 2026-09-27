@@ -2,6 +2,7 @@ import { formatDuration } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Play, Clock, Plus, ListPlus, Volume2, Shuffle, Flame, TrendingUp, Sparkles, RefreshCw, Search, X, Music, Layers, ListMusic, Trash2 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
@@ -226,15 +227,14 @@ export default function AllSongs() {
     }
   }, [debouncedQuery, sortBy, user, getAuthParams]);
 
-  // Trigger initial fetch or reset on query/sort changes
+  // Reset pagination and refetch whenever the query, sort, or active tab changes
+  // — this is what keeps hasMore/offset from getting stuck after a filter change.
   useEffect(() => {
     if (activeTab === 'library') {
       setHasMoreLibrary(true);
       libraryOffsetRef.current = 0;
       fetchLibrarySongs(true);
     }
-    libraryOffsetRef.current = 0;
-    fetchLibrarySongs(true);
   }, [debouncedQuery, sortBy, activeTab]);
 
   // Infinite Scroll Callback: load next page
@@ -249,6 +249,43 @@ export default function AllSongs() {
     isLoadingMore || isLibraryLoading,
     '450px'
   );
+
+  // ── Virtualization (10k+ Songs) ──────────────────────────────────────────
+  // Only the library tab needs windowing — Top 100 charts are capped at 100
+  // rows, cheap enough to render directly.
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 639px)').matches : false
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const mq = window.matchMedia('(max-width: 639px)');
+    const handler = (e) => setIsMobileViewport(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Page scrolls via the shared <main> element (not a nested container), so the
+  // virtualizer windows against that instead of introducing a second scrollbar.
+  const mainScrollElRef = useRef(null);
+  useEffect(() => {
+    mainScrollElRef.current = document.querySelector('main');
+  }, []);
+
+  const isLibraryActive = activeTab === 'library';
+
+  const mobileRowVirtualizer = useVirtualizer({
+    count: isLibraryActive && isMobileViewport ? librarySongs.length : 0,
+    getScrollElement: () => mainScrollElRef.current,
+    estimateSize: () => 72,
+    overscan: 8,
+  });
+
+  const desktopRowVirtualizer = useVirtualizer({
+    count: isLibraryActive && !isMobileViewport ? librarySongs.length : 0,
+    getScrollElement: () => mainScrollElRef.current,
+    estimateSize: () => 60,
+    overscan: 8,
+  });
 
   // ── 2. Fetch Top 100 Charts ──
   const fetchChartSongs = useCallback(async (activePeriod = period) => {
@@ -346,6 +383,18 @@ export default function AllSongs() {
     if (e) e.stopPropagation();
     if (albumId) navigate(`/albums/${albumId}`);
   };
+
+  // Padding-row technique for virtualizing a native <table> (from the
+  // TanStack Virtual docs) — spacer rows stand in for the rows scrolled
+  // out of view so the table's real height/scrollbar stays correct.
+  const desktopVirtualItems = isLibraryActive && !isMobileViewport ? desktopRowVirtualizer.getVirtualItems() : null;
+  const desktopRows = desktopVirtualItems
+    ? desktopVirtualItems.map(v => ({ virtualRow: v, song: currentActiveSongs[v.index], index: v.index }))
+    : currentActiveSongs.map((song, index) => ({ virtualRow: null, song, index }));
+  const desktopPaddingTop = desktopVirtualItems && desktopVirtualItems.length > 0 ? desktopVirtualItems[0].start : 0;
+  const desktopPaddingBottom = desktopVirtualItems && desktopVirtualItems.length > 0
+    ? desktopRowVirtualizer.getTotalSize() - desktopVirtualItems[desktopVirtualItems.length - 1].end
+    : 0;
 
   return (
     <div className="pb-28 max-w-7xl mx-auto space-y-5">
@@ -528,17 +577,29 @@ export default function AllSongs() {
         </div>
       ) : (
         <>
-          {/* Mobile Song Rows (High-Contrast for Dark Mode) */}
-          <div className="sm:hidden space-y-1 bg-slate-900/40 backdrop-blur-sm rounded-2xl p-2 border border-white/5">
-            {currentActiveSongs.map((song, index) => {
+          {/* Mobile Song Rows (High-Contrast for Dark Mode) — virtualized on the
+              library tab so a 10k+ catalog never renders more than ~15 DOM rows.
+              On the library tab we skip mounting this entirely on desktop
+              viewports, otherwise the CSS-hidden sibling would still render
+              every row unvirtualized in the background. */}
+          {(!isLibraryActive || isMobileViewport) && (
+          <div
+            className="sm:hidden space-y-1 bg-slate-900/40 backdrop-blur-sm rounded-2xl p-2 border border-white/5"
+            style={isLibraryActive && isMobileViewport ? { position: 'relative', height: mobileRowVirtualizer.getTotalSize() } : undefined}
+          >
+            {(isLibraryActive && isMobileViewport
+              ? mobileRowVirtualizer.getVirtualItems().map(v => ({ virtualRow: v, song: currentActiveSongs[v.index], index: v.index }))
+              : currentActiveSongs.map((song, index) => ({ virtualRow: null, song, index }))
+            ).map(({ virtualRow, song, index }) => {
+              if (!song) return null;
               const isCurrent = currentTrack?.id === song.id;
               const rankNum = song.rank || index + 1;
               const artistId = song.artistId || song.artist_id;
               const albumId = song.albumId || song.album_id || song.parent;
 
-              return (
+              const row = (
                 <div 
-                  key={`${song.id}-${index}`} 
+                  key={virtualRow ? undefined : `${song.id}-${index}`}
                   onClick={() => playFromTrack(index)} 
                   className={`flex items-center justify-between p-2.5 rounded-xl transition-colors cursor-pointer group ${
                     isCurrent ? 'bg-purple-900/40 border border-purple-400/50 text-white' : 'hover:bg-white/5 active:bg-white/10'
@@ -640,10 +701,25 @@ export default function AllSongs() {
                   </div>
                 </div>
               );
+
+              if (!virtualRow) return row;
+
+              return (
+                <div
+                  key={`${song.id}-${index}`}
+                  ref={mobileRowVirtualizer.measureElement}
+                  data-index={index}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)`, paddingBottom: 4 }}
+                >
+                  {row}
+                </div>
+              );
             })}
           </div>
+          )}
 
-          {/* Desktop Responsive Table View */}
+          {/* Desktop Responsive Table View — same DOM-mounting guard as above */}
+          {(!isLibraryActive || !isMobileViewport) && (
           <div className="hidden sm:block bg-slate-900/40 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden shadow-xl">
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
@@ -662,7 +738,11 @@ export default function AllSongs() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-sm">
-                {currentActiveSongs.map((song, index) => {
+                {desktopPaddingTop > 0 && (
+                  <tr aria-hidden="true" style={{ height: desktopPaddingTop }}><td colSpan={6} /></tr>
+                )}
+                {desktopRows.map(({ virtualRow, song, index }) => {
+                  if (!song) return null;
                   const isCurrent = currentTrack?.id === song.id;
                   const rankNum = song.rank || index + 1;
                   const artistId = song.artistId || song.artist_id;
@@ -671,6 +751,8 @@ export default function AllSongs() {
                   return (
                     <tr 
                       key={`${song.id}-${index}`} 
+                      ref={virtualRow ? desktopRowVirtualizer.measureElement : undefined}
+                      data-index={virtualRow ? index : undefined}
                       onClick={() => playFromTrack(index)}
                       className={`transition-colors group cursor-pointer ${
                         isCurrent ? 'bg-purple-900/30 text-purple-200' : 'text-slate-200 hover:bg-white/5'
@@ -819,9 +901,13 @@ export default function AllSongs() {
                     </tr>
                   );
                 })}
+                {desktopPaddingBottom > 0 && (
+                  <tr aria-hidden="true" style={{ height: desktopPaddingBottom }}><td colSpan={6} /></tr>
+                )}
               </tbody>
             </table>
           </div>
+          )}
 
           {/* Infinite Scroll Sentinel for 10k+ Songs */}
           {activeTab === 'library' && hasMoreLibrary && (

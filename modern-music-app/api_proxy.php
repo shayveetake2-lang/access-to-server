@@ -1681,6 +1681,143 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
             ];
         }
 
+        // Typo-tolerant fallback: only runs when the exact/LIKE pass above found
+        // nothing, so normal (correctly-spelled) searches keep their fast path.
+        if (empty($songs) && empty($albums) && empty($artists)) {
+            $qLower = mb_strtolower($q);
+            $qLen = mb_strlen($qLower);
+            $maxDist = $qLen <= 4 ? 1 : ($qLen <= 8 ? 2 : 3);
+
+            $allArtists = $pdo->query("SELECT id, name, album_count FROM artist WHERE name IS NOT NULL AND TRIM(name) != ''")->fetchAll(PDO::FETCH_ASSOC);
+            $fuzzyArtistMatches = [];
+            foreach ($allArtists as $a) {
+                $dist = levenshtein($qLower, mb_strtolower($a['name']));
+                if ($dist <= $maxDist) {
+                    $a['_dist'] = $dist;
+                    $fuzzyArtistMatches[] = $a;
+                }
+            }
+            usort($fuzzyArtistMatches, fn($x, $y) => $x['_dist'] <=> $y['_dist']);
+            $fuzzyArtistMatches = array_slice($fuzzyArtistMatches, 0, $artistCount);
+
+            foreach ($fuzzyArtistMatches as $r) {
+                $subArtId = (string)(100000000 + (int)$r['id']);
+                $artists[] = [
+                    'id' => $subArtId,
+                    'name' => $r['name'],
+                    'coverArt' => 'ar-' . $subArtId,
+                    'albumCount' => (int)($r['album_count'] ?? 0)
+                ];
+            }
+
+            $allAlbums = $pdo->query("
+                SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
+                       COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
+                FROM album alb
+                LEFT JOIN artist art ON alb.album_artist = art.id
+                WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
+            ")->fetchAll(PDO::FETCH_ASSOC);
+            $fuzzyAlbumMatches = [];
+            foreach ($allAlbums as $a) {
+                $dist = levenshtein($qLower, mb_strtolower($a['name']));
+                if ($dist <= $maxDist) {
+                    $a['_dist'] = $dist;
+                    $fuzzyAlbumMatches[] = $a;
+                }
+            }
+            usort($fuzzyAlbumMatches, fn($x, $y) => $x['_dist'] <=> $y['_dist']);
+            $fuzzyAlbumMatches = array_slice($fuzzyAlbumMatches, 0, $albumCount);
+
+            foreach ($fuzzyAlbumMatches as $r) {
+                $subAlbId = (string)(200000000 + (int)$r['id']);
+                $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+                $albums[] = [
+                    'id' => $subAlbId,
+                    'name' => $r['name'],
+                    'title' => $r['name'],
+                    'artist' => !empty($r['artist']) ? $r['artist'] : 'Various Artists',
+                    'artistId' => $subArtId,
+                    'coverArt' => 'al-' . $subAlbId,
+                    'songCount' => (int)($r['song_count'] ?: 0),
+                    'playCount' => (int)($r['playCount'] ?: 0),
+                    'year' => (int)$r['year']
+                ];
+            }
+
+            // Narrow song candidates via SOUNDEX + matched fuzzy artists first, so we
+            // never run a full Levenshtein pass over the entire library.
+            // Cast to int: PDO returns numeric columns as strings, and the
+            // in_array(..., true) strict check below would otherwise never
+            // match against the int artistId pulled from the song rows.
+            $matchedArtistIds = array_map('intval', array_column($fuzzyArtistMatches, 'id'));
+            $soundexParams = [':sdx' => $qLower];
+            $artistIdPlaceholders = [];
+            foreach ($matchedArtistIds as $idx => $aid) {
+                $ph = ":aid{$idx}";
+                $artistIdPlaceholders[] = $ph;
+                $soundexParams[$ph] = $aid;
+            }
+            $artistIdClause = $artistIdPlaceholders ? (' OR s.artist IN (' . implode(',', $artistIdPlaceholders) . ')') : '';
+
+            $songCandStmt = $pdo->prepare("
+                SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                       s.total_count as playCount,
+                       COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
+                       COALESCE(alb.name, 'Unknown Album') as album, COALESCE(alb.id, 0) as albumId
+                FROM song s
+                LEFT JOIN artist art ON s.artist = art.id
+                LEFT JOIN album alb ON s.album = alb.id
+                WHERE s.enabled = 1
+                  AND (SOUNDEX(s.title) = SOUNDEX(:sdx){$artistIdClause})
+                LIMIT 500
+            ");
+            $songCandStmt->execute($soundexParams);
+            $songCandidates = $songCandStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $fuzzySongMatches = [];
+            foreach ($songCandidates as $r) {
+                $title = $r['title'] ?? '';
+                $dist = levenshtein($qLower, mb_strtolower($title));
+                foreach (preg_split('/\s+/', $title) as $word) {
+                    if ($word === '') continue;
+                    $dist = min($dist, levenshtein($qLower, mb_strtolower($word)));
+                }
+                $artistMatched = in_array((int)$r['artistId'], $matchedArtistIds, true);
+                if ($dist <= $maxDist || $artistMatched) {
+                    $r['_dist'] = $artistMatched ? min($dist, $maxDist) : $dist;
+                    $fuzzySongMatches[] = $r;
+                }
+            }
+            usort($fuzzySongMatches, fn($x, $y) => $x['_dist'] <=> $y['_dist']);
+            $fuzzySongMatches = array_slice($fuzzySongMatches, 0, $songCount);
+
+            foreach ($fuzzySongMatches as $r) {
+                $subId = (string)(300000000 + (int)$r['id']);
+                $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
+                $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+                $songs[] = [
+                    'id' => $subId,
+                    'parent' => $subAlbId,
+                    'title' => !empty($r['title']) ? $r['title'] : 'Unknown Track',
+                    'isDir' => false,
+                    'isVideo' => false,
+                    'type' => 'music',
+                    'albumId' => $subAlbId,
+                    'album' => !empty($r['album']) ? $r['album'] : 'Unknown Album',
+                    'artistId' => $subArtId,
+                    'artist' => !empty($r['artist']) ? $r['artist'] : 'Unknown Artist',
+                    'coverArt' => 'al-' . $subAlbId,
+                    'duration' => (int)$r['duration'],
+                    'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
+                    'track' => (int)$r['track'],
+                    'size' => (int)$r['size'],
+                    'playCount' => (int)$r['playCount'],
+                    'contentType' => 'audio/mpeg',
+                    'suffix' => 'mp3'
+                ];
+            }
+        }
+
         echo json_encode([
             'status' => 'ok',
             'song' => $songs,

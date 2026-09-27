@@ -34,10 +34,10 @@ export default function TopBar() {
         return;
       }
       setLoading(true);
+      setShowDropdown(true);
       try {
         const data = await searchSubsonic(query, user);
         setResults(data);
-        setShowDropdown(true);
       } catch (err) {
         console.error(err);
       } finally {
@@ -130,18 +130,20 @@ export default function TopBar() {
         </div>
 
         {/* Dropdown Results */}
-        {showDropdown && results && (() => {
-          const rawSongs = results.song;
+        {showDropdown && (results || loading) && (() => {
+          const rawSongs = results?.song;
           const songs = (Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : [])).slice(0, 150);
-          const rawAlbums = results.album;
+          const rawAlbums = results?.album;
           const albums = Array.isArray(rawAlbums) ? rawAlbums : (rawAlbums ? [rawAlbums] : []);
-          const rawArtists = results.artist;
+          const rawArtists = results?.artist;
           const artists = Array.isArray(rawArtists) ? rawArtists : (rawArtists ? [rawArtists] : []);
           const hasResults = songs.length > 0 || albums.length > 0 || artists.length > 0;
 
           return (
             <div className="absolute top-full mt-2 w-full bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto z-50">
-              {!hasResults ? (
+              {loading ? (
+                <div className="p-4 text-center text-slate-400 text-sm">Searching…</div>
+              ) : !hasResults ? (
                 <div className="p-4 text-center text-slate-400 text-sm">No results found for "{query}"</div>
               ) : (
                 <div className="py-2">

@@ -226,7 +226,6 @@ export function applyUnknownArtistFallback(items = [], unknownArtistId = null) {
   });
 }
 
-let _searchTimeout = null;
 let _searchAbortController = null;
 
 export function searchSubsonic(query, user = null) {
@@ -234,14 +233,13 @@ export function searchSubsonic(query, user = null) {
     const trimmedQuery = (query || '').trim();
     if (trimmedQuery.length < 2) return resolve({});
 
-    // PERFORMANCE PATCH: 300ms Debounce & AbortController to prevent API hammering
-    if (_searchTimeout) clearTimeout(_searchTimeout);
+    // AbortController cancels the previous in-flight request — caller (TopBar)
+    // already debounces keystrokes, so no extra delay is added here.
     if (_searchAbortController) _searchAbortController.abort();
-    
     _searchAbortController = new AbortController();
     const signal = _searchAbortController.signal;
 
-    _searchTimeout = setTimeout(async () => {
+    (async () => {
       const cacheKey = `aether_search_v2_${trimmedQuery.toLowerCase()}`;
       if (typeof window !== 'undefined' && window.sessionStorage) {
         try {
@@ -321,7 +319,7 @@ export function searchSubsonic(query, user = null) {
       }
 
       resolve(merged);
-    }, 300);
+    })();
   });
 }
 
