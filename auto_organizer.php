@@ -130,8 +130,17 @@ if (ob_get_level() > 0) ob_flush();
 flush();
 
 // Setup paths
-$stagingDir = '/Volumes/Music/Staging/';
+$stagingDir = '/Applications/MAMP/htdocs/staging/';
 $destDirBase = '/Volumes/Music/';
+
+// Fall back to legacy network staging path if the MAMP staging folder isn't present
+if (!is_dir($stagingDir)) {
+    $fallbackStagingDir = '/Volumes/Music/Staging/';
+    if (is_dir($fallbackStagingDir)) {
+        outputLog("MAMP staging directory not found; falling back to {$fallbackStagingDir}", 'warning');
+        $stagingDir = $fallbackStagingDir;
+    }
+}
 
 // Mount Verification Failsafe
 if (!is_dir($destDirBase)) {
@@ -151,9 +160,8 @@ if (!is_dir($stagingDir)) {
     }
 }
 
-outputLog("Started scanning {$stagingDir}...", 'info');
-
 $files = scandir($stagingDir);
+outputLog("Staging contains " . count(array_diff($files, ['.', '..'])) . " item(s): " . implode(', ', array_slice(array_diff($files, ['.', '..']), 0, 10)), 'info');
 $audioExtensions = ['mp3', 'flac', 'm4a'];
 $movedCount = 0;
 
@@ -162,6 +170,52 @@ foreach ($files as $file) {
     if ($file === '.' || $file === '..') continue;
     
     $filePath = $stagingDir . $file;
+    if (is_dir($filePath)) {
+        $subFiles = scandir($filePath);
+        $subCover = null;
+        foreach ($subFiles as $sf) {
+            if ($sf === '.' || $sf === '..') continue;
+            $sfPath = $filePath . '/' . $sf;
+            $sfExt = strtolower(pathinfo($sf, PATHINFO_EXTENSION));
+            if (in_array($sfExt, ['jpg', 'jpeg', 'png']) && ($sf === 'cover.jpg' || !$subCover)) {
+                $subCover = $sfPath;
+            }
+        }
+        foreach ($subFiles as $sf) {
+            if ($sf === '.' || $sf === '..') continue;
+            $sfPath = $filePath . '/' . $sf;
+            if (!is_file($sfPath)) continue;
+            $sfExt = strtolower(pathinfo($sf, PATHINFO_EXTENSION));
+            if (in_array($sfExt, $audioExtensions)) {
+                outputLog("Processing subfolder audio: {$sf}");
+                $meta = getMetadata($sfPath);
+                if (($meta['artist'] === 'Unknown Artist' || $meta['album'] === 'Unknown Album') && strpos($file, ' - ') !== false) {
+                    $fParts = explode(' - ', $file, 2);
+                    if ($meta['artist'] === 'Unknown Artist') $meta['artist'] = trim($fParts[0]);
+                    if ($meta['album'] === 'Unknown Album') $meta['album'] = trim($fParts[1]);
+                }
+                $cleanArtist = sanitizeDirName($meta['artist']) ?: 'Unknown Artist';
+                $cleanAlbum = sanitizeDirName($meta['album']) ?: 'Unknown Album';
+                $destFolder = $destDirBase . $cleanArtist . '/' . $cleanAlbum . '/';
+                if (!is_dir($destFolder)) {
+                    @mkdir($destFolder, 0777, true);
+                }
+                $destFilePath = $destFolder . $sf;
+                if (rename($sfPath, $destFilePath)) {
+                    outputLog("Moved: {$sf} -> {$cleanArtist}/{$cleanAlbum}/", 'success');
+                    $movedCount++;
+                    if ($subCover && file_exists($subCover)) {
+                        @rename($subCover, $destFolder . 'cover.jpg');
+                        outputLog("Moved cover art -> {$cleanArtist}/{$cleanAlbum}/cover.jpg", 'success');
+                        $subCover = null;
+                    }
+                }
+            }
+        }
+        @rmdir($filePath);
+        continue;
+    }
+
     if (!is_file($filePath)) continue;
     
     $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
@@ -219,21 +273,53 @@ foreach ($files as $file) {
 outputLog("Finished organizing files. Total moved: {$movedCount}", 'info');
 outputLog("Triggering Ampache catalog update...", 'info');
 
-// Run the Ampache CLI update script and pipe output back to browser
-$command = "php /Applications/MAMP/htdocs/ampache/bin/cli.inc -c update 2>&1";
-$handle = popen($command, 'r');
+$cliCandidates = [
+    '/Applications/MAMP/htdocs/access-to-server/ampache/bin/cli',
+    '/Applications/MAMP/htdocs/ampache/bin/cli',
+    '/Applications/MAMP/htdocs/ampache/bin/cli.inc',
+    '/Volumes/htdocs/access-to-server/ampache/bin/cli',
+    '/Volumes/htdocs/ampache/bin/cli'
+];
+$ampacheCli = null;
+$isLegacyCli = false;
+foreach ($cliCandidates as $cand) {
+    if (file_exists($cand)) {
+        $ampacheCli = $cand;
+        $isLegacyCli = (substr($cand, -4) === '.inc');
+        break;
+    }
+}
 
-if ($handle) {
-    while (!feof($handle)) {
-        $line = fgets($handle);
-        if ($line !== false) {
-             outputLog(trim($line));
+if ($ampacheCli) {
+    $phpCandidates = [
+        '/Applications/MAMP/bin/php/php7.4.33/bin/php',
+        '/Applications/MAMP/bin/php/php7.4.21/bin/php',
+        '/Applications/MAMP/bin/php/php8.0.8/bin/php',
+        '/usr/local/bin/php',
+        '/opt/homebrew/bin/php'
+    ];
+    $phpBin = 'php';
+    foreach ($phpCandidates as $cand) {
+        if (file_exists($cand) && is_executable($cand)) {
+            $phpBin = $cand;
+            break;
         }
     }
-    pclose($handle);
-    outputLog("Ampache catalog update complete.", 'success');
+    $subCmd = $isLegacyCli ? "-c update" : "run:updateCatalog -a -g";
+    $command = "nice -n 15 {$phpBin} " . escapeshellarg($ampacheCli) . " {$subCmd} 2>&1";
+    $handle = popen($command, 'r');
+    if ($handle) {
+        while (!feof($handle)) {
+            $line = fgets($handle);
+            if ($line !== false) {
+                 outputLog(trim($line));
+            }
+        }
+        pclose($handle);
+        outputLog("Ampache catalog update complete.", 'success');
+    }
 } else {
-    outputLog("Failed to execute Ampache CLI update command.", 'error');
+    outputLog("Ampache CLI binary not found in standard paths; attempting web catalog update...", 'warning');
 }
 
 if (!$isApi) {
