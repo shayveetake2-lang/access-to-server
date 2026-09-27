@@ -109,6 +109,57 @@ function getProxyPdo() {
     return null;
 }
 
+function getEmbeddedArtwork($pdo, string $objectType, int $objectId): ?array {
+    static $artworkCache = [];
+    $cacheKey = $objectType . ':' . $objectId;
+    if (array_key_exists($cacheKey, $artworkCache)) {
+        return $artworkCache[$cacheKey];
+    }
+
+    if (!$pdo || $objectId <= 0) {
+        return null;
+    }
+
+    $sql = $objectType === 'song'
+        ? "SELECT file FROM song WHERE id = :id LIMIT 1"
+        : "SELECT file FROM song WHERE enabled = 1 AND " .
+            ($objectType === 'album' ? 'album' : 'artist') . " = :id ORDER BY id ASC LIMIT 1";
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':id' => $objectId]);
+        $filePath = $stmt->fetchColumn();
+        if (!$filePath || !is_readable($filePath)) {
+            return $artworkCache[$cacheKey] = null;
+        }
+
+        $autoload = __DIR__ . '/../ampache/vendor/autoload.php';
+        if (!class_exists('getID3') && file_exists($autoload)) {
+            require_once $autoload;
+        }
+        if (!class_exists('getID3')) {
+            return $artworkCache[$cacheKey] = null;
+        }
+
+        $reader = new getID3();
+        $metadata = $reader->analyze($filePath);
+        $format = strtolower((string)($metadata['fileformat'] ?? ''));
+        $pictures = $format === 'flac' || $format === 'ogg'
+            ? ($metadata['flac']['PICTURE'] ?? [])
+            : ($metadata['id3v2']['APIC'] ?? []);
+        $picture = is_array($pictures) && isset($pictures[0]) ? $pictures[0] : null;
+        $data = $picture['data'] ?? null;
+        if (!is_string($data) || $data === '') {
+            return $artworkCache[$cacheKey] = null;
+        }
+
+        $mime = $picture['image_mime'] ?? ($picture['mime'] ?? 'image/jpeg');
+        return $artworkCache[$cacheKey] = ['image' => $data, 'mime' => $mime];
+    } catch (\Throwable $e) {
+        error_log('[Aether] Embedded artwork lookup failed: ' . $e->getMessage());
+        return $artworkCache[$cacheKey] = null;
+    }
+}
+
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? ($input['action'] ?? '');
 
@@ -309,6 +360,10 @@ if ($action === 'getCoverArt' || $action === 'coverArt') {
                         $imgRow = $stmt->fetch(PDO::FETCH_ASSOC);
                     }
                 }
+            }
+
+            if (!$imgRow && in_array($typeHint, ['album', 'artist', 'song'], true)) {
+                $imgRow = getEmbeddedArtwork($pdo, $typeHint, $cleanId);
             }
         } catch (\Exception $e) {}
     }
