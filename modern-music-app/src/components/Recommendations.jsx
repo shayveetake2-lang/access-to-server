@@ -18,12 +18,12 @@ export default function Recommendations() {
       const CACHE_KEY = `aether_recs_${user.username}`;
       const CACHE_EXPIRY = 1000 * 60 * 60 * 12; // 12 hours
       
-      const cached = sessionStorage.getItem(CACHE_KEY);
+      const cached = sessionStorage.getItem(CACHE_KEY) || sessionStorage.getItem('aether_recs');
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < CACHE_EXPIRY) {
-            setRecommendations(parsed.data);
+          if (parsed && (!parsed.timestamp || Date.now() - parsed.timestamp < CACHE_EXPIRY)) {
+            setRecommendations(parsed.data || parsed);
             setLoading(false);
             return;
           }
@@ -58,10 +58,12 @@ export default function Recommendations() {
         const recommendedSongs = Array.isArray(rawSongs) ? rawSongs : (rawSongs ? [rawSongs] : []);
         
         setRecommendations(recommendedSongs);
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+        const cachePayload = JSON.stringify({
           timestamp: Date.now(),
           data: recommendedSongs
-        }));
+        });
+        sessionStorage.setItem(CACHE_KEY, cachePayload);
+        sessionStorage.setItem('aether_recs', cachePayload);
       } catch (err) {
         console.error("Failed to fetch recommendations:", err);
       } finally {

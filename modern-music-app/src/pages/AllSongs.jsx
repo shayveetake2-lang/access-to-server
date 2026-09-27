@@ -77,6 +77,18 @@ export default function AllSongs() {
       setLibrarySongs(prev => prev.filter(s => s.id !== song.id));
       setChartSongs(prev => prev.filter(s => s.id !== song.id));
       setLibraryTotal(prev => Math.max(0, prev - 1));
+
+      // Invalidate catalog sessionStorage cache on deletion
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          Object.keys(sessionStorage).forEach(k => {
+            if (k.startsWith('aether_catalog_songs_') || k.startsWith('aether_chart_songs_')) {
+              sessionStorage.removeItem(k);
+            }
+          });
+        } catch (e) {}
+      }
+
       if (deleteFile && res.file_error) {
         showToast(`Deleted "${song.title}" from library, but file removal failed: ${res.file_error}`, 'warning');
       } else {
@@ -101,8 +113,30 @@ export default function AllSongs() {
   const fetchLibrarySongs = useCallback(async (reset = false, offset = 0) => {
     if (reset) {
       setIsLibraryLoading(true);
+      setLibrarySongs([]);
     } else {
       setIsLoadingMore(true);
+    }
+
+    const cacheKey = `aether_catalog_songs_${encodeURIComponent(debouncedQuery)}_${sortBy}_${offset}`;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+            setLibrarySongs(prev => {
+              if (reset) dedupeIndexRef.current = createDedupeIndex();
+              return dedupeAppend(reset ? [] : prev, parsed.songs, dedupeIndexRef.current);
+            });
+            setLibraryTotal(parsed.total);
+            setHasMoreLibrary(parsed.hasMore);
+            setIsLibraryLoading(false);
+            setIsLoadingMore(false);
+            return;
+          }
+        }
+      } catch (e) {}
     }
 
     try {
@@ -161,6 +195,18 @@ export default function AllSongs() {
       const unknownArtistId = await resolveUnknownArtistId(user);
       fetchedSongs = applyUnknownArtistFallback(fetchedSongs, unknownArtistId);
 
+      // Cache successful page in sessionStorage
+      if (typeof window !== 'undefined' && window.sessionStorage && fetchedSongs.length > 0) {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            songs: fetchedSongs,
+            total: totalCount,
+            hasMore: hasMore
+          }));
+        } catch (e) {}
+      }
+
       setLibrarySongs(prev => {
         if (reset) dedupeIndexRef.current = createDedupeIndex();
         return dedupeAppend(reset ? [] : prev, fetchedSongs, dedupeIndexRef.current);
@@ -198,6 +244,21 @@ export default function AllSongs() {
 
   // ── 2. Fetch Top 100 Charts ──
   const fetchChartSongs = useCallback(async (activePeriod = period) => {
+    const chartCacheKey = `aether_chart_songs_${activePeriod}`;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        const cached = sessionStorage.getItem(chartCacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+            setChartSongs(parsed.songs);
+            setIsChartLoading(false);
+            return;
+          }
+        }
+      } catch (e) {}
+    }
+
     setIsChartLoading(true);
     try {
       let loadedSongs = [];
@@ -219,6 +280,15 @@ export default function AllSongs() {
           loadedSongs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
           loadedSongs.sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
         }
+      }
+
+      if (typeof window !== 'undefined' && window.sessionStorage && loadedSongs.length > 0) {
+        try {
+          sessionStorage.setItem(chartCacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            songs: loadedSongs
+          }));
+        } catch (e) {}
       }
 
       setChartSongs(loadedSongs);

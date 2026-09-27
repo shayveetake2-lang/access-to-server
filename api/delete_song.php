@@ -219,33 +219,20 @@ try {
 
     $pdo->commit();
 
-    // Physical file removal is opt-in and best-effort — a failure here must
-    // never roll back the already-committed database deletion.
+    // STRICT NON-DESTRUCTIVE ARCHITECTURE:
+    // Physical file removal via unlink() is permanently disabled to protect the
+    // audio library stored on network drive mac2 (/Volumes/Music). Deletions are
+    // strictly catalog/metadata-only.
     $fileDeleted = false;
     $fileError = null;
-    if ($deleted && $deleteFile && !empty($song['file'])) {
-        $realPath = realpath($song['file']);
-        $realRoot = realpath(MUSIC_MOUNT_ROOT);
-        if ($realPath && $realRoot && strpos($realPath, $realRoot) === 0) {
-            if (is_writable($realPath)) {
-                $fileDeleted = @unlink($realPath);
-                if (!$fileDeleted) {
-                    $fileError = 'unlink() failed — check filesystem permissions.';
-                }
-            } else {
-                $fileError = 'File is not writable by the web server user.';
-            }
-        } else {
-            $fileError = 'File path is outside the permitted music mount and was not removed.';
-        }
-    }
 
     echo json_encode([
         'status' => 'success',
         'deleted_id' => $songId,
         'title' => $song['title'],
-        'file_deleted' => $fileDeleted,
-        'file_error' => $fileError,
+        'file_deleted' => false,
+        'file_error' => null,
+        'notice' => 'Catalog entry removed non-destructively. Physical audio file preserved on storage.'
     ]);
 } catch (\Exception $e) {
     if ($pdo->inTransaction()) {

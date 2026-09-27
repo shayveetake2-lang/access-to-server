@@ -1,7 +1,7 @@
 {
     "status": "success",
-    "timestamp": 1790297209,
-    "time_str": "00:46:49",
+    "timestamp": 1790475028,
+    "time_str": "02:10:28",
     "summary": {
         "total_drives_monitored": 5,
         "total_connected": 1,
@@ -17,13 +17,13 @@
             "mounted": true,
             "status": "online",
             "status_text": "Mounted / Connected",
-            "free": 70860800000,
+            "free": 65945600000,
             "total": 245107195904,
-            "used": 174246395904,
-            "percent_used": 71.1,
-            "free_formatted": "65.99 GB",
+            "used": 179161595904,
+            "percent_used": 73.1,
+            "free_formatted": "61.42 GB",
             "total_formatted": "228.27 GB",
-            "used_formatted": "162.28 GB"
+            "used_formatted": "166.86 GB"
         },
         "usb_port1": {
             "name": "USB Port 1",
@@ -67,9 +67,9 @@
             "total": 0,
             "used": 0,
             "percent_used": 0,
-            "free_formatted": "0 B",
-            "total_formatted": "0 B",
-            "used_formatted": "0 B",
+            "free_formatted": "Offline/Sleeping",
+            "total_formatted": "Offline/Sleeping",
+            "used_formatted": "Offline/Sleeping",
             "nodes": {
                 "mac2": {
                     "name": "mac2 (Music Node)",
@@ -88,7 +88,7 @@
                 },
                 "movies": {
                     "name": "Movie Storage Drive",
-                    "path": "/Volumes/Movie",
+                    "path": "/Volumes/Movies",
                     "type": "network",
                     "mounted": false,
                     "status": "offline",

@@ -190,7 +190,7 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400">Web Server:</span>
-                                    <span class="text-emerald-400 font-semibold">Apache / PHP 8</span>
+                                    <span class="text-emerald-400 font-semibold">Apache / PHP 7.4</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-slate-400">Status:</span>
@@ -381,8 +381,8 @@
                         </div>
                     </div>
 
-                    <!-- ── PROMINENT QUICK LAUNCHERS (Plex Media Server & Aether Music Portal) ── -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- ── PROMINENT QUICK LAUNCHERS (Plex Media Server, Aether Music Portal & Ampache) ── -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- Plex Media Server Quick Launcher Card -->
                         <a href="#" onclick="handlePlexRouting(event)" class="p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-amber-950/20 border border-amber-500/30 hover:border-amber-400 shadow-xl shadow-amber-500/5 hover:shadow-amber-500/20 transition-all duration-300 group flex items-center justify-between">
                             <div class="flex items-center gap-4 min-w-0">
@@ -415,11 +415,32 @@
                                         <h3 class="text-base font-bold text-white group-hover:text-purple-300 transition-colors truncate">Aether Music Portal</h3>
                                         <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0">● Active SPA</span>
                                     </div>
-                                    <p class="text-xs text-slate-400 truncate mt-0.5">High-Fidelity Audio Streaming · Subsonic API</p>
+                                    <p class="text-xs text-slate-400 truncate mt-0.5">High-Fidelity Audio · Subsonic API</p>
                                 </div>
                             </div>
                             <div class="shrink-0 pl-3">
                                 <span class="px-3.5 py-2 rounded-xl bg-purple-500/20 group-hover:bg-purple-500 text-purple-300 group-hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                                    Launch ↗
+                                </span>
+                            </div>
+                        </a>
+
+                        <!-- Ampache Backend Quick Launcher Card -->
+                        <a href="ampache/public/" target="_blank" class="p-5 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-slate-900/90 to-blue-950/20 border border-cyan-500/30 hover:border-cyan-400 shadow-xl shadow-cyan-500/5 hover:shadow-cyan-500/20 transition-all duration-300 group flex items-center justify-between">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform shadow-md shrink-0">
+                                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors truncate">Ampache Music Engine</h3>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">● Backend</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 truncate mt-0.5">Catalog Indexing &amp; Admin · PHP 7.4</p>
+                                </div>
+                            </div>
+                            <div class="shrink-0 pl-3">
+                                <span class="px-3.5 py-2 rounded-xl bg-cyan-500/20 group-hover:bg-cyan-500 text-cyan-300 group-hover:text-slate-950 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
                                     Launch ↗
                                 </span>
                             </div>
@@ -1388,7 +1409,7 @@
             const adminRequiredTabs = ['data', 'activity', 'settings'];
             const authRequiredTabs = ['servers', ...adminRequiredTabs];
 
-            const currentUserRole = currentAdminState.role || localStorage.getItem('user_role') || 'guest';
+            const currentUserRole = typeof getActiveUserRole === 'function' ? getActiveUserRole() : (currentAdminState.role || 'guest');
             const isLoggedIn = currentAdminState.logged_in || !!localStorage.getItem('auth_token') || !!sessionStorage.getItem('active_session_token');
 
             if (!isLoggedIn && authRequiredTabs.includes(tabId)) {
@@ -1572,7 +1593,7 @@
             
             try {
                 let deploymentSuccess = false;
-                const sseUrl = `api/system/deploy.php?repo=${encodeURIComponent(repo)}&token=${encodeURIComponent(token)}`;
+                const sseUrl = `/api/system/deploy.php?repo=${encodeURIComponent(repo)}&token=${encodeURIComponent(token)}`;
                 const es = new EventSource(sseUrl);
                 
                 es.onmessage = (event) => {
@@ -2074,7 +2095,7 @@
                     if (parsed && parsed.role) return parsed.role.toLowerCase();
                 } catch (e) {}
             }
-            return (currentAdminState.role || localStorage.getItem('user_role') || 'guest').toLowerCase();
+            return (currentAdminState.role || 'guest').toLowerCase();
         }
 
         async function loadSettingsTelemetry() {
@@ -2678,16 +2699,16 @@
         });
     </script>
     <script>
-        // Dynamically routes users to the direct IP if strictly on localhost,
-        // otherwise redirects to the official Plex portal if accessed via ZeroTier or Cloudflare Tunnel.
+        // Routes to app.plex.tv/web if on Cloudflare Tunnel, or direct port 32400 if on ZeroTier/LAN
         function handlePlexRouting(e) {
             if (e && e.preventDefault) e.preventDefault();
             const host = window.location.hostname;
-            const isLocal = host === "127.0.0.1" || host === "localhost";
-            if (!isLocal || host.includes('serverflow') || host.includes('cloudflare') || host.startsWith("10.") || host.startsWith("192.168.")) {
+            const isCloudflare = host.includes('serverflow.icu') || host.includes('cloudflare');
+            if (isCloudflare) {
                 window.open('https://app.plex.tv/web', '_blank');
             } else {
-                window.open('http://' + host + ':32400/web', '_blank');
+                const targetHost = (host === 'localhost' || host === '127.0.0.1') ? host : '10.247.192.231';
+                window.open('http://' + targetHost + ':32400/web', '_blank');
             }
         }
     </script>

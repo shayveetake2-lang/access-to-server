@@ -117,7 +117,7 @@ class SecurityRegressionTest extends MockTestCase
         foreach ($maliciousUrls as $url) {
             $isValid = filter_var($url, FILTER_VALIDATE_URL) &&
                        preg_match('/^https:\/\/[a-zA-Z0-9_\-\.]+\/[a-zA-Z0-9_\-\.\/]+$/', $url) &&
-                       !str_starts_with(trim($url), '-');
+                       strpos(trim($url), '-') !== 0;
             
             $this->assertFalse(
                 (bool)$isValid,
@@ -231,9 +231,9 @@ class SecurityRegressionTest extends MockTestCase
         $this->assertFileExists($bootstrapFile);
         $content = file_get_contents($bootstrapFile);
 
-        $hasCookieParams = str_contains($content, 'session_set_cookie_params') &&
-                           str_contains($content, 'httponly') &&
-                           str_contains($content, 'samesite');
+        $hasCookieParams = (strpos($content, 'session_set_cookie_params') !== false) &&
+                           (strpos($content, 'httponly') !== false) &&
+                           (strpos($content, 'samesite') !== false);
         
         $this->assertTrue(
             $hasCookieParams,
@@ -430,16 +430,13 @@ class SecurityRegressionTest extends MockTestCase
     // SECTION 6: NETWORK SECURITY, CORS & SSL VALIDATION
     // =========================================================================
 
-    public function testAiChatVerifiesSslCertificates(): void
+    public function testAiChatEndpointsAreFullyDecommissioned(): void
     {
         $chatFile = $this->projectRoot . '/api/chat.php';
-        $content = file_get_contents($chatFile);
+        $botFile = $this->projectRoot . '/bot.py';
 
-        $this->assertDoesNotMatchRegularExpression(
-            '/CURLOPT_SSL_VERIFYPEER\s*,\s*false/i',
-            $content,
-            'api/chat.php must not disable CURLOPT_SSL_VERIFYPEER.'
-        );
+        $this->assertFileDoesNotExist($chatFile, 'api/chat.php must be deleted to eliminate chatbot attack surface.');
+        $this->assertFileDoesNotExist($botFile, 'bot.py must be deleted to eliminate local python daemon attack surface.');
     }
 
     public function testCorsPolicyWhitelistsServerflowIcu(): void
@@ -546,7 +543,9 @@ class SecurityRegressionTest extends MockTestCase
     public function runAllTests(): void
     {
         $methods = get_class_methods($this);
-        $testMethods = array_filter($methods, fn($m) => str_starts_with($m, 'test'));
+        $testMethods = array_filter($methods, function($m) {
+            return strpos($m, 'test') === 0;
+        });
 
         echo "\n=============================================================\n";
         echo "   SERVERFLOW ENTERPRISE SECURITY REGRESSION TEST SUITE\n";

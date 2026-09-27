@@ -9,41 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// 1. Verify JWT (Requires standard user access)
-$headers = getallheaders();
-$authHeader = $headers['Authorization'] ?? '';
-$token = str_replace('Bearer ', '', $authHeader);
-
-if (!$token) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Missing authorization token']);
-    exit;
-}
-
-$parts = explode('.', $token);
-if (count($parts) !== 3) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Malformed token']);
-    exit;
-}
-[$header, $payload, $signature] = $parts;
-$jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
-$expected_signature = base64_encode(hash_hmac('sha256', "$header.$payload", $jwt_secret, true));
-
-// simple base64 signature compare (in real life you'd use hash_equals and handle base64 padding)
-if (rtrim($signature, '=') !== rtrim($expected_signature, '=')) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Invalid token signature']);
-    exit;
-}
-
-$decoded_payload = json_decode(base64_decode($payload), true);
-if (!$decoded_payload || ($decoded_payload['exp'] < time())) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Token expired']);
-    exit;
-}
-$username = $decoded_payload['username'] ?? 'unknown';
+// 1. Verify Authentication (Requires standard user access)
+require_once __DIR__ . '/auth/require_auth.php';
+requireAuth();
+$username = $_SESSION['username'] ?? 'unknown';
 
 // 2. Setup DB connection
 require_once __DIR__ . '/../config/db_connect.php';

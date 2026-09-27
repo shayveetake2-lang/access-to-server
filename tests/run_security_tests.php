@@ -92,7 +92,7 @@ namespace {
 
     foreach ($methods as $method) {
         $name = $method->getName();
-        if (!str_starts_with($name, 'test')) {
+        if (strpos($name, 'test') !== 0) {
             continue;
         }
 

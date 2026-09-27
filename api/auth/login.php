@@ -93,20 +93,22 @@ try {
     }
 
     if ($user && password_verify($password, $user['password_hash'])) {
+        unset($password, $user['password_hash']);
         session_regenerate_id(true);
         $token = bin2hex(random_bytes(32));
         $hashedToken = hash('sha256', $token);
         $ttlDays = (int)(getenv('AUTH_TOKEN_TTL_DAYS') ?: 7);
         $expiresAt = date('Y-m-d H:i:s', time() + ($ttlDays * 86400));
         
-        $jwt_header = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
-        $jwt_payload = base64_encode(json_encode(['user_id' => $user['id'], 'username' => $user['username'], 'role' => $user['role'], 'exp' => time() + ($ttlDays * 86400)]));
-        $jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
-        $jwt_signature = base64_encode(hash_hmac('sha256', "$jwt_header.$jwt_payload", $jwt_secret, true));
-        $jwt = "$jwt_header.$jwt_payload.$jwt_signature";
+        require_once __DIR__ . '/jwt_utils.php';
+        $jwt = createSignedJwt([
+            'user_id'  => $user['id'],
+            'username' => $user['username'],
+            'role'     => $user['role'],
+        ], $ttlDays * 86400);
         
         $salt = bin2hex(random_bytes(6));
-        $subsonic_token = md5($password . $salt);
+        $subsonic_token = md5($token . $salt);
 
         try {
             $ampPdo = getAmpacheConnectionLogin();

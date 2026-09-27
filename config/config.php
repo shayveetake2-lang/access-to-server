@@ -39,7 +39,7 @@ define('AMPACHE_DB_HOST', getEnvValue('AMPACHE_DB_HOST', DB_HOST));
 define('AMPACHE_DB_PORT', getEnvValue('AMPACHE_DB_PORT', DB_PORT));
 define('AMPACHE_DB_NAME', getEnvValue('AMPACHE_DB_NAME', 'ampache'));
 define('AMPACHE_DB_USER', getEnvValue('AMPACHE_DB_USER', 'server_app'));
-define('AMPACHE_DB_PASS', getEnvValue('AMPACHE_DB_PASS', 'password'));
+define('AMPACHE_DB_PASS', getEnvValue('AMPACHE_DB_PASS', 'ServerAppSecurePass2026!'));
 
 /**
  * SQLite PDO extension wrapper to ensure compatibility with MySQL DDL statements
@@ -55,7 +55,6 @@ if (!class_exists('SQLitePDO')) {
             return $sql;
         }
 
-        #[\ReturnTypeWillChange]
         public function exec($statement) {
             $trimmed = trim($statement);
             if (preg_match("/^\s*(CREATE DATABASE|USE)\b/i", $trimmed)) {
@@ -64,12 +63,10 @@ if (!class_exists('SQLitePDO')) {
             return parent::exec($this->cleanSql($statement));
         }
 
-        #[\ReturnTypeWillChange]
         public function prepare($query, $options = array()) {
             return parent::prepare($this->cleanSql($query), $options);
         }
 
-        #[\ReturnTypeWillChange]
         public function query($query, $fetchMode = null, ...$args) {
             $trimmed = trim($query);
             $clean = $this->cleanSql($query);

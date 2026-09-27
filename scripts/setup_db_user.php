@@ -13,15 +13,31 @@ $rootUser = 'root';
 $rootPass = 'root';
 
 $pdo = null;
+$ports = [8889, 3306];
 foreach ($hosts as $host) {
-    try {
-        $pdo = new PDO("mysql:host={$host};port={$port}", $rootUser, $rootPass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_TIMEOUT => 2
-        ]);
-        echo "[+] Connected to MySQL root via {$host}:{$port}\n";
-        break;
-    } catch (Exception $e) {}
+    foreach ($ports as $port) {
+        try {
+            $pdo = new PDO("mysql:host={$host};port={$port}", $rootUser, $rootPass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_TIMEOUT => 2
+            ]);
+            echo "[+] Connected to MySQL root via {$host}:{$port}\n";
+            break 2;
+        } catch (Exception $e) {}
+    }
+}
+
+if (!$pdo) {
+    $sock = '/Applications/MAMP/tmp/mysql/mysql.sock';
+    if (file_exists($sock)) {
+        try {
+            $pdo = new PDO("mysql:unix_socket={$sock}", $rootUser, $rootPass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_TIMEOUT => 2
+            ]);
+            echo "[+] Connected to MySQL root via socket {$sock}\n";
+        } catch (Exception $e) {}
+    }
 }
 
 if (!$pdo) {

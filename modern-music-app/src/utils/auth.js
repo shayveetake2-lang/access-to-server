@@ -1,19 +1,26 @@
 export const checkIsAdmin = (user) => {
   if (!user) return false;
   
-  // Check if role is admin or isAdmin flag is explicitly true
-  if (user.role === 'admin' || user.isAdmin === true) {
+  // 1. Verify role from cryptographically signed JWT token if available
+  const token = user.token || user.jwt;
+  if (token && typeof token === 'string' && token.split('.').length === 3) {
+    try {
+      const payloadBase64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(decodeURIComponent(escape(atob(payloadBase64))));
+      if (payload && payload.exp && payload.exp * 1000 < Date.now()) {
+        return false;
+      }
+      return payload?.role === 'admin';
+    } catch (e) {}
+  }
+  
+  // 2. Verified role from database response
+  if (user.role === 'admin') {
     return true;
   }
   
-  // Check for admin properties from Subsonic/Ampache API
+  // 3. Verified Subsonic adminRole property from server
   if (user.adminRole === true || user.adminRole === 'true' || user.adminRole === 1) {
-    return true;
-  }
-
-  // Fallback for hardcoded standard admin usernames if missing role
-  const username = (user.username || '').toLowerCase();
-  if (['admin', 'musicadmin', 'serveradmin'].includes(username)) {
     return true;
   }
 

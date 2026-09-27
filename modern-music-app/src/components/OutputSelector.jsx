@@ -274,13 +274,16 @@ export default function OutputMenu({ compact = false }) {
         )}
       </button>
 
-      {/* Interactive Dropdown Menu */}
+      {/* Interactive Dropdown / Mobile Bottom Sheet */}
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-[55] md:hidden" onClick={() => setIsOpen(false)} />
+          <div className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-sm sm:hidden" onClick={() => setIsOpen(false)} />
           <div
-            className="absolute bottom-full right-0 mb-4 w-[240px] sm:w-[280px] max-h-[60vh] overflow-y-auto z-[70] rounded-2xl bg-slate-950 backdrop-blur-3xl border border-white/20 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.95)] animate-in fade-in zoom-in-95 duration-150"
+            className="fixed bottom-0 inset-x-0 z-[70] sm:absolute sm:bottom-full sm:right-0 sm:inset-x-auto sm:mb-4 sm:w-[280px] max-h-[75vh] sm:max-h-[60vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-neutral-900 sm:bg-slate-950 backdrop-blur-3xl border-t sm:border border-neutral-800 sm:border-white/20 p-4 sm:p-2 shadow-[0_20px_60px_rgba(0,0,0,0.95)] animate-in slide-in-from-bottom duration-200 sm:slide-in-from-bottom-0 sm:fade-in sm:zoom-in-95"
           >
+          {/* Mobile Drag Indicator */}
+          <div className="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-3 sm:hidden" />
+
           {/* Header */}
           <div className="flex items-center justify-between px-2.5 py-2 border-b border-white/10 mb-1.5">
             <div className="flex items-center gap-1.5">

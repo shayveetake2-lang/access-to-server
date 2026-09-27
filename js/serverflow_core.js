@@ -1,7 +1,7 @@
 /**
  * js/serverflow_core.js — ServerFlow Unified UI Core Module
  * Provides unified theme management, navigation state,
- * user profile dropdown, and interactive ServerFlow Help AI Chatbot.
+ * user profile dropdown, and dynamic network routing.
  */
 
 // Initialize Theme on Load
@@ -115,11 +115,12 @@ function initProfileDropdown() {
 function handlePlexRouting(e) {
     if (e && e.preventDefault) e.preventDefault();
     const host = window.location.hostname;
-    const isLocal = host === "127.0.0.1" || host === "localhost";
-    if (!isLocal || host.includes('serverflow') || host.includes('cloudflare') || host.startsWith("10.") || host.startsWith("192.168.")) {
+    const isCloudflare = host.includes('serverflow.icu') || host.includes('cloudflare');
+    if (isCloudflare) {
         window.open("https://app.plex.tv/web", "_blank");
     } else {
-        window.open("http://" + host + ":32400/web", "_blank");
+        const targetHost = (host === "localhost" || host === "127.0.0.1") ? host : "10.247.192.231";
+        window.open("http://" + targetHost + ":32400/web", "_blank");
     }
 }
 window.handlePlexRouting = handlePlexRouting;

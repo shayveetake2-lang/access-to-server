@@ -68,7 +68,7 @@ if ($deployMethod === 'github') {
     $githubUrl = isset($_POST['github_url']) ? trim($_POST['github_url']) : '';
     
     // Validate strict github URL format and block CLI flags
-    if (empty($githubUrl) || str_starts_with($githubUrl, '-') || !preg_match('/^https:\/\/(www\.)?github\.com\/[a-zA-Z0-9_\-\.]+\/[a-zA-Z0-9_\-\.]+(\.git)?$/', $githubUrl)) {
+    if (empty($githubUrl) || strpos($githubUrl, '-') === 0 || !preg_match('/^https:\/\/(www\.)?github\.com\/[a-zA-Z0-9_\-\.]+\/[a-zA-Z0-9_\-\.]+(\.git)?$/', $githubUrl)) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid GitHub URL. Must be a valid public HTTPS GitHub repository URL.']);
         exit;
     }

@@ -48,8 +48,8 @@ $userRole = $decoded_payload['role'] ?? 'user';
 // Removed: Admin-only block to restore standard deployment capability
 
 // Set session for downstream quota & ownership handling
-$_SESSION['username'] = $decoded_payload['username'] ?? 'admin';
-$_SESSION['role'] = 'admin';
+$_SESSION['username'] = $decoded_payload['username'] ?? 'user';
+$_SESSION['role'] = $userRole;
 
 // ==========================================
 // 2. Set SSE Headers for Streaming Output
@@ -58,8 +58,6 @@ header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('Connection: keep-alive');
 header('X-Accel-Buffering: no'); // Disable buffering for real-time streams
-
-
 
 $repoUrl = isset($_POST['repo']) ? trim($_POST['repo']) : (isset($_GET['repo']) ? trim($_GET['repo']) : '');
 
@@ -70,7 +68,7 @@ if (empty($repoUrl)) {
 }
 
 // Strict URL validation & Argument Injection Defense
-if (empty($repoUrl) || str_starts_with($repoUrl, '-') || !preg_match('/^https:\/\/[a-zA-Z0-9_\-\.]+\/[a-zA-Z0-9_\-\.\/]+(\.git)?$/', $repoUrl)) {
+if (empty($repoUrl) || strpos($repoUrl, '-') === 0 || !preg_match('/^https:\/\/[a-zA-Z0-9_\-\.]+\/[a-zA-Z0-9_\-\.\/]+(\.git)?$/', $repoUrl)) {
     sendMsg("Error: Invalid or disallowed Repository URL. Only standard HTTPS Git URLs are accepted.");
     sendMsg("Deployment Failed.");
     exit;

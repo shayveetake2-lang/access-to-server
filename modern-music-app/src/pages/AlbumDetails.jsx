@@ -151,6 +151,19 @@ export default function AlbumDetails() {
         {songs[0] && (
           <StarButton type="album" id={album.id} initialStarred={!!album.starred} size={20} className="w-10 h-10 rounded-full border border-white/15 hover:border-white/30 flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all" />
         )}
+        {songs.length > 0 && (
+          <button
+            onClick={() => {
+              const trackIds = songs.map(s => s.id).filter(Boolean);
+              if (trackIds.length > 0) openAddToPlaylistModal(trackIds);
+            }}
+            className="w-10 h-10 rounded-full border border-white/15 hover:border-purple-400/50 flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all text-slate-300 hover:text-purple-300"
+            title="Add Entire Album to Playlist"
+            aria-label="Add Entire Album to Playlist"
+          >
+            <ListPlus size={18} />
+          </button>
+        )}
       </div>
 
       {/* Tracklist Mobile View */}

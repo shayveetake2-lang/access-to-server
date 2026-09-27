@@ -164,11 +164,12 @@ try {
 
     $pdo->commit();
 
-    $jwt_header = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
-    $jwt_payload = base64_encode(json_encode(['user_id' => $newUserId, 'username' => $username, 'role' => 'member', 'exp' => time() + ($ttlDays * 86400)]));
-    $jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
-    $jwt_signature = base64_encode(hash_hmac('sha256', "$jwt_header.$jwt_payload", $jwt_secret, true));
-    $jwt = "$jwt_header.$jwt_payload.$jwt_signature";
+    require_once __DIR__ . '/jwt_utils.php';
+    $jwt = createSignedJwt([
+        'user_id'  => $newUserId,
+        'username' => $username,
+        'role'     => 'member',
+    ], $ttlDays * 86400);
 
     $_SESSION['auth_token'] = $jwt;
     $_SESSION['user_id'] = $newUserId;

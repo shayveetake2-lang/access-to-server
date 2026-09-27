@@ -123,10 +123,12 @@ export function PlaylistModalProvider({ children }) {
     try {
       // Force-fresh auth for every add-to-playlist mutation
       const auth = getSubsonicAuthParams(user, true);
-      const res = await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${playlistId}&songIdToAdd=${songIdToAdd}&${auth}`));
+      const songIds = Array.isArray(songIdToAdd) ? songIdToAdd : [songIdToAdd];
+      const addParams = songIds.map(id => `songIdToAdd=${encodeURIComponent(id)}`).join('&');
+      const res = await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${playlistId}&${addParams}&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
-        showToast("Added to playlist!", "success");
+        showToast(songIds.length > 1 ? `Added ${songIds.length} tracks to playlist!` : "Added to playlist!", "success");
         closePlaylistModal();
       } else {
         showToast("Failed to add to playlist.", "error");

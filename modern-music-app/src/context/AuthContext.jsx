@@ -12,9 +12,8 @@ export function useAuth() {
 // Resolves the authoritative admin flag straight from the Ampache server's
 // `adminRole` field (falling back to the reserved-username allowlist only if
 // the getUser lookup fails outright), so a role promotion/demotion made on
-// the server is always honored — never just trusted from a stale local cache.
 async function resolveIsAdmin(username, authParams) {
-  let isAdmin = ['admin', 'musicadmin', 'serveradmin'].includes((username || '').toLowerCase());
+  let isAdmin = false;
 
   try {
     const userRes = await fetch(getAmpacheUrl(`action=getUser&username=${encodeURIComponent(username)}&${authParams}`));

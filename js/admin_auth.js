@@ -124,10 +124,10 @@ async function checkAuthOnLoad(loginPayload = null) {
         const data = await res.json();
         if (data && data.status === 'success' && data.logged_in) {
             currentAdminState.logged_in = true;
-            currentAdminState.user = data.user || storedUser || 'Admin';
+            currentAdminState.user = data.user || jwtUser || 'User';
+            currentAdminState.role = data.role || jwtRole || 'member';
             sessionStorage.setItem('active_session_token', activeToken || 'active');
-            if (data.role) localStorage.setItem('user_role', data.role);
-            updateAdminUI(true, currentAdminState.user, data.role || storedRole || 'admin');
+            updateAdminUI(true, currentAdminState.user, currentAdminState.role);
 
             const targetTab = window.pendingTabId || window.location.hash.replace('#', '');
             if (targetTab && typeof window.switchTab === 'function') {
@@ -142,20 +142,15 @@ async function checkAuthOnLoad(loginPayload = null) {
             localStorage.removeItem('user_name');
             currentAdminState.logged_in = false;
             currentAdminState.user = null;
+            currentAdminState.role = 'guest';
             updateAdminUI(false, null, 'guest');
         }
     } catch(e) {
-        // If temporary network interruption occurs, maintain local session
-        if (storedUser) {
-            currentAdminState.logged_in = true;
-            currentAdminState.user = storedUser;
-            updateAdminUI(true, storedUser, storedRole || 'user');
-        } else {
-            sessionStorage.removeItem('active_session_token');
-            currentAdminState.logged_in = false;
-            currentAdminState.user = null;
-            updateAdminUI(false, null, 'guest');
-        }
+        // If temporary network interruption occurs, maintain validated JWT session
+        currentAdminState.logged_in = true;
+        currentAdminState.user = jwtUser;
+        currentAdminState.role = jwtRole;
+        updateAdminUI(true, jwtUser, jwtRole);
     }
 }
 

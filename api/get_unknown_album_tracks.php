@@ -21,6 +21,7 @@ function getAmpachePdo() {
     $hosts = array_unique([$host, '127.0.0.1', 'localhost']);
     $creds = [
         [$user, $pass],
+        ['server_app', 'ServerAppSecurePass2026!'],
         ['server_app', 'password'],
         ['root', 'root'],
         ['root', '']

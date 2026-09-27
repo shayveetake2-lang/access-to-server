@@ -1,7 +1,11 @@
-# Prevent direct script execution via web server
+# /Volumes/USBDrive/.htaccess - RCE Prevention & Engine Lockdown
+# Prevents execution of any PHP or CGI scripts uploaded to external USB storage
+
 php_flag engine off
+
 <FilesMatch "(?i)\.(php|php3|php4|php5|phtml|phar|pl|py|cgi|sh|bash)$">
     Order Deny,Allow
     Deny from all
 </FilesMatch>
+
 Options -ExecCGI -Indexes

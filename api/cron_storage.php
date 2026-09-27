@@ -150,6 +150,20 @@ foreach ($detectedUsbVolumes as $volInfo) {
     }
 }
 
+// Auto-harden mounted USB drives with php_flag engine off .htaccess to prevent RCE
+$usbHtaccessTemplate = dirname(__DIR__) . '/scripts/usb_drive.htaccess';
+if (file_exists($usbHtaccessTemplate)) {
+    foreach ([$usb1Path, $usb2Path] as $uPath) {
+        if ($uPath && @is_dir($uPath) && is_writable($uPath)) {
+            $targetHt = rtrim($uPath, '/') . '/.htaccess';
+            if (!file_exists($targetHt)) {
+                @copy($usbHtaccessTemplate, $targetHt);
+                @chmod($targetHt, 0644);
+            }
+        }
+    }
+}
+
 $usbPort1 = getVolumeStats($usb1Mounted && $usb1Label ? "USB Port 1 ({$usb1Label})" : 'USB Port 1', $usb1Path ?: '/Volumes/USBDrive', 'usb', $usb1Mounted);
 $usbPort1['port_number'] = 1;
 $usbPort1['volume_label'] = $usb1Mounted ? $usb1Label : null;
@@ -159,11 +173,14 @@ $usbPort2['port_number'] = 2;
 $usbPort2['volume_label'] = $usb2Mounted ? $usb2Label : null;
 
 // 3. External Network Nodes (Grouped into Unified Network Storage)
-$mac2Mounted = @is_dir('/Volumes/Music');
+// Use timed process check instead of bare @is_dir to prevent Apache hanging on sleeping SMB shares
+$mac2Mounted = isDriveResponsive('/Volumes/Music', 1);
 $mac2Stats = getVolumeStats('mac2 (Music Node)', '/Volumes/Music', 'network', $mac2Mounted);
 
-$moviePath = @is_dir('/Volumes/Movies') ? '/Volumes/Movies' : '/Volumes/Movie';
-$movieMounted = @is_dir('/Volumes/Movies') || @is_dir('/Volumes/Movie');
+$hasMovies = isDriveResponsive('/Volumes/Movies', 1);
+$hasMovie = !$hasMovies && isDriveResponsive('/Volumes/Movie', 1);
+$moviePath = $hasMovies ? '/Volumes/Movies' : ($hasMovie ? '/Volumes/Movie' : '/Volumes/Movies');
+$movieMounted = $hasMovies || $hasMovie;
 $movieStats = getVolumeStats('Movie Storage Drive', $moviePath, 'network', $movieMounted);
 
 // Grouped Network Storage

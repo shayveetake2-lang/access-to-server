@@ -9,13 +9,23 @@ export function usePlayer() {
 }
 
 export function PlayerProvider({ children }) {
-  const [currentTrack, setCurrentTrack] = useState(null);
-  const [queue, setQueue] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [persistedQueueState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('aether_queue_state');
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+    }
+    return null;
+  });
+
+  const [currentTrack, setCurrentTrack] = useState(() => persistedQueueState?.currentTrack || null);
+  const [queue, setQueue] = useState(() => (Array.isArray(persistedQueueState?.queue) ? persistedQueueState.queue : []));
+  const [currentIndex, setCurrentIndex] = useState(() => (typeof persistedQueueState?.currentIndex === 'number' ? persistedQueueState.currentIndex : -1));
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(1);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState(() => persistedQueueState?.currentTrack?.duration || 0);
   const [repeatMode, setRepeatMode] = useState('off'); // off, all, one
   const [isShuffled, setIsShuffled] = useState(false);
   const [errorToast, setErrorToast] = useState(null);
@@ -54,7 +64,18 @@ export function PlayerProvider({ children }) {
         lastKnownTimeRef.current = cur;
       }
       setProgress(cur);
-      setDuration(audioRef.current.duration || currentTrackRef.current?.duration || 0);
+      const dur = audioRef.current.duration || currentTrackRef.current?.duration || 0;
+      setDuration(dur);
+
+      if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession && dur > 0 && isFinite(dur)) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: dur,
+            playbackRate: audioRef.current.playbackRate || 1,
+            position: Math.min(cur, dur)
+          });
+        } catch (e) {}
+      }
     }
   };
 
@@ -344,6 +365,18 @@ export function PlayerProvider({ children }) {
         navigator.mediaSession.setActionHandler('nexttrack', () => {
           playNext();
         });
+        try {
+          navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (audioRef.current && details.seekTime !== undefined) {
+              if (details.fastSeek && 'fastSeek' in audioRef.current) {
+                audioRef.current.fastSeek(details.seekTime);
+              } else {
+                audioRef.current.currentTime = details.seekTime;
+              }
+              setProgress(details.seekTime);
+            }
+          });
+        } catch (e) {}
 
       } catch (err) {
         console.debug('MediaSession error:', err);
@@ -389,8 +422,28 @@ export function PlayerProvider({ children }) {
     loadTrack(song);
   };
 
+  // Persist active queue state across browser reloads without auto-playing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (queue.length > 0 || currentTrack) {
+          localStorage.setItem('aether_queue_state', JSON.stringify({
+            queue: queue.slice(0, 100),
+            currentIndex,
+            currentTrack
+          }));
+        }
+      } catch (e) {}
+    }
+  }, [queue, currentIndex, currentTrack]);
+
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current) {
+      if (currentTrack) {
+        loadTrack(currentTrack);
+      }
+      return;
+    }
     if (!audioRef.current.paused) {
       audioRef.current.pause();
       setIsPlaying(false);

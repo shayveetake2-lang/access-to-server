@@ -230,13 +230,26 @@ export async function searchSubsonic(query, user = null) {
   const trimmedQuery = (query || '').trim();
   if (trimmedQuery.length < 2) return {};
 
+  const cacheKey = `aether_search_${trimmedQuery.toLowerCase()}`;
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+          return parsed.data;
+        }
+      }
+    } catch (e) {}
+  }
+
   const auth = getSubsonicAuthParams(user);
   if (!auth || !auth.includes('u=')) return {};
   const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
 
   try {
     const [searchRes, unknownArtistId] = await Promise.all([
-      fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=50&albumCount=15&artistCount=15&${authClean}&_t=${Date.now()}`, { cache: 'no-store' })
+      fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=150&albumCount=20&artistCount=20&${authClean}&_t=${Date.now()}`, { cache: 'no-store' })
         .then(res => res.json())
         .catch(() => null),
       resolveUnknownArtistId(user)
@@ -250,7 +263,7 @@ export async function searchSubsonic(query, user = null) {
     // If exact query returns empty, perform a single wildcard fallback (* suffix)
     if (songList.length === 0 && albumList.length === 0 && artistList.length === 0 && !trimmedQuery.endsWith('*')) {
       try {
-        const fallbackRes = await fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery + '*')}&songCount=50&albumCount=15&artistCount=15&${authClean}&_t=${Date.now()}`, { cache: 'no-store' });
+        const fallbackRes = await fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery + '*')}&songCount=150&albumCount=20&artistCount=20&${authClean}&_t=${Date.now()}`, { cache: 'no-store' });
         const fallbackData = await fallbackRes.json();
         const fbFound = fallbackData?.['subsonic-response']?.searchResult3 || {};
         if (Array.isArray(fbFound.song)) songList = fbFound.song;
@@ -267,6 +280,15 @@ export async function searchSubsonic(query, user = null) {
       album: applyUnknownArtistFallback(albumList, unknownArtistId),
       artist: artistList
     };
+
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          timestamp: Date.now(),
+          data: merged
+        }));
+      } catch (e) {}
+    }
 
     return merged;
   } catch (err) {
@@ -316,7 +338,22 @@ export async function fetchRecentlyAdded(user = null, limits = { songLimit: 20, 
 }
 
 export async function fetchAllArtists(user = null) {
+  const cacheKey = 'aether_catalog_artists';
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+          return parsed.data;
+        }
+      }
+    } catch (e) {}
+  }
+
   const cacheBust = `_t=${Date.now()}`;
+  let result = null;
+
   // 1. Try high-speed database proxy
   try {
     const res = await fetch(`${getApiProxyUrl()}?action=getArtists&${cacheBust}`, { cache: 'no-store' });
@@ -334,42 +371,68 @@ export async function fetchAllArtists(user = null) {
       if (all.length === 0 && Array.isArray(data.artists)) {
         all = data.artists;
       }
-      if (all.length > 0) return { artists: all, rawResponse: data };
+      if (all.length > 0) result = { artists: all, rawResponse: data };
     }
   } catch (e) {
     console.debug("Proxy fetchAllArtists fallback:", e);
   }
 
   // 2. Subsonic fallback
-  try {
-    const auth = getSubsonicAuthParams(user);
-    const res = await fetch(getAmpacheUrl(`action=getArtists&${auth}&${cacheBust}`), { cache: 'no-store' });
-    const data = await res.json();
-    if (data?.['subsonic-response']?.status === 'ok') {
-      const rawIndex = data['subsonic-response'].artists?.index;
-      const index = Array.isArray(rawIndex) ? rawIndex : (rawIndex ? [rawIndex] : []);
-      let all = [];
-      index.forEach(idx => {
-        if (idx.artist) {
-          const artList = Array.isArray(idx.artist) ? idx.artist : [idx.artist];
-          all = [...all, ...artList];
+  if (!result) {
+    try {
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=getArtists&${auth}&${cacheBust}`), { cache: 'no-store' });
+      const data = await res.json();
+      if (data?.['subsonic-response']?.status === 'ok') {
+        const rawIndex = data['subsonic-response'].artists?.index;
+        const index = Array.isArray(rawIndex) ? rawIndex : (rawIndex ? [rawIndex] : []);
+        let all = [];
+        index.forEach(idx => {
+          if (idx.artist) {
+            const artList = Array.isArray(idx.artist) ? idx.artist : [idx.artist];
+            all = [...all, ...artList];
+          }
+        });
+        if (all.length === 0 && data['subsonic-response'].artists?.artist) {
+          const rawList = data['subsonic-response'].artists.artist;
+          all = Array.isArray(rawList) ? rawList : (rawList ? [rawList] : []);
         }
-      });
-      if (all.length === 0 && data['subsonic-response'].artists?.artist) {
-        const rawList = data['subsonic-response'].artists.artist;
-        all = Array.isArray(rawList) ? rawList : (rawList ? [rawList] : []);
+        result = { artists: all, rawResponse: data };
       }
-      return { artists: all, rawResponse: data };
+    } catch (e) {
+      console.debug("Subsonic getArtists fallback:", e);
     }
-  } catch (e) {
-    console.debug("Subsonic getArtists fallback:", e);
   }
 
-  return { artists: [], rawResponse: null };
+  const finalResult = result || { artists: [], rawResponse: null };
+  if (finalResult.artists.length > 0 && typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        timestamp: Date.now(),
+        data: finalResult
+      }));
+    } catch (e) {}
+  }
+  return finalResult;
 }
 
 export async function fetchAllAlbums(user = null) {
+  const cacheKey = 'aether_catalog_albums';
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+          return parsed.data;
+        }
+      }
+    } catch (e) {}
+  }
+
   const cacheBust = `_t=${Date.now()}`;
+  let result = null;
+
   // 1. Try high-speed database proxy
   try {
     const res = await fetch(`${getApiProxyUrl()}?action=getAlbums&${cacheBust}`, { cache: 'no-store' });
@@ -377,27 +440,38 @@ export async function fetchAllAlbums(user = null) {
     if (data?.status === 'ok') {
       const albumList = data.albums || data['subsonic-response']?.albumList?.album || [];
       const list = Array.isArray(albumList) ? albumList : (albumList ? [albumList] : []);
-      if (list.length > 0) return { albums: list, rawResponse: data };
+      if (list.length > 0) result = { albums: list, rawResponse: data };
     }
   } catch (e) {
     console.debug("Proxy fetchAllAlbums fallback:", e);
   }
 
   // 2. Subsonic fallback
-  try {
-    const auth = getSubsonicAuthParams(user);
-    const res = await fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}&${cacheBust}`), { cache: 'no-store' });
-    const data = await res.json();
-    if (data?.['subsonic-response']?.status === 'ok') {
-      const raw = data['subsonic-response'].albumList?.album || [];
-      const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-      return { albums: list, rawResponse: data };
+  if (!result) {
+    try {
+      const auth = getSubsonicAuthParams(user);
+      const res = await fetch(getAmpacheUrl(`action=getAlbumList&type=alphabeticalByArtist&size=500&${auth}&${cacheBust}`), { cache: 'no-store' });
+      const data = await res.json();
+      if (data?.['subsonic-response']?.status === 'ok') {
+        const raw = data['subsonic-response'].albumList?.album || [];
+        const list = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+        result = { albums: list, rawResponse: data };
+      }
+    } catch (e) {
+      console.debug("Subsonic getAlbumList fallback:", e);
     }
-  } catch (e) {
-    console.debug("Subsonic getAlbumList fallback:", e);
   }
 
-  return { albums: [], rawResponse: null };
+  const finalResult = result || { albums: [], rawResponse: null };
+  if (finalResult.albums.length > 0 && typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        timestamp: Date.now(),
+        data: finalResult
+      }));
+    } catch (e) {}
+  }
+  return finalResult;
 }
 
 export async function fetchAlbumDetails(albumId, user = null) {

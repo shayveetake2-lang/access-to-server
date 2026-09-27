@@ -3,14 +3,21 @@
 // Duplicate IDs are preserved on the surviving entry as `duplicateIds` so admin
 // tools (e.g. Orphaned Media / Content Assigner) can still act on every copy.
 
-const normalizeTitle = (title) => (title || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const normalizeTitle = (title) => {
+  return (title || '')
+    .toLowerCase()
+    .replace(/\s*[\(\[](remastered|remaster|deluxe|bonus track|anniversary edition|explicit|clean)[^\)\]]*[\)\]]/gi, '')
+    .replace(/[^\w\s]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+};
 
 /**
  * @param {Array} songs - raw Subsonic song objects (must have `id`, `title`, `duration`)
- * @param {number} durationToleranceSeconds - max duration delta to still count as a duplicate
+ * @param {number} durationToleranceSeconds - max duration delta to still count as a duplicate (default: 1.5s)
  * @returns {Array} deduped songs; merged entries gain `duplicateIds` and `mergedCount`
  */
-export function dedupeSongs(songs, durationToleranceSeconds = 1) {
+export function dedupeSongs(songs, durationToleranceSeconds = 1.5) {
   if (!Array.isArray(songs) || songs.length === 0) return [];
 
   const groups = [];
@@ -28,7 +35,16 @@ export function dedupeSongs(songs, durationToleranceSeconds = 1) {
     });
 
     if (matchIdx !== undefined) {
-      groups[matchIdx].duplicateIds.push(song.id);
+      const currentCanonical = groups[matchIdx].canonical;
+      const currentBitRate = Number(currentCanonical.bitRate) || 0;
+      const newBitRate = Number(song.bitRate) || 0;
+
+      if (newBitRate > currentBitRate) {
+        groups[matchIdx].duplicateIds.push(currentCanonical.id);
+        groups[matchIdx].canonical = { ...song, primaryId: currentCanonical.id };
+      } else {
+        groups[matchIdx].duplicateIds.push(song.id);
+      }
     } else {
       groups.push({ canonical: song, duplicateIds: [] });
       groupIndexByTitle.set(titleKey, [...candidateIndexes, groups.length - 1]);
@@ -61,7 +77,7 @@ export function createDedupeIndex() {
  * @param {number} durationToleranceSeconds
  * @returns {Array} the new deduped result array (existingResult is not mutated)
  */
-export function dedupeAppend(existingResult, newSongs, index, durationToleranceSeconds = 1) {
+export function dedupeAppend(existingResult, newSongs, index, durationToleranceSeconds = 1.5) {
   const result = existingResult.slice();
 
   (newSongs || []).forEach((song) => {
