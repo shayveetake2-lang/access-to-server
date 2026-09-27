@@ -53,23 +53,24 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        // Fetch parallel:
-        // 1. Full Catalog Albums (database-proxy first)
-        // 2. Playlists (community public playlists)
-        // 3. Featured library
-        const [albumRes, playlistRes, featuredRes] = await Promise.allSettled([
-          fetchAllAlbums(user),
-          fetch(getAmpacheUrl(`action=getPlaylists&${getAuthParams(user)}`)),
-          fetchFeaturedLibrary(user)
-        ]);
-
+        // Render the catalog as soon as it arrives; secondary dashboard content hydrates afterward.
+        const albumsPromise = fetchAllAlbums(user);
+        const [albumRes] = await Promise.allSettled([albumsPromise]);
         if (!isMounted) return;
 
-        // Process Library Albums
         let loadedAlbums = [];
         if (albumRes.status === 'fulfilled' && albumRes.value?.albums) {
           loadedAlbums = albumRes.value.albums;
         }
+        setAllAlbums(loadedAlbums);
+        setLoading(false);
+
+        const [playlistRes, featuredRes] = await Promise.allSettled([
+          fetch(getAmpacheUrl(`action=getPlaylists&${getAuthParams(user)}`)),
+          fetchFeaturedLibrary(user, albumsPromise)
+        ]);
+
+        if (!isMounted) return;
 
         // Process Public Playlists
         let loadedPlaylists = [];
@@ -91,7 +92,6 @@ export default function Dashboard() {
           }
         }
 
-        setAllAlbums(loadedAlbums);
         setPublicPlaylists(loadedPlaylists);
         if (featuredRes.status === 'fulfilled') {
           setFeaturedSongs(featuredRes.value.songs);

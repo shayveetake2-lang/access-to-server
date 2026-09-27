@@ -555,17 +555,17 @@ export async function fetchArtistDetails(artistId, user = null) {
   return null;
 }
 
-export async function fetchFeaturedLibrary(user = null) {
+export async function fetchFeaturedLibrary(user = null, albumsPromise = null) {
   const auth = getSubsonicAuthParams(user);
   const cacheBust = `_t=${Date.now()}`;
   const [albumsResult, artistsResult, songsRes, unknownArtistId] = await Promise.all([
-    fetchAllAlbums(user),
+    albumsPromise || fetchAllAlbums(user),
     fetchAllArtists(user),
     fetch(getAmpacheUrl(`action=search3&query=%2A&songCount=200&albumCount=0&artistCount=0&${auth}&${cacheBust}`), { cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
     resolveUnknownArtistId(user)
   ]);
-  const albums = albumsResult.albums || [];
-  const artists = artistsResult.artists || [];
+  const albums = (albumsResult.albums || []).filter(album => album.hasArt === true || album.hasArt === 1 || album.hasArt === '1');
+  const artists = (artistsResult.artists || []).filter(artist => artist.coverArt);
   let songs = songsRes?.['subsonic-response']?.searchResult3?.song || [];
   if (!songs.length) {
     try {
@@ -579,7 +579,10 @@ export async function fetchFeaturedLibrary(user = null) {
   return {
     albums: applyUnknownArtistFallback(Array.isArray(albums) ? albums : [albums].filter(Boolean), unknownArtistId),
     artists,
-    songs: applyUnknownArtistFallback(Array.isArray(songs) ? songs : [songs].filter(Boolean), unknownArtistId)
+    songs: applyUnknownArtistFallback(
+      (Array.isArray(songs) ? songs : [songs].filter(Boolean)).filter(song => song.coverArt),
+      unknownArtistId
+    )
   };
 }
 
