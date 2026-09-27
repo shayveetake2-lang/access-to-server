@@ -7,6 +7,15 @@ export default defineConfig({
   base: './',
   build: {
     target: ['es2018', 'safari13', 'chrome80'],
+    // Explicit content-hashed filenames so every rebuild ships a fresh URL —
+    // eliminates manual Cmd+Shift+R hard-refreshes on stale cached bundles.
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]',
+      },
+    },
   },
   server: {
     proxy: {

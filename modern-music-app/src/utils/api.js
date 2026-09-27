@@ -142,7 +142,7 @@ export function getCoverArtUrl(coverArtId) {
     if (!isNaN(num)) normalizedId = num < 100000000 ? String(100000000 + num) : String(num);
   } else if (raw.startsWith('sg-')) {
     const num = parseInt(raw.slice(3), 10);
-    if (!isNaN(num)) normalizedId = num < 100000000 ? String(300000000 + num) : String(num);
+    if (!isNaN(num)) normalizedId = num < 100000000 ? String(600000000 + num) : String(num);
   } else {
     const num = parseInt(raw, 10);
     if (!isNaN(num)) normalizedId = num < 100000000 ? String(200000000 + num) : String(num);
@@ -162,7 +162,7 @@ export function getStreamUrl(trackId) {
   
   const num = parseInt(normalizedId, 10);
   if (!isNaN(num)) {
-    normalizedId = num < 100000000 ? String(300000000 + num) : (num >= 300000000 && num < 400000000 ? String(num) : String(300000000 + (num % 100000000)));
+    normalizedId = num < 100000000 ? String(600000000 + num) : (num >= 600000000 && num < 400000000 ? String(num) : String(600000000 + (num % 100000000)));
   }
 
   return `${getApiProxyUrl()}?action=stream&id=${encodeURIComponent(normalizedId)}`;
@@ -242,73 +242,85 @@ export function searchSubsonic(query, user = null) {
     const signal = _searchAbortController.signal;
 
     _searchTimeout = setTimeout(async () => {
-      const cacheKey = `aether_search_${trimmedQuery.toLowerCase()}`;
+      const cacheKey = `aether_search_v2_${trimmedQuery.toLowerCase()}`;
       if (typeof window !== 'undefined' && window.sessionStorage) {
         try {
           const cached = sessionStorage.getItem(cacheKey);
           if (cached) {
             const parsed = JSON.parse(cached);
-            if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+            const hasCachedResults = (parsed.data?.song?.length > 0) || (parsed.data?.album?.length > 0) || (parsed.data?.artist?.length > 0);
+            if (hasCachedResults && (Date.now() - parsed.timestamp < 600000)) { // 5-minute TTL
               return resolve(parsed.data);
             }
           }
         } catch (e) {}
       }
 
-      const auth = getSubsonicAuthParams(user);
-      if (!auth || !auth.includes('u=')) return resolve({});
-      const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
+      let songList = [];
+      let albumList = [];
+      let artistList = [];
 
+      // 1. Primary: Direct high-performance MySQL pipeline via api_proxy.php
       try {
-        const [searchRes, unknownArtistId] = await Promise.all([
-          fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=150&albumCount=20&artistCount=20&${authClean}&_t=${Date.now()}`, { cache: 'no-store', signal })
-            .then(res => res.json())
-            .catch((e) => { if (e.name !== 'AbortError') return null; throw e; }),
-          resolveUnknownArtistId(user)
-        ]);
+        const proxyUrl = `${getApiProxyUrl()}?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=150&albumCount=20&artistCount=20&_t=${Date.now()}`;
+        const proxyRes = await fetch(proxyUrl, { cache: 'no-store', signal });
+        const proxyData = await proxyRes.json();
+        if (proxyData?.status === 'ok') {
+          const rawSong = proxyData.song || proxyData?.['subsonic-response']?.searchResult3?.song || proxyData?.['subsonic-response']?.searchResult2?.song || [];
+          const rawAlb = proxyData.album || proxyData?.['subsonic-response']?.searchResult3?.album || proxyData?.['subsonic-response']?.searchResult2?.album || [];
+          const rawArt = proxyData.artist || proxyData?.['subsonic-response']?.searchResult3?.artist || proxyData?.['subsonic-response']?.searchResult2?.artist || [];
 
-    const found = searchRes?.['subsonic-response']?.searchResult3 || {};
-    let songList = Array.isArray(found.song) ? found.song : (found.song ? [found.song] : []);
-    let albumList = Array.isArray(found.album) ? found.album : (found.album ? [found.album] : []);
-    let artistList = Array.isArray(found.artist) ? found.artist : (found.artist ? [found.artist] : []);
+          songList = Array.isArray(rawSong) ? rawSong : (rawSong ? [rawSong] : []);
+          albumList = Array.isArray(rawAlb) ? rawAlb : (rawAlb ? [rawAlb] : []);
+          artistList = Array.isArray(rawArt) ? rawArt : (rawArt ? [rawArt] : []);
+        }
+      } catch (proxyErr) {
+        if (proxyErr.name === 'AbortError') return resolve({});
+        console.debug("Proxy search notice, trying fallback:", proxyErr);
+      }
 
-    // If exact query returns empty, perform a single wildcard fallback (* suffix)
-    if (songList.length === 0 && albumList.length === 0 && artistList.length === 0 && !trimmedQuery.endsWith('*')) {
-      try {
-        const fallbackRes = await fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery + '*')}&songCount=150&albumCount=20&artistCount=20&${authClean}&_t=${Date.now()}`, { cache: 'no-store' });
-        const fallbackData = await fallbackRes.json();
-        const fbFound = fallbackData?.['subsonic-response']?.searchResult3 || {};
-        if (Array.isArray(fbFound.song)) songList = fbFound.song;
-        else if (fbFound.song) songList = [fbFound.song];
-        if (Array.isArray(fbFound.album)) albumList = fbFound.album;
-        else if (fbFound.album) albumList = [fbFound.album];
-        if (Array.isArray(fbFound.artist)) artistList = fbFound.artist;
-        else if (fbFound.artist) artistList = [fbFound.artist];
-      } catch (fbErr) {}
-    }
+      // 2. Fallback: Native Ampache Subsonic REST API (if proxy returned 0 items)
+      if (songList.length === 0 && albumList.length === 0 && artistList.length === 0) {
+        try {
+          const auth = getSubsonicAuthParams(user);
+          if (auth && auth.includes('u=')) {
+            const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
+            const subRes = await fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=150&albumCount=20&artistCount=20&${authClean}&_t=${Date.now()}`, { cache: 'no-store', signal })
+              .then(res => res.json())
+              .catch(e => { if (e.name !== 'AbortError') return null; throw e; });
 
-    const merged = {
-      song: dedupeSongs(applyUnknownArtistFallback(songList, unknownArtistId)),
-      album: applyUnknownArtistFallback(albumList, unknownArtistId),
-      artist: artistList
-    };
+            const found = subRes?.['subsonic-response']?.searchResult3 || subRes?.['subsonic-response']?.searchResult2 || {};
+            if (Array.isArray(found.song)) songList = found.song;
+            else if (found.song) songList = [found.song];
+            if (Array.isArray(found.album)) albumList = found.album;
+            else if (found.album) albumList = [found.album];
+            if (Array.isArray(found.artist)) artistList = found.artist;
+            else if (found.artist) artistList = [found.artist];
+          }
+        } catch (subErr) {
+          if (subErr.name === 'AbortError') return resolve({});
+        }
+      }
 
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      try {
-        sessionStorage.setItem(cacheKey, JSON.stringify({
-          timestamp: Date.now(),
-          data: merged
-        }));
-      } catch (e) {}
-    }
+      const unknownArtistId = await resolveUnknownArtistId(user);
+      const merged = {
+        song: dedupeSongs(applyUnknownArtistFallback(songList, unknownArtistId)),
+        album: applyUnknownArtistFallback(albumList, unknownArtistId),
+        artist: artistList
+      };
 
-    resolve(merged);
-  } catch (err) {
-    if (err.name !== 'AbortError') {
-      console.error("searchSubsonic error:", err);
-    }
-    resolve({});
-  }
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          if (merged.song.length > 0 || merged.album.length > 0 || merged.artist.length > 0) {
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              timestamp: Date.now(),
+              data: merged
+            }));
+          }
+        } catch (e) {}
+      }
+
+      resolve(merged);
     }, 300);
   });
 }
@@ -318,13 +330,27 @@ export function getApiProxyUrl() {
 }
 
 export async function fetchRecentlyAdded(user = null, limits = { songLimit: 20, albumLimit: 16 }) {
+  const cacheKey = `aether_recently_added_${limits.songLimit}_${limits.albumLimit}`;
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 600000) {
+          return parsed.data;
+        }
+      }
+    } catch (e) {}
+  }
+
   const cacheBust = `_t=${Date.now()}`;
-  // Try proxy first for fastest response
+  let result = null;
+
   try {
     const res = await fetch(`${getApiProxyUrl()}?action=getRecentlyAdded&songLimit=${limits.songLimit}&albumLimit=${limits.albumLimit}&${cacheBust}`, { cache: 'no-store' });
     const data = await res.json();
     if (data?.status === 'ok' && (Array.isArray(data.recentAlbums) || Array.isArray(data.recentSongs))) {
-      return {
+      result = {
         recentAlbums: data.recentAlbums || [],
         recentSongs: data.recentSongs || []
       };
@@ -333,24 +359,29 @@ export async function fetchRecentlyAdded(user = null, limits = { songLimit: 20, 
     console.debug("Proxy getRecentlyAdded fallback:", e);
   }
 
-  // Fallback to native Subsonic API
-  const auth = getSubsonicAuthParams(user);
-  let recentAlbums = [];
-  try {
-    const res = await fetch(getAmpacheUrl(`action=getAlbumList2&type=newest&size=${limits.albumLimit}&${auth}&${cacheBust}`), { cache: 'no-store' });
-    const data = await res.json();
-    if (data?.['subsonic-response']?.status === 'ok') {
-      const raw = data['subsonic-response']?.albumList2?.album || data['subsonic-response']?.albumList?.album || [];
-      recentAlbums = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+  if (!result) {
+    const auth = getSubsonicAuthParams(user);
+    let recentAlbums = [];
+    try {
+      const res = await fetch(getAmpacheUrl(`action=getAlbumList2&type=newest&size=${limits.albumLimit}&${auth}&${cacheBust}`), { cache: 'no-store' });
+      const data = await res.json();
+      if (data?.['subsonic-response']?.status === 'ok') {
+        const raw = data['subsonic-response']?.albumList2?.album || data['subsonic-response']?.albumList?.album || [];
+        recentAlbums = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+      }
+    } catch (e) {
+      console.debug("Subsonic getAlbumList2 fallback:", e);
     }
-  } catch (e) {
-    console.debug("Subsonic getAlbumList2 fallback:", e);
+    result = { recentAlbums, recentSongs: [] };
   }
 
-  return {
-    recentAlbums,
-    recentSongs: []
-  };
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+    } catch (e) {}
+  }
+
+  return result;
 }
 
 export async function fetchAllArtists(user = null) {
@@ -360,7 +391,7 @@ export async function fetchAllArtists(user = null) {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+        if (Date.now() - parsed.timestamp < 600000) { // 5-minute TTL
           return parsed.data;
         }
       }
@@ -439,7 +470,7 @@ export async function fetchAllAlbums(user = null) {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+        if (Date.now() - parsed.timestamp < 600000) { // 5-minute TTL
           return parsed.data;
         }
       }
@@ -572,6 +603,19 @@ export async function fetchArtistDetails(artistId, user = null) {
 }
 
 export async function fetchFeaturedLibrary(user = null, albumsPromise = null) {
+  const cacheKey = 'aether_catalog_featured_songs';
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 600000) {
+          return parsed.data;
+        }
+      }
+    } catch (e) {}
+  }
+
   const auth = getSubsonicAuthParams(user);
   const cacheBust = `_t=${Date.now()}`;
   const [albumsResult, artistsResult, songsRes, unknownArtistId] = await Promise.all([
@@ -580,9 +624,20 @@ export async function fetchFeaturedLibrary(user = null, albumsPromise = null) {
     fetch(getAmpacheUrl(`action=search3&query=%2A&songCount=200&albumCount=0&artistCount=0&${auth}&${cacheBust}`), { cache: 'no-store' }).then(r => r.json()).catch(() => ({})),
     resolveUnknownArtistId(user)
   ]);
-  const albums = (albumsResult.albums || []).filter(album => album.hasArt === true || album.hasArt === 1 || album.hasArt === '1');
-  const artists = (artistsResult.artists || []).filter(artist => artist.coverArt);
+
+  const isValidArt = (item) => {
+    const art = item.coverArt;
+    if (!art) return false;
+    const strArt = String(art).trim();
+    if (strArt === '' || strArt === '0' || strArt === 'unknown') return false;
+    if (strArt === DEFAULT_COVER_ART) return false;
+    return true;
+  };
+
+  const albums = (albumsResult.albums || []).filter(album => isValidArt(album));
+  const artists = (artistsResult.artists || []).filter(artist => isValidArt(artist));
   let songs = songsRes?.['subsonic-response']?.searchResult3?.song || [];
+  
   if (!songs.length) {
     try {
       const fallback = await fetch(getAmpacheUrl(`action=getRandomSongs&size=200&${auth}&${cacheBust}`), { cache: 'no-store' });
@@ -592,14 +647,23 @@ export async function fetchFeaturedLibrary(user = null, albumsPromise = null) {
       console.debug('Featured song fallback unavailable:', error);
     }
   }
-  return {
+  
+  const result = {
     albums: applyUnknownArtistFallback(Array.isArray(albums) ? albums : [albums].filter(Boolean), unknownArtistId),
     artists,
     songs: applyUnknownArtistFallback(
-      (Array.isArray(songs) ? songs : [songs].filter(Boolean)).filter(song => song.coverArt),
+      (Array.isArray(songs) ? songs : [songs].filter(Boolean)).filter(song => isValidArt(song)),
       unknownArtistId
     )
   };
+
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: result }));
+    } catch (e) {}
+  }
+  
+  return result;
 }
 
 /**

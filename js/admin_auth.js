@@ -83,6 +83,7 @@ async function checkAuthOnLoad(loginPayload = null) {
 
     const activeToken = sessionStorage.getItem('active_session_token') || localStorage.getItem('auth_token');
     const storedStorage = localStorage.getItem('user_storage');
+    const storedRole = localStorage.getItem('user_role');
     if (storedStorage) {
         try { updateUserStorageUI(JSON.parse(storedStorage)); } catch(e) {}
     }
@@ -101,6 +102,7 @@ async function checkAuthOnLoad(loginPayload = null) {
         const payloadStr = atob(activeToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'));
         const payloadObj = JSON.parse(decodeURIComponent(payloadStr.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
         if (payloadObj.role) jwtRole = payloadObj.role;
+        else if (storedRole) jwtRole = storedRole;
         if (payloadObj.username) jwtUser = payloadObj.username;
         if (payloadObj.exp && payloadObj.exp * 1000 < Date.now()) throw new Error('Token expired');
     } catch (e) {
@@ -212,7 +214,12 @@ function requireAdminAuth(callback) {
 }
 
 function updateAdminUI(isLoggedIn, user, role) {
-    currentAdminState.role = isLoggedIn ? (role || 'user') : 'guest';
+    // Defensive boundary: a corrupted token or missing user must never be treated as "logged in".
+    // Both isLoggedIn AND a truthy user are required before any admin-only UI is revealed.
+    const hasValidUser = isLoggedIn && !!user && typeof user === 'string' && user.trim().length > 0;
+    isLoggedIn = hasValidUser;
+    const roleLower = (isLoggedIn ? String(role || 'user') : 'guest').toLowerCase();
+    currentAdminState.role = roleLower;
     const navBtnTexts = document.querySelectorAll('.admin-nav-text-el');
     const navIconLocks = document.querySelectorAll('.admin-nav-icon-lock-el');
     const navBadges = document.querySelectorAll('.admin-nav-badge-active-el');
@@ -259,7 +266,7 @@ function updateAdminUI(isLoggedIn, user, role) {
         if (!isLoggedIn) {
             pill.textContent = 'No User Logged In';
             pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-400 border border-slate-700/60 truncate';
-        } else if (role.toLowerCase() === 'admin') {
+        } else if (roleLower === 'admin') {
             pill.textContent = 'Admin Mode';
             pill.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 truncate';
         } else {
@@ -286,7 +293,7 @@ function updateAdminUI(isLoggedIn, user, role) {
         standardUserPortal.forEach(el => el.classList.remove('hidden'));
         if (standardUserBanner) standardUserBanner.classList.add('hidden');
 
-        if (role.toLowerCase() === 'admin') {
+        if (roleLower === 'admin') {
             if (adminPortal) adminPortal.classList.remove('hidden');
             if (navDropdownWrapper) navDropdownWrapper.classList.remove('hidden');
             if (manageAdminsBtn) manageAdminsBtn.classList.remove('hidden');
@@ -323,10 +330,22 @@ function updateAdminUI(isLoggedIn, user, role) {
         document.querySelectorAll('.auth-required-btn, .auth-required-action, .auth-required-nav').forEach(el => el.classList.remove('hidden'));
         document.querySelectorAll('.logged-out-prompt').forEach(el => el.classList.add('hidden'));
 
-        if (role.toLowerCase() === 'admin') {
+        if (roleLower === 'admin' && hasValidUser) {
             document.querySelectorAll('.auth-admin-nav').forEach(el => el.classList.remove('hidden'));
+            
+            // Explicitly reveal Ampache Launch buttons (requires a validated, non-corrupted user)
+            const ampacheCard = document.getElementById('ampache-launch-card');
+            const ampacheBtn = document.getElementById('ampache-launch-btn');
+            if (ampacheCard) ampacheCard.classList.remove('hidden');
+            if (ampacheBtn) ampacheBtn.classList.remove('hidden');
         } else {
             document.querySelectorAll('.auth-admin-nav').forEach(el => el.classList.add('hidden'));
+            
+            // Explicitly hide Ampache Launch buttons for guests/members
+            const ampacheCard = document.getElementById('ampache-launch-card');
+            const ampacheBtn = document.getElementById('ampache-launch-btn');
+            if (ampacheCard) ampacheCard.classList.add('hidden');
+            if (ampacheBtn) ampacheBtn.classList.add('hidden');
         }
 
     } else {

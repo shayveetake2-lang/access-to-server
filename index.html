@@ -426,7 +426,7 @@
                         </a>
 
                         <!-- Ampache Backend Quick Launcher Card -->
-                        <a href="ampache/public/" target="_blank" class="p-5 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-slate-900/90 to-blue-950/20 border border-cyan-500/30 hover:border-cyan-400 shadow-xl shadow-cyan-500/5 hover:shadow-cyan-500/20 transition-all duration-300 group flex items-center justify-between">
+                        <a href="ampache/public/" target="_blank" id="ampache-launch-card" class="auth-admin-nav hidden p-5 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-slate-900/90 to-blue-950/20 border border-cyan-500/30 hover:border-cyan-400 shadow-xl shadow-cyan-500/5 hover:shadow-cyan-500/20 transition-all duration-300 group flex items-center justify-between">
                             <div class="flex items-center gap-4 min-w-0">
                                 <div class="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform shadow-md shrink-0">
                                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -509,91 +509,6 @@
                                     ZeroTier online · Apache active
                                 </div>
                                 <span class="font-mono text-[10px] text-slate-500">2 Cores · 8GB</span>
-                            </div>
-                        </div>
-
-                        <!-- CARD 2: Traffic -->
-                        <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
-                            <div class="flex items-start justify-between mb-4 gap-2">
-                                <div class="min-w-0">
-                                    <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate">Traffic</h3>
-                                    <span class="text-[10px] text-slate-400 font-mono block truncate">Requests / min</span>
-                                </div>
-                                <select class="shrink-0 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-2 py-1 focus:outline-none">
-                                    <option>Requests</option>
-                                    <option>Bandwidth</option>
-                                </select>
-                            </div>
-                            <div class="my-2 relative">
-                                <div class="text-[10px] text-slate-400 mb-1 flex justify-between font-mono">
-                                    <span>2,000 req/min</span>
-                                    <span>1,000 req/min</span>
-                                    <span>0</span>
-                                </div>
-                                <svg class="w-full h-32" viewBox="0 0 300 100">
-                                    <defs>
-                                        <linearGradient id="trafficGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3"/>
-                                            <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0"/>
-                                        </linearGradient>
-                                    </defs>
-                                    <path fill="url(#trafficGradient)" d="M 0,80 Q 50,70 100,60 T 200,30 T 300,70 L 300,100 L 0,100 Z" />
-                                    <path fill="none" stroke="#06b6d4" stroke-width="2.5" d="M 0,80 Q 50,70 100,60 T 200,30 T 300,70" />
-                                    <circle cx="200" cy="30" r="4" fill="#06b6d4" />
-                                    <circle cx="200" cy="30" r="2.5" fill="#ffffff" />
-                                </svg>
-                                <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-2">
-                                    <span>03:00</span>
-                                    <span>06:00</span>
-                                    <span>09:00</span>
-                                    <span>12:00</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CARD 3: Servers -->
-                        <div class="p-5 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl shadow-black/5 dark:shadow-black/40 flex flex-col justify-between">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Servers</h3>
-                                <select class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-2 py-1 focus:outline-none">
-                                    <option>List</option>
-                                    <option>Grid</option>
-                                </select>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-xs">
-                                    <thead>
-                                        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-medium">
-                                            <th class="pb-2">Name</th>
-                                            <th class="pb-2">Status</th>
-                                            <th class="pb-2">IP</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-slate-700 dark:text-slate-300">
-                                        <tr>
-                                            <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Host Node</td>
-                                            <td class="py-2.5"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">● Online</span></td>
-                                            <td class="py-2.5 text-slate-400"><script>
-                                                const hostNode = window.location.hostname;
-                                                if (hostNode.startsWith('10.') || hostNode.startsWith('192.168.')) {
-                                                    document.write('ZeroTier (Protected)');
-                                                } else {
-                                                    document.write(hostNode);
-                                                }
-                                            </script></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="py-2.5 font-sans font-semibold text-slate-900 dark:text-white">Web Server</td>
-                                            <td class="py-2.5"><span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">● Online</span></td>
-                                            <td class="py-2.5 text-slate-400">127.0.0.1:80</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="mt-4 pt-2">
-                                <button onclick="switchTab('servers')" class="w-full py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-cyan-500/10 text-slate-600 dark:text-slate-300 hover:text-cyan-400 text-xs font-semibold transition-all">
-                                    Manage Servers →
-                                </button>
                             </div>
                         </div>
 

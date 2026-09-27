@@ -41,6 +41,7 @@ export default function AllSongs() {
   // Persistent O(1)-lookup dedupe index, reused across paginated fetches so
   // duplicate detection stays O(n) total instead of re-scanning on every page.
   const dedupeIndexRef = useRef(createDedupeIndex());
+  const libraryOffsetRef = useRef(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [sortBy, setSortBy] = useState('title_asc');
@@ -110,8 +111,10 @@ export default function AllSongs() {
   }, [searchQuery]);
 
   // ── 1. Fetch Paginated Library Songs (Hardware-Optimized for 10,000+ Items) ──
-  const fetchLibrarySongs = useCallback(async (reset = false, offset = 0) => {
+  const fetchLibrarySongs = useCallback(async (reset = false) => {
+    let offset = reset ? 0 : libraryOffsetRef.current;
     if (reset) {
+      libraryOffsetRef.current = 0;
       setIsLibraryLoading(true);
       setLibrarySongs([]);
     } else {
@@ -124,13 +127,14 @@ export default function AllSongs() {
         const cached = sessionStorage.getItem(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+          if (Date.now() - parsed.timestamp < 600000) { // 5-minute TTL
             setLibrarySongs(prev => {
               if (reset) dedupeIndexRef.current = createDedupeIndex();
               return dedupeAppend(reset ? [] : prev, parsed.songs, dedupeIndexRef.current);
             });
             setLibraryTotal(parsed.total);
             setHasMoreLibrary(parsed.hasMore);
+            libraryOffsetRef.current = offset + 50;
             setIsLibraryLoading(false);
             setIsLoadingMore(false);
             return;
@@ -213,6 +217,7 @@ export default function AllSongs() {
       });
       setLibraryTotal(totalCount);
       setHasMoreLibrary(hasMore);
+      libraryOffsetRef.current = offset + limit;
     } catch (err) {
       console.error("Failed to load library tracks:", err);
     } finally {
@@ -225,15 +230,18 @@ export default function AllSongs() {
   useEffect(() => {
     if (activeTab === 'library') {
       setHasMoreLibrary(true);
-      fetchLibrarySongs(true, 0);
+      libraryOffsetRef.current = 0;
+      fetchLibrarySongs(true);
     }
-  }, [debouncedQuery, sortBy, activeTab, fetchLibrarySongs]);
+    libraryOffsetRef.current = 0;
+    fetchLibrarySongs(true);
+  }, [debouncedQuery, sortBy, activeTab]);
 
   // Infinite Scroll Callback: load next page
   const loadMoreLibrarySongs = useCallback(() => {
     if (!hasMoreLibrary || isLibraryLoading || isLoadingMore) return;
-    fetchLibrarySongs(false, librarySongs.length);
-  }, [hasMoreLibrary, isLibraryLoading, isLoadingMore, librarySongs.length, fetchLibrarySongs]);
+    fetchLibrarySongs(false);
+  }, [hasMoreLibrary, isLibraryLoading, isLoadingMore, fetchLibrarySongs]);
 
   const librarySentinelRef = useInfiniteScroll(
     loadMoreLibrarySongs,
@@ -250,7 +258,7 @@ export default function AllSongs() {
         const cached = sessionStorage.getItem(chartCacheKey);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < 300000) { // 5-minute TTL
+          if (Date.now() - parsed.timestamp < 600000) { // 5-minute TTL
             setChartSongs(parsed.songs);
             setIsChartLoading(false);
             return;
@@ -384,7 +392,7 @@ export default function AllSongs() {
             <Shuffle size={15} /> <span>Shuffle</span>
           </button>
           <button
-            onClick={() => activeTab === 'library' ? fetchLibrarySongs(true, 0) : fetchChartSongs(period)}
+            onClick={() => activeTab === 'library' ? fetchLibrarySongs(true) : fetchChartSongs(period)}
             className="p-2 sm:p-2.5 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/5 transition-all"
             title="Refresh List"
             aria-label="Refresh list"

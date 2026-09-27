@@ -6,7 +6,7 @@
 // With 100+ concurrent getCoverArt requests, they serialize and queue for minutes
 // on the 2011 MacBook Pro. Media endpoints don't need sessions at all.
 $_action = $_GET['action'] ?? '';
-$_mediaActions = ['getCoverArt', 'coverArt', 'stream', 'download'];
+$_mediaActions = ['getCoverArt', 'coverArt', 'stream', 'download', 'search', 'search2', 'search3'];
 if (!in_array($_action, $_mediaActions)) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -1486,6 +1486,219 @@ if ($action === 'getArtist') {
                 'status' => 'ok',
                 'version' => '1.16.1',
                 'artist' => $artistData
+            ]
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+if ($action === 'search' || $action === 'search2' || $action === 'search3') {
+    $q = trim($_GET['query'] ?? ($input['query'] ?? ($_GET['q'] ?? ($input['q'] ?? ''))));
+    $q = rtrim($q, '*');
+
+    if (strlen($q) < 2) {
+        echo json_encode([
+            'status' => 'ok',
+            'song' => [],
+            'album' => [],
+            'artist' => [],
+            'subsonic-response' => [
+                'status' => 'ok',
+                'version' => '1.16.1',
+                'searchResult3' => [
+                    'song' => [],
+                    'album' => [],
+                    'artist' => []
+                ],
+                'searchResult2' => [
+                    'song' => [],
+                    'album' => [],
+                    'artist' => []
+                ]
+            ]
+        ]);
+        exit;
+    }
+
+    $songCount = intval($_GET['songCount'] ?? ($input['songCount'] ?? 150));
+    if ($songCount < 1 || $songCount > 300) $songCount = 150;
+
+    $albumCount = intval($_GET['albumCount'] ?? ($input['albumCount'] ?? 20));
+    if ($albumCount < 1 || $albumCount > 100) $albumCount = 20;
+
+    $artistCount = intval($_GET['artistCount'] ?? ($input['artistCount'] ?? 20));
+    if ($artistCount < 1 || $artistCount > 100) $artistCount = 20;
+
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    try {
+        $likeQ = '%' . $q . '%';
+        $exactQ = $q;
+        $startQ = $q . '%';
+
+        // 1. Search Songs
+        $songStmt = $pdo->prepare("
+            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                   s.total_count as playCount,
+                   COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
+                   COALESCE(alb.name, 'Unknown Album') as album, COALESCE(alb.id, 0) as albumId
+            FROM song s
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album alb ON s.album = alb.id
+            WHERE s.enabled = 1
+              AND (s.title LIKE :q1 OR art.name LIKE :q2 OR alb.name LIKE :q3)
+            ORDER BY 
+              CASE 
+                WHEN s.title = :exact1 THEN 0
+                WHEN s.title LIKE :start1 THEN 1
+                WHEN art.name LIKE :start2 THEN 2
+                ELSE 3 
+              END,
+              s.total_count DESC, s.title ASC
+            LIMIT :lim
+        ");
+        $songStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
+        $songStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
+        $songStmt->bindValue(':q3', $likeQ, PDO::PARAM_STR);
+        $songStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+        $songStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+        $songStmt->bindValue(':start2', $startQ, PDO::PARAM_STR);
+        $songStmt->bindValue(':lim', $songCount, PDO::PARAM_INT);
+        $songStmt->execute();
+        $songRows = $songStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $songs = [];
+        foreach ($songRows as $r) {
+            $subId = (string)(300000000 + (int)$r['id']);
+            $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
+            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+            $songs[] = [
+                'id' => $subId,
+                'parent' => $subAlbId,
+                'title' => !empty($r['title']) ? $r['title'] : 'Unknown Track',
+                'isDir' => false,
+                'isVideo' => false,
+                'type' => 'music',
+                'albumId' => $subAlbId,
+                'album' => !empty($r['album']) ? $r['album'] : 'Unknown Album',
+                'artistId' => $subArtId,
+                'artist' => !empty($r['artist']) ? $r['artist'] : 'Unknown Artist',
+                'coverArt' => 'al-' . $subAlbId,
+                'duration' => (int)$r['duration'],
+                'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
+                'track' => (int)$r['track'],
+                'size' => (int)$r['size'],
+                'playCount' => (int)$r['playCount'],
+                'contentType' => 'audio/mpeg',
+                'suffix' => 'mp3'
+            ];
+        }
+
+        // 2. Search Albums
+        $albStmt = $pdo->prepare("
+            SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
+                   COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
+            FROM album alb
+            LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
+            WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
+              AND (alb.name LIKE :q1 OR art.name LIKE :q2)
+            ORDER BY 
+              CASE 
+                WHEN alb.name = :exact1 THEN 0
+                WHEN alb.name LIKE :start1 THEN 1
+                ELSE 2 
+              END,
+              alb.name ASC
+            LIMIT :lim
+        ");
+        $albStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
+        $albStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
+        $albStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+        $albStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+        $albStmt->bindValue(':lim', $albumCount, PDO::PARAM_INT);
+        $albStmt->execute();
+        $albRows = $albStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $albums = [];
+        foreach ($albRows as $r) {
+            $subAlbId = (string)(200000000 + (int)$r['id']);
+            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+            $albums[] = [
+                'id' => $subAlbId,
+                'name' => $r['name'],
+                'title' => $r['name'],
+                'artist' => !empty($r['artist']) ? $r['artist'] : 'Various Artists',
+                'artistId' => $subArtId,
+                'coverArt' => 'al-' . $subAlbId,
+                'songCount' => (int)($r['song_count'] ?: 0),
+                'playCount' => (int)($r['playCount'] ?: 0),
+                'year' => (int)$r['year']
+            ];
+        }
+
+        // 3. Search Artists
+        $artStmt = $pdo->prepare("
+            SELECT art.id, art.name,
+                   COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount
+            FROM artist art
+            LEFT JOIN album alb ON alb.album_artist = art.id
+            WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
+              AND art.name LIKE :q
+            GROUP BY art.id, art.name, art.album_count
+            ORDER BY 
+              CASE 
+                WHEN art.name = :exact1 THEN 0
+                WHEN art.name LIKE :start1 THEN 1
+                ELSE 2 
+              END,
+              art.name ASC
+            LIMIT :lim
+        ");
+        $artStmt->bindValue(':q', $likeQ, PDO::PARAM_STR);
+        $artStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+        $artStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+        $artStmt->bindValue(':lim', $artistCount, PDO::PARAM_INT);
+        $artStmt->execute();
+        $artRows = $artStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $artists = [];
+        foreach ($artRows as $r) {
+            $subArtId = (string)(100000000 + (int)$r['id']);
+            $artists[] = [
+                'id' => $subArtId,
+                'name' => $r['name'],
+                'coverArt' => 'ar-' . $subArtId,
+                'albumCount' => (int)$r['albumCount']
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'ok',
+            'song' => $songs,
+            'album' => $albums,
+            'artist' => $artists,
+            'subsonic-response' => [
+                'status' => 'ok',
+                'version' => '1.16.1',
+                'searchResult3' => [
+                    'song' => $songs,
+                    'album' => $albums,
+                    'artist' => $artists
+                ],
+                'searchResult2' => [
+                    'song' => $songs,
+                    'album' => $albums,
+                    'artist' => $artists
+                ]
             ]
         ]);
         exit;

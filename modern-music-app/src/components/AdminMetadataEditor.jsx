@@ -59,8 +59,10 @@ export default function AdminMetadataEditor() {
   const { isAdmin } = useAuth();
 
   const getAuthToken = () => {
-    if (user?.token) return user.token;
     try {
+      const jwt = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+      if (jwt) return jwt;
+      if (user?.token) return user.token;
       const stored = localStorage.getItem('ampache_user') || sessionStorage.getItem('ampache_user');
       return stored ? JSON.parse(stored)?.token || '' : '';
     } catch {

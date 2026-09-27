@@ -17,6 +17,7 @@ export default function AllArtists() {
   const [activeTab, setActiveTab] = useState('name'); // 'name' | 'genre'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLetter, setSelectedLetter] = useState(() => sessionStorage.getItem('allArtists_letter') || 'All');
+  const [sortBy, setSortBy] = useState('alphabetical');
 
   useEffect(() => {
     sessionStorage.setItem('allArtists_letter', selectedLetter);
@@ -105,8 +106,7 @@ export default function AllArtists() {
 
   // Filtered artists based on search, tab, letter, and genre
   const filteredArtists = useMemo(() => {
-    return canonicalArtists.filter(artist => {
-      // Search filter
+    let result = canonicalArtists.filter(artist => {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         const matchesName = artist.name.toLowerCase().includes(query);
@@ -115,7 +115,6 @@ export default function AllArtists() {
         if (!matchesName && !matchesAliases && !matchesGenre) return false;
       }
 
-      // Tab-specific filters
       if (activeTab === 'name') {
         if (selectedLetter !== 'All') {
           const first = artist.name.trim().charAt(0).toUpperCase();
@@ -133,12 +132,26 @@ export default function AllArtists() {
 
       return true;
     });
-  }, [canonicalArtists, searchQuery, activeTab, selectedLetter, selectedGenre]);
+
+    if (sortBy !== 'alphabetical') {
+      const sorted = [...result];
+      if (sortBy === 'albums') {
+        sorted.sort((a, b) => (b.albumCount || 0) - (a.albumCount || 0));
+      } else if (sortBy === 'songs') {
+        sorted.sort((a, b) => (b.songCount || b.trackCount || 0) - (a.songCount || a.trackCount || 0));
+      } else if (sortBy === 'plays') {
+        sorted.sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
+      }
+      return sorted;
+    }
+
+    return result;
+  }, [canonicalArtists, searchQuery, activeTab, selectedLetter, selectedGenre, sortBy]);
 
   // Grouped by letter for the "By Name" view
   const groupedByName = useMemo(() => {
-    if (activeTab !== 'name' || selectedLetter !== 'All' || searchQuery.trim()) {
-      return null; // Don't show nested sections if filtered or in genre mode
+    if (activeTab !== 'name' || selectedLetter !== 'All' || searchQuery.trim() || sortBy !== 'alphabetical') {
+      return null; // Don't show nested sections if filtered, in genre mode, or custom sorted
     }
 
     const groups = new Map();
@@ -210,6 +223,18 @@ export default function AllArtists() {
               By Genre
             </button>
           </div>
+
+          {/* Sort Dropdown */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-slate-900/60 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-colors cursor-pointer"
+          >
+            <option value="alphabetical" className="bg-slate-900 text-white">Alphabetical</option>
+            <option value="albums" className="bg-slate-900 text-white">Most Albums</option>
+            <option value="songs" className="bg-slate-900 text-white">Most Songs</option>
+            <option value="plays" className="bg-slate-900 text-white">Most Played</option>
+          </select>
 
           {/* Search Box */}
           <div className="relative flex-1 sm:w-56">
