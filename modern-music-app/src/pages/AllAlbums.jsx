@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useLayoutEffect } from 'react';
-import { Play, Search, Filter, SlidersHorizontal, LayoutGrid, Layers, ChevronRight, X, Disc, Flame, Music, Calendar, ArrowDownAZ } from 'lucide-react';
+import { Play, Search, Filter, SlidersHorizontal, LayoutGrid, Layers, ChevronRight, X, Disc } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
@@ -403,72 +403,7 @@ export default function AllAlbums() {
           </button>
         </div>
 
-        {/* Row 2: Quick Filter Buttons (One-Tap Pills) */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/5">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Sort & Filter:</span>
-          
-          <button
-            onClick={() => { setSortBy('popular'); if (viewMode !== 'grid') setViewMode('grid'); }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              sortBy === 'popular'
-                ? 'bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                : 'bg-slate-950/70 text-slate-300 hover:text-white border border-white/10'
-            }`}
-          >
-            <Flame size={13} className={sortBy === 'popular' ? 'text-amber-300' : 'text-purple-400'} />
-            <span>Most Popular</span>
-          </button>
-
-          <button
-            onClick={() => { setSortBy('tracks_desc'); if (viewMode !== 'grid') setViewMode('grid'); }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              sortBy === 'tracks_desc'
-                ? 'bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                : 'bg-slate-950/70 text-slate-300 hover:text-white border border-white/10'
-            }`}
-          >
-            <Music size={13} className={sortBy === 'tracks_desc' ? 'text-emerald-300' : 'text-purple-400'} />
-            <span>Most Tracks</span>
-          </button>
-
-          <button
-            onClick={() => { setSortBy('year_desc'); if (viewMode !== 'grid') setViewMode('grid'); }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              sortBy === 'year_desc'
-                ? 'bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                : 'bg-slate-950/70 text-slate-300 hover:text-white border border-white/10'
-            }`}
-          >
-            <Calendar size={13} className={sortBy === 'year_desc' ? 'text-sky-300' : 'text-purple-400'} />
-            <span>Newest Releases</span>
-          </button>
-
-          <button
-            onClick={() => { setSortBy('album_asc'); if (viewMode !== 'grid') setViewMode('grid'); }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              sortBy === 'album_asc'
-                ? 'bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                : 'bg-slate-950/70 text-slate-300 hover:text-white border border-white/10'
-            }`}
-          >
-            <ArrowDownAZ size={13} className={sortBy === 'album_asc' ? 'text-pink-300' : 'text-purple-400'} />
-            <span>Album (A→Z)</span>
-          </button>
-
-          <button
-            onClick={() => { setSortBy('artist_asc'); if (viewMode !== 'grid') setViewMode('grid'); }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              sortBy === 'artist_asc'
-                ? 'bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                : 'bg-slate-950/70 text-slate-300 hover:text-white border border-white/10'
-            }`}
-          >
-            <Disc size={13} className={sortBy === 'artist_asc' ? 'text-indigo-300' : 'text-purple-400'} />
-            <span>Artist (A→Z)</span>
-          </button>
-        </div>
-
-        {/* Row 3: Genre Filter Chips */}
+        {/* Row 2: Genre Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 touch-scroll scrollbar-none">
           {GENRE_CATEGORIES.map(cat => {
             const isActive = selectedGenre === cat.id;

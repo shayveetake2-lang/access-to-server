@@ -53,37 +53,22 @@ export function mergeArtists(rawArtists = [], rawAlbums = []) {
   // 1. Build a map of artistId & artistName -> Set of Genres from albums
   const genresByArtistKey = new Map();
   const genresByArtistId = new Map();
-  const statsByArtistId = new Map();
-  const statsByArtistKey = new Map();
 
   if (Array.isArray(rawAlbums)) {
     rawAlbums.forEach(album => {
       const genre = album.genre?.trim();
-      const songs = parseInt(album.songCount || 0, 10);
-      const plays = parseInt(album.playCount || 0, 10);
+      if (!genre) return;
 
       if (album.artistId) {
         const idKey = String(album.artistId);
         if (!genresByArtistId.has(idKey)) genresByArtistId.set(idKey, new Set());
-        if (genre) genresByArtistId.get(idKey).add(genre);
-
-        const cur = statsByArtistId.get(idKey) || { songCount: 0, playCount: 0 };
-        statsByArtistId.set(idKey, {
-          songCount: cur.songCount + songs,
-          playCount: cur.playCount + plays
-        });
+        genresByArtistId.get(idKey).add(genre);
       }
 
       if (album.artist) {
         const nameKey = normalizeArtistKey(extractPrimaryArtistName(album.artist));
         if (!genresByArtistKey.has(nameKey)) genresByArtistKey.set(nameKey, new Set());
-        if (genre) genresByArtistKey.get(nameKey).add(genre);
-
-        const cur = statsByArtistKey.get(nameKey) || { songCount: 0, playCount: 0 };
-        statsByArtistKey.set(nameKey, {
-          songCount: cur.songCount + songs,
-          playCount: cur.playCount + plays
-        });
+        genresByArtistKey.get(nameKey).add(genre);
       }
     });
   }
@@ -155,21 +140,14 @@ export function mergeArtists(rawArtists = [], rawAlbums = []) {
     }
   });
 
-  // 3. Attach genres & aggregated play/song counts to each canonical artist
+  // 3. Attach genres to each canonical artist
   const mergedList = Array.from(canonicalMap.values()).map(artist => {
     const primaryKey = normalizeArtistKey(artist.name);
     const genresSet = new Set();
-    let totalSongs = 0;
-    let totalPlays = 0;
 
     // From name-based map
     if (genresByArtistKey.has(primaryKey)) {
       genresByArtistKey.get(primaryKey).forEach(g => genresSet.add(g));
-    }
-    if (statsByArtistKey.has(primaryKey)) {
-      const s = statsByArtistKey.get(primaryKey);
-      totalSongs = Math.max(totalSongs, s.songCount);
-      totalPlays = Math.max(totalPlays, s.playCount);
     }
 
     // From ID-based map
@@ -177,17 +155,10 @@ export function mergeArtists(rawArtists = [], rawAlbums = []) {
       if (genresByArtistId.has(String(id))) {
         genresByArtistId.get(String(id)).forEach(g => genresSet.add(g));
       }
-      if (statsByArtistId.has(String(id))) {
-        const s = statsByArtistId.get(String(id));
-        totalSongs = Math.max(totalSongs, s.songCount);
-        totalPlays = Math.max(totalPlays, s.playCount);
-      }
     });
 
     return {
       ...artist,
-      songCount: totalSongs || artist.songCount || 0,
-      playCount: totalPlays || artist.playCount || 0,
       genres: Array.from(genresSet)
     };
   });

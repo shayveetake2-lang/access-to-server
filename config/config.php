@@ -183,10 +183,6 @@ function initSQLiteSchema(PDO $pdo) {
         @$pdo->exec("ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0");
     } catch (\Exception $e) {}
     try {
-    try {
-        @$pdo->exec("ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
-    } catch (\Exception $e) {}
-
         @$pdo->exec("ALTER TABLE sys_users ADD COLUMN auth_token VARCHAR(64) DEFAULT NULL");
     } catch (\Exception $e) {}
     try {
@@ -253,6 +249,46 @@ function initSQLiteSchema(PDO $pdo) {
     } catch (\Exception $e) {}
 
     $initialized = true;
+}
+
+/**
+ * Ensure MySQL sys_users table has all required columns.
+ * Runs ALTER TABLE only when a column is missing (idempotent).
+ */
+function ensureMySQLSchema(PDO $pdo): void {
+    static $done = false;
+    if ($done) return;
+
+    $driver = '';
+    try {
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    } catch (\Exception $e) {}
+
+    if ($driver !== 'mysql') {
+        return;
+    }
+
+    $migrations = [
+        "ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) DEFAULT NULL",
+        "ALTER TABLE sys_users ADD COLUMN storage_limit_mb INT DEFAULT 100",
+        "ALTER TABLE sys_users ADD COLUMN storage_used_mb FLOAT DEFAULT 0.0",
+        "ALTER TABLE sys_users ADD COLUMN auth_token VARCHAR(64) DEFAULT NULL",
+        "ALTER TABLE sys_users ADD COLUMN token_hash VARCHAR(64) DEFAULT NULL",
+        "ALTER TABLE sys_users ADD COLUMN token_expires_at DATETIME DEFAULT NULL"
+    ];
+
+    foreach ($migrations as $sql) {
+        try {
+            $pdo->exec($sql);
+        } catch (\Exception $e) {
+            // Column already exists or table doesn't exist yet — ignore safely
+        }
+    }
+
+    try { $pdo->exec("CREATE INDEX idx_users_token_hash ON sys_users(token_hash)"); } catch (\Exception $e) {}
+    try { $pdo->exec("CREATE INDEX idx_users_username ON sys_users(username)"); } catch (\Exception $e) {}
+
+    $done = true;
 }
 
 /**
@@ -329,6 +365,7 @@ function getDBConnection() {
                 foreach ($credPairs as [$u, $p]) {
                     try {
                         $pdo = new PDO($dsn, $u, $p, $options);
+                        ensureMySQLSchema($pdo);
                         return $pdo;
                     } catch (\PDOException $e) {
                         // Try next credential combination
@@ -342,6 +379,7 @@ function getDBConnection() {
     if (file_exists($sockPath)) {
         try {
             $pdo = new PDO("mysql:unix_socket=$sockPath;dbname=" . DB_NAME . ";charset=" . DB_CHARSET, DB_USER, DB_PASS, $options);
+            ensureMySQLSchema($pdo);
             return $pdo;
         } catch (\PDOException $sockErr) {
             // Fallthrough to SQLite

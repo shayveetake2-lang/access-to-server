@@ -17,7 +17,7 @@ export default function AlbumDetails() {
   const [album, setAlbum] = useState(null);
   const { user, getAuthParams } = useAuth();
   const [loading, setLoading] = useState(true);
-  const { playQueue, playSong, addToQueue, currentTrack, isPlaying } = usePlayer();
+  const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { openAddToPlaylistModal } = usePlaylistModal();
   const { showToast } = useToast();
 
@@ -91,8 +91,8 @@ export default function AlbumDetails() {
   };
 
   const playFromTrack = (index) => {
-    if (songs[index]) {
-      playSong(songs[index]);
+    if (songs.length > 0) {
+      playQueue(songs, index);
     }
   };
 

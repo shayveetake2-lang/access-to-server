@@ -39,13 +39,12 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
   const [coverFailed, setCoverFailed] = useState(false);
   const navigate = useNavigate();
   const { user, getAuthParams } = useAuth();
-  const { playQueue, playSong } = usePlayer();
+  const { playQueue } = usePlayer();
   const weekSeed = useMemo(() => getWeekSeed(), []);
 
   const featured = useMemo(() => {
     const isValidArt = (item) => {
       if (!item) return false;
-      if (item.hasArt === false) return false;
       const art = item.coverArt || item.albumId || item.id;
       if (!art) return false;
       const strArt = String(art).trim();
@@ -117,7 +116,7 @@ export default function FeaturedSlideshow({ songs = [], albums = [], artists = [
       .join('') || '?';
 
     const handleAction = () => {
-      if (currentSlide.type === 'song') playSong(slideItem);
+      if (currentSlide.type === 'song') playQueue([slideItem], 0);
       else if (currentSlide.type === 'album') navigate(`/albums/${slideItem.id}`);
       else navigate(`/artists/${slideItem.id}`);
     };

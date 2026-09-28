@@ -15,7 +15,7 @@ export default function PlaylistDetails() {
   const [loading, setLoading] = useState(true);
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { playQueue, playSong, addToQueue, currentTrack, isPlaying } = usePlayer();
+  const { playQueue, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { user, getAuthParams } = useAuth();
   const { showToast } = useToast();
 
@@ -195,8 +195,8 @@ export default function PlaylistDetails() {
   };
 
   const playFromTrack = (index) => {
-    if (tracks[index]) {
-      playSong(tracks[index]);
+    if (tracks.length > 0) {
+      playQueue(tracks, index);
     }
   };
 

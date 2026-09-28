@@ -27,40 +27,27 @@ export default function TopBar() {
   const PRIMARY_PATHS = new Set(['/', '/albums', '/artists', '/songs', '/liked', '/playlists', '/public-playlists', '/settings', '/help', '/admin']);
   const canGoBack = !PRIMARY_PATHS.has(location.pathname);
 
-  const handleQueryChange = (e) => {
-    const val = e.target.value;
-    setQuery(val);
-    if (val.trim().length >= 2) {
-      setLoading(true);
-      setShowDropdown(true);
-      setResults(null);
-    } else {
-      setLoading(false);
-      setShowDropdown(false);
-      setResults(null);
-    }
-  };
-
   useEffect(() => {
-    const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setResults(null);
-      setLoading(false);
-      return;
-    }
-
-    const debounce = setTimeout(async () => {
+    const fetchResults = async () => {
+      if (query.length < 2) {
+        setResults(null);
+        return;
+      }
       setLoading(true);
       setShowDropdown(true);
       try {
-        const data = await searchSubsonic(trimmed, user);
+        const data = await searchSubsonic(query, user);
         setResults(data);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
-    }, 150);
+    };
+
+    const debounce = setTimeout(() => {
+      fetchResults();
+    }, 300);
 
     return () => clearTimeout(debounce);
   }, [query, user]);
@@ -131,8 +118,8 @@ export default function TopBar() {
             type="text" 
             placeholder="Search music, artists..." 
             value={query}
-            onChange={handleQueryChange}
-            onFocus={() => { if(results || query.length >= 2) setShowDropdown(true); }}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => { if(results) setShowDropdown(true); }}
             className="w-full bg-slate-900/60 border border-white/10 rounded-full py-2 pl-10 pr-4 text-xs sm:text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all placeholder:text-slate-500"
           />
           {loading && (
@@ -155,12 +142,9 @@ export default function TopBar() {
           return (
             <div className="absolute top-full mt-2 w-full bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-[70vh] overflow-y-auto z-50">
               {loading ? (
-                <div className="p-4 flex items-center justify-center gap-2.5 text-center text-slate-400 text-sm">
-                  <div className="w-3.5 h-3.5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                  <span>Searching for &ldquo;{query}&rdquo;…</span>
-                </div>
+                <div className="p-4 text-center text-slate-400 text-sm">Searching…</div>
               ) : !hasResults ? (
-                <div className="p-4 text-center text-slate-400 text-sm">No results found for &ldquo;{query}&rdquo;</div>
+                <div className="p-4 text-center text-slate-400 text-sm">No results found for "{query}"</div>
               ) : (
                 <div className="py-2">
                   {/* Songs */}

@@ -7,18 +7,28 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../config/db_connect.php';
 
-// Self-healing schema validation: Ensure 'email' column exists in sys_users
+// Self-healing schema validation: Ensure all required columns exist in sys_users
+$requiredColumns = [
+    'email'            => 'VARCHAR(255) DEFAULT NULL',
+    'storage_limit_mb' => 'INT DEFAULT 100',
+    'storage_used_mb'  => 'FLOAT DEFAULT 0.0',
+    'auth_token'       => 'VARCHAR(64) DEFAULT NULL',
+    'token_hash'       => 'VARCHAR(64) DEFAULT NULL',
+    'token_expires_at' => 'DATETIME DEFAULT NULL'
+];
+
 $hasEmailColumn = false;
-try {
-    $pdo->query("SELECT email FROM sys_users LIMIT 1");
-    $hasEmailColumn = true;
-} catch (\Exception $colCheckErr) {
+foreach ($requiredColumns as $col => $colDef) {
     try {
-        $pdo->exec("ALTER TABLE sys_users ADD COLUMN email VARCHAR(255) DEFAULT NULL");
-        $hasEmailColumn = true;
-    } catch (\Exception $alterErr) {
-        error_log("Notice: Unable to auto-add 'email' column to sys_users: " . $alterErr->getMessage());
-        $hasEmailColumn = false;
+        $pdo->query("SELECT {$col} FROM sys_users LIMIT 1");
+        if ($col === 'email') $hasEmailColumn = true;
+    } catch (\Exception $colCheckErr) {
+        try {
+            $pdo->exec("ALTER TABLE sys_users ADD COLUMN {$col} {$colDef}");
+            if ($col === 'email') $hasEmailColumn = true;
+        } catch (\Exception $alterErr) {
+            error_log("Notice: Unable to auto-add '{$col}' column to sys_users: " . $alterErr->getMessage());
+        }
     }
 }
 

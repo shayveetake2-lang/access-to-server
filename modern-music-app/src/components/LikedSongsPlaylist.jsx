@@ -16,7 +16,7 @@ function formatDuration(seconds) {
 
 export default function LikedSongsPlaylist() {
   const { likedSongs, loadingStarred } = useLikedSongs();
-  const { playQueue, playSong } = usePlayer();
+  const { playQueue } = usePlayer();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -67,9 +67,7 @@ export default function LikedSongsPlaylist() {
   };
 
   const handlePlayFromTrack = (index) => {
-    if (likedSongs[index]) {
-      playSong(likedSongs[index]);
-    }
+    playQueue(likedSongs, index);
   };
 
   return (

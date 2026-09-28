@@ -16,7 +16,7 @@ function formatDuration(seconds) {
 
 export default function LikedSongsPage() {
   const { likedSongs, loadingStarred } = useLikedSongs();
-  const { playQueue, playSong } = usePlayer();
+  const { playQueue } = usePlayer();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -95,7 +95,7 @@ export default function LikedSongsPage() {
             return (
               <div
                 key={song.id}
-                onClick={() => playSong(song)}
+                onClick={() => playQueue(likedSongs, idx)}
                 className="flex items-center gap-3 px-3 sm:px-5 py-3 hover:bg-white/5 cursor-pointer group transition-colors"
               >
                 {/* Index */}
