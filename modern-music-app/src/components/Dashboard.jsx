@@ -299,11 +299,11 @@ export default function Dashboard() {
       {/* Top Welcome Bar with Quick Listen Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
         <div>
-          <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
             <span>Welcome to Aether</span>
             <span className="hidden sm:inline-block w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             Stream high-fidelity music, explore curated albums, and discover community playlists.
           </p>
         </div>
@@ -354,17 +354,17 @@ export default function Dashboard() {
             <section className="space-y-4 pt-1">
               <div className="flex items-center justify-between px-1">
                 <div>
-                  <h3 className="text-lg sm:text-2xl font-bold text-white flex items-center gap-2">
-                    <Globe size={20} className="text-purple-400" />
+                  <h3 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Globe size={20} className="text-purple-600 dark:text-purple-400" />
                     <span>Community Playlists</span>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Curated mixes made public by other listeners on the server
                   </p>
                 </div>
                 <Link 
                   to="/public-playlists" 
-                  className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 group transition-colors"
+                  className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1 group transition-colors"
                 >
                   <span>See all</span>
                   <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
@@ -378,7 +378,7 @@ export default function Dashboard() {
                     <div 
                       key={playlist.id}
                       onClick={() => navigate(`/playlists/${playlist.id}`)}
-                      className="group flex flex-col bg-slate-900/40 hover:bg-slate-800/60 p-3.5 sm:p-4 rounded-2xl transition-all border border-white/5 hover:border-purple-500/30 backdrop-blur-sm relative active:scale-[0.98] cursor-pointer"
+                      className="group flex flex-col bg-white/80 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 p-3.5 sm:p-4 rounded-2xl transition-all border border-slate-200 dark:border-white/5 hover:border-purple-500/30 backdrop-blur-sm relative active:scale-[0.98] cursor-pointer shadow-sm dark:shadow-none"
                     >
                       {/* Artwork Banner */}
                       <div className="relative aspect-video rounded-xl overflow-hidden mb-3 shadow-md bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 flex items-center justify-center border border-white/5">
@@ -401,13 +401,13 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      <h4 className="font-bold text-slate-100 group-hover:text-purple-300 transition-colors text-sm truncate mb-0.5">
+                      <h4 className="font-bold text-gray-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors text-sm truncate mb-0.5">
                         {playlist.name}
                       </h4>
 
-                      <div className="flex items-center justify-between text-xs text-slate-400 mt-1">
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
                         <span className="flex items-center gap-1 truncate text-[11px]">
-                          <User size={12} className="text-purple-400 shrink-0" />
+                          <User size={12} className="text-purple-500 dark:text-purple-400 shrink-0" />
                           <span className="truncate">@{playlist.owner || 'Community'}</span>
                         </span>
                         
@@ -415,7 +415,7 @@ export default function Dashboard() {
                           <button 
                             onClick={(e) => handleSavePublicPlaylist(playlist, e)}
                             disabled={savingPlaylistId === playlist.id}
-                            className="px-2 py-0.5 rounded bg-white/5 hover:bg-purple-500/20 text-slate-300 hover:text-purple-300 transition-colors flex items-center gap-1 text-[10px] font-medium border border-white/5 active:scale-95 shrink-0"
+                            className="px-2 py-0.5 rounded bg-slate-100 dark:bg-white/5 hover:bg-purple-100 dark:hover:bg-purple-500/20 text-slate-700 dark:text-slate-300 hover:text-purple-700 dark:hover:text-purple-300 transition-colors flex items-center gap-1 text-[10px] font-medium border border-slate-200 dark:border-white/5 active:scale-95 shrink-0"
                             title="Save to My Playlists"
                           >
                             <BookmarkPlus size={11} />
@@ -440,8 +440,8 @@ export default function Dashboard() {
                   onClick={() => setSelectedGenre(cat.id)}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
                     isActive
-                      ? 'bg-purple-500 text-white shadow-[0_0_16px_rgba(168,85,247,0.4)]'
-                      : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/5'
+                      ? 'bg-purple-600 text-white shadow-[0_0_16px_rgba(168,85,247,0.4)]'
+                      : 'bg-slate-100 dark:bg-slate-900/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white border border-slate-200 dark:border-white/5'
                   }`}
                 >
                   {cat.label}
@@ -458,16 +458,16 @@ export default function Dashboard() {
                 <section key={section.id} className="space-y-3.5">
                   <div className="flex items-center justify-between px-1">
                     <div>
-                      <h3 className="text-lg sm:text-2xl font-bold text-white flex items-center gap-2">
+                      <h3 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <span>{section.label}</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 font-medium">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 font-medium">
                           {section.albums.length}
                         </span>
                       </h3>
                     </div>
                     <Link 
                       to="/albums" 
-                      className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 group transition-colors"
+                      className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1 group transition-colors"
                     >
                       <span>Explore all</span>
                       <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
@@ -479,11 +479,11 @@ export default function Dashboard() {
                     {section.albums.slice(0, 12).map(album => (
                       <div 
                         key={album.id}
-                        className="group flex flex-col w-36 sm:w-44 md:w-48 shrink-0 bg-slate-900/40 hover:bg-slate-800/60 p-2.5 sm:p-3 rounded-2xl transition-all border border-white/5 hover:border-purple-500/30 backdrop-blur-sm relative active:scale-[0.98] cursor-pointer"
+                        className="group flex flex-col w-36 sm:w-44 md:w-48 shrink-0 bg-white/80 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800/60 p-2.5 sm:p-3 rounded-2xl transition-all border border-slate-200 dark:border-white/5 hover:border-purple-500/30 backdrop-blur-sm relative active:scale-[0.98] cursor-pointer shadow-sm dark:shadow-none"
                         onClick={() => navigate(`/albums/${album.id}`)}
                       >
                         {/* Square Cover Art */}
-                        <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-800 border border-white/5">
+                        <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 shadow-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/5">
                           <img 
                             src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
                             alt={album.name || album.title}
@@ -491,7 +491,7 @@ export default function Dashboard() {
                             loading="lazy"
                             decoding="async"
                             onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
-/>
+                          />
                           {/* Quick Play Overlay */}
                           <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
                             <button 
@@ -512,10 +512,10 @@ export default function Dashboard() {
 
                         {/* Title & Artist */}
                         <div className="px-0.5 min-w-0">
-                          <h4 className="font-semibold text-slate-100 group-hover:text-purple-300 transition-colors text-xs sm:text-sm truncate leading-snug">
+                          <h4 className="font-semibold text-gray-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors text-xs sm:text-sm truncate leading-snug">
                             {album.name || album.title}
                           </h4>
-                          <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
+                          <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                             {album.artist}
                           </p>
                         </div>
@@ -541,47 +541,47 @@ export default function Dashboard() {
       {isRequestModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsRequestModalOpen(false)}></div>
-          <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-white/5 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <MessageSquare className="text-purple-400" size={20} />
+          <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <MessageSquare className="text-purple-600 dark:text-purple-400" size={20} />
                 Request a Song
               </h2>
               <button 
                 onClick={() => setIsRequestModalOpen(false)}
-                className="text-slate-400 hover:text-white transition-colors p-1"
+                className="text-slate-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors p-1"
               >
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleSubmitRequest} className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Song Title <span className="text-red-400">*</span></label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Song Title <span className="text-red-500">*</span></label>
                 <input 
                   type="text" 
                   value={requestTitle}
                   onChange={e => setRequestTitle(e.target.value)}
-                  className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   placeholder="e.g. Blinding Lights"
                   required
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Artist (Optional)</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Artist (Optional)</label>
                 <input 
                   type="text" 
                   value={requestArtist}
                   onChange={e => setRequestArtist(e.target.value)}
-                  className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   placeholder="e.g. The Weeknd"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Additional Notes (Optional)</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Additional Notes (Optional)</label>
                 <textarea 
                   value={requestNotes}
                   onChange={e => setRequestNotes(e.target.value)}
-                  className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 min-h-[80px]"
+                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 min-h-[80px] placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   placeholder="e.g. Please add the explicit version!"
                 ></textarea>
               </div>
@@ -589,7 +589,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setIsRequestModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
                 >
                   Cancel
                 </button>

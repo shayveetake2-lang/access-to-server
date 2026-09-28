@@ -17,7 +17,7 @@ function formatBytes($bytes, $precision = 2) {
 }
 
 // Volume labels that are never candidate matches for our monitored drives (system/reserved).
-const RESERVED_VOLUME_LABELS = ['Macintosh HD', 'Recovery', 'com.apple.TimeMachine.localsnapshots'];
+const RESERVED_VOLUME_LABELS = ['Macintosh HD', 'Recovery', 'com.apple.TimeMachine.localsnapshots', 'htdocs'];
 
 /**
  * Lists mountable volume labels under /Volumes, excluding reserved system entries.
@@ -140,13 +140,15 @@ $mac2Stats = getVolumeStats('mac2 (Music Node)', $mac2Resolved['path'], 'network
 $mac2Stats['resolved_via_fallback'] = $mac2Resolved['fallback'];
 $mac2Label = $mac2Stats['mounted'] ? basename($mac2Resolved['path']) : '';
 
-$usb1Resolved = resolveVolumePath('/Volumes/USBDrive1', '/^usb/i', [$mac2Label], true);
+// USB Port 1: Physical USB Port (strictly target USBDrive1 or explicit USB label, no generic fallback)
+$usb1Resolved = resolveVolumePath('/Volumes/USBDrive1', '/^usb(drive)?1?$/i', array_filter([$mac2Label, 'Music', 'htdocs']), false);
 $usbPort1 = getVolumeStats('USB Port 1', $usb1Resolved['path'], 'usb');
 $usbPort1['port_number'] = 1;
 $usbPort1['resolved_via_fallback'] = $usb1Resolved['fallback'];
 $usbPort1['volume_label'] = $usbPort1['mounted'] ? basename($usb1Resolved['path']) : null;
 
-$usb2Resolved = resolveVolumePath('/Volumes/USBDrive2', '/^usb/i', [$mac2Label, $usbPort1['volume_label'] ?: ''], true);
+// USB Port 2: Physical USB Port (strictly target USBDrive2 or explicit USB2 label, never claim mac2 or network mounts)
+$usb2Resolved = resolveVolumePath('/Volumes/USBDrive2', '/^usb(drive)?2?$/i', array_filter([$mac2Label, 'Music', 'htdocs', $usbPort1['volume_label'] ?: '']), false);
 $usbPort2 = getVolumeStats('USB Port 2', $usb2Resolved['path'], 'usb');
 $usbPort2['port_number'] = 2;
 $usbPort2['resolved_via_fallback'] = $usb2Resolved['fallback'];

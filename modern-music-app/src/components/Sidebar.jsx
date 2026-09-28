@@ -1,4 +1,4 @@
-import { Home, Search, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, Volume2, Globe, Heart, Disc } from 'lucide-react';
+import { Home, Disc, Library, ListMusic, Mic2, Settings, ShieldAlert, Music, Volume2, Globe, Heart } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
@@ -25,7 +25,7 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="w-64 bg-slate-950/80 backdrop-blur-xl border-r border-white/5 flex flex-col h-full sticky top-0 hidden md:flex select-none">
+    <div className="w-64 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-r border-slate-200 dark:border-white/5 flex flex-col h-full sticky top-0 hidden md:flex select-none transition-colors">
       {/* Brand Header */}
       <div className="p-6 pb-4">
         <NavLink to="/" className="flex items-center gap-3 group focus:outline-none" title="Aether Audio Home">
@@ -38,7 +38,7 @@ export default function Sidebar() {
               <path d="M20 10v4" />
             </svg>
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-purple-300 via-white to-indigo-200 bg-clip-text text-transparent tracking-tight leading-none group-hover:from-purple-200 group-hover:to-white transition-all">
+          <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 dark:from-purple-300 via-indigo-700 dark:via-white to-purple-600 dark:to-indigo-200 bg-clip-text text-transparent tracking-tight leading-none group-hover:from-purple-500 group-hover:to-indigo-600 dark:group-hover:from-purple-200 dark:group-hover:to-white transition-all">
             Aether
           </span>
         </NavLink>
@@ -46,7 +46,7 @@ export default function Sidebar() {
       
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1.5 mt-3 overflow-y-auto">
-        <div className="px-3 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Menu</div>
+        <div className="px-3 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Menu</div>
         {navItems.map((item) => (
           <NavLink 
             key={item.label}
@@ -54,8 +54,8 @@ export default function Sidebar() {
             className={({ isActive }) => 
               `flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-xs font-medium ${
                 isActive 
-                  ? 'bg-purple-500/15 text-purple-300 font-semibold shadow-[inset_3px_0_0_0_rgba(168,85,247,1)]' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  ? 'bg-purple-500/15 text-purple-600 dark:text-purple-300 font-semibold shadow-[inset_3px_0_0_0_rgba(168,85,247,1)]' 
+                  : 'text-slate-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
               }`
             }
           >
@@ -68,17 +68,17 @@ export default function Sidebar() {
       {/* Now Playing Mini Widget on Desktop Sidebar */}
       {currentTrack && (
         <div className="px-3 pb-2">
-          <div className="p-2.5 rounded-2xl bg-slate-900/60 border border-white/5 flex items-center gap-3 backdrop-blur-md shadow-lg">
-            <div className="w-10 h-10 rounded-xl bg-slate-800 shrink-0 overflow-hidden relative shadow-sm border border-white/5 flex items-center justify-center">
+          <div className="p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 flex items-center gap-3 backdrop-blur-md shadow-sm dark:shadow-lg">
+            <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0 overflow-hidden relative shadow-sm border border-slate-200 dark:border-white/5 flex items-center justify-center">
               {currentTrack.coverArt ? (
                 <img 
                   src={getCoverArtUrl(currentTrack.coverArt, getAuthParams(user))} 
                   className="w-full h-full object-cover" 
                   alt="" 
                   onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
-/>
+                />
               ) : (
-                <Music size={16} className="text-purple-400" />
+                <Music size={16} className="text-purple-500 dark:text-purple-400" />
               )}
               {isPlaying && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -87,8 +87,8 @@ export default function Sidebar() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-white truncate leading-tight">{currentTrack.title}</div>
-              <div className="text-[10px] text-slate-400 truncate mt-0.5">{currentTrack.artist || 'Unknown Artist'}</div>
+              <div className="text-xs font-semibold text-gray-900 dark:text-white truncate leading-tight">{currentTrack.title}</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{currentTrack.artist || 'Unknown Artist'}</div>
             </div>
           </div>
         </div>
@@ -98,18 +98,18 @@ export default function Sidebar() {
       <div className="p-3 pt-0 space-y-2">
         <a 
           href={getMediaPortalUrl()} 
-          className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-500/20 hover:border-purple-500/40 transition-all group"
+          className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border border-purple-200 dark:border-purple-500/20 hover:border-purple-400 dark:hover:border-purple-500/40 transition-all group"
         >
           <div>
-            <h4 className="text-xs font-semibold text-purple-300 group-hover:text-purple-200 flex items-center gap-1.5">
+            <h4 className="text-xs font-semibold text-purple-700 dark:text-purple-300 group-hover:text-purple-800 dark:group-hover:text-purple-200 flex items-center gap-1.5">
               <span>←</span> Media Portal
             </h4>
-            <p className="text-[10px] text-slate-400 mt-0.5">Movies, TV &amp; Server Flow</p>
+            <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5">Movies, TV &amp; Server Flow</p>
           </div>
-          <span className="text-slate-500 group-hover:text-purple-300 transition-colors text-xs font-mono">↗</span>
+          <span className="text-slate-400 group-hover:text-purple-600 dark:text-slate-500 dark:group-hover:text-purple-300 transition-colors text-xs font-mono">↗</span>
         </a>
 
-        <div className="px-2 py-1 text-[10px] text-slate-500 font-mono flex items-center justify-between">
+        <div className="px-2 py-1 text-[10px] text-slate-400 dark:text-slate-500 font-mono flex items-center justify-between">
           <span>Space: Play/Pause</span>
           <span>M: Mute</span>
         </div>

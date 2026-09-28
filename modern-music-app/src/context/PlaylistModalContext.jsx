@@ -42,8 +42,8 @@ export function PlaylistModalProvider({ children }) {
     
     setIsCreating(true);
     try {
-      // Force-fresh token: createPlaylist must always bind to the currently-logged-in user's DB profile
-      const auth = getSubsonicAuthParams(user, true);
+      // Explicitly inject the active user's Subsonic API credentials (u, t, s, v, c, f=json) via getAuthParams
+      const auth = typeof getAuthParams === 'function' ? getAuthParams(user, true) : getSubsonicAuthParams(user, true);
       const res = await fetch(getAmpacheUrl(`action=createPlaylist&name=${encodeURIComponent(createPlaylistName.trim())}&${auth}`));
       const data = await res.json();
       if (data?.["subsonic-response"]?.status === "ok") {
@@ -52,7 +52,7 @@ export function PlaylistModalProvider({ children }) {
         if (newId) {
           // Explicitly set public or private flag — force-fresh auth to avoid token-binding to wrong user
           try {
-            await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&public=${isPublic ? 'true' : 'false'}&${getSubsonicAuthParams(user, true)}`));
+            await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${newId}&public=${isPublic ? 'true' : 'false'}&${auth}`));
           } catch (pe) {
             console.debug("Failed setting playlist visibility via Subsonic:", pe);
           }
@@ -94,7 +94,7 @@ export function PlaylistModalProvider({ children }) {
     try {
       // Force-fresh token on every modal open: mobile browsers cache-bust credentials
       // differently and a stale token returns an empty playlist array for the wrong user.
-      const auth = getSubsonicAuthParams(user, true);
+      const auth = typeof getAuthParams === 'function' ? getAuthParams(user, true) : getSubsonicAuthParams(user, true);
       const res = await fetch(getAmpacheUrl(`action=getPlaylists&${auth}`));
       const data = await res.json();
       if (data?.['subsonic-response']?.status === 'ok') {
@@ -122,7 +122,7 @@ export function PlaylistModalProvider({ children }) {
     if (!user || !songIdToAdd) return;
     try {
       // Force-fresh auth for every add-to-playlist mutation
-      const auth = getSubsonicAuthParams(user, true);
+      const auth = typeof getAuthParams === 'function' ? getAuthParams(user, true) : getSubsonicAuthParams(user, true);
       const songIds = Array.isArray(songIdToAdd) ? songIdToAdd : [songIdToAdd];
       const addParams = songIds.map(id => `songIdToAdd=${encodeURIComponent(id)}`).join('&');
       const res = await fetch(getAmpacheUrl(`action=updatePlaylist&playlistId=${playlistId}&${addParams}&${auth}`));
@@ -143,10 +143,10 @@ export function PlaylistModalProvider({ children }) {
       {children}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-4 border-b border-white/5">
-              <h3 className="font-semibold text-white">Add to Playlist</h3>
-              <button onClick={closePlaylistModal} className="text-slate-400 hover:text-white transition-colors">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-white/5">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Add to Playlist</h3>
+              <button onClick={closePlaylistModal} className="text-slate-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -155,12 +155,12 @@ export function PlaylistModalProvider({ children }) {
                 <div className="p-8 flex justify-center"><div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>
               ) : playlists.length === 0 ? (
                 <div className="p-6 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
-                    <ListMusic className="text-slate-400 opacity-50" size={32} />
+                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                    <ListMusic className="text-slate-400 opacity-60" size={32} />
                   </div>
-                  <h4 className="text-white font-medium mb-1">No playlists</h4>
-                  <p className="text-slate-400 text-sm mb-4">Create a playlist to add this song.</p>
-                  <button onClick={() => openCreatePlaylistModal()} className="px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white rounded-lg text-sm font-medium transition-colors w-full">
+                  <h4 className="text-gray-900 dark:text-white font-medium mb-1">No playlists</h4>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">Create a playlist to add this song.</p>
+                  <button onClick={() => openCreatePlaylistModal()} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition-colors w-full shadow-md">
                     Create Playlist
                   </button>
                 </div>
@@ -169,16 +169,16 @@ export function PlaylistModalProvider({ children }) {
                   <button 
                     key={p.id}
                     onClick={() => addToPlaylist(p.id)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors text-left group"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-left group"
                   >
-                    <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                      <ListMusic size={16} className="text-slate-400 group-hover:text-purple-400" />
+                    <div className="w-10 h-10 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                      <ListMusic size={16} className="text-slate-500 dark:text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-slate-200 group-hover:text-white">{p.name}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-slate-200 group-hover:text-purple-600 dark:group-hover:text-white">{p.name}</div>
                       <div className="text-xs text-slate-500">{p.songCount || 0} tracks</div>
                     </div>
-                    <Plus size={16} className="text-slate-600 group-hover:text-purple-400" />
+                    <Plus size={16} className="text-slate-400 dark:text-slate-600 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
                   </button>
                 ))
               )}
@@ -189,10 +189,10 @@ export function PlaylistModalProvider({ children }) {
       
       {isCreateOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-4 border-b border-white/5">
-              <h3 className="font-semibold text-white">Create Playlist</h3>
-              <button onClick={() => setIsCreateOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-white/5">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Create Playlist</h3>
+              <button onClick={() => setIsCreateOpen(false)} className="text-slate-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -202,26 +202,26 @@ export function PlaylistModalProvider({ children }) {
                 value={createPlaylistName}
                 onChange={(e) => setCreatePlaylistName(e.target.value)}
                 placeholder="Playlist name..."
-                className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors mb-3"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors mb-3"
                 autoFocus
               />
 
-              <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-800/60 border border-white/5 cursor-pointer hover:bg-slate-800 transition-colors mb-4 select-none group">
+              <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200 dark:border-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mb-4 select-none group">
                 <input 
                   type="checkbox" 
                   checked={isPublic}
                   onChange={(e) => setIsPublic(e.target.checked)}
-                  className="mt-0.5 rounded border-white/20 bg-slate-900 text-purple-500 focus:ring-purple-500/40 w-4 h-4 cursor-pointer accent-purple-500"
+                  className="mt-0.5 rounded border-slate-300 dark:border-white/20 bg-white dark:bg-slate-900 text-purple-600 focus:ring-purple-500/40 w-4 h-4 cursor-pointer accent-purple-600"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-white flex items-center gap-1.5">
-                    {isPublic ? <Globe size={13} className="text-purple-400" /> : <Lock size={13} className="text-slate-400" />}
+                  <div className="text-xs font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
+                    {isPublic ? <Globe size={13} className="text-purple-600 dark:text-purple-400" /> : <Lock size={13} className="text-slate-500 dark:text-slate-400" />}
                     <span>{isPublic ? "Public Playlist" : "Private Playlist"}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${isPublic ? 'bg-purple-500/20 text-purple-300' : 'bg-slate-700/60 text-slate-400'}`}>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${isPublic ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300' : 'bg-slate-200 dark:bg-slate-700/60 text-slate-700 dark:text-slate-400'}`}>
                       {isPublic ? "Visible to Everyone" : "Only You"}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
                     {isPublic 
                       ? "Anyone on this server can discover, listen to, and save this playlist." 
                       : "Only you can see and play this playlist."}
@@ -232,7 +232,7 @@ export function PlaylistModalProvider({ children }) {
               <button 
                 type="submit" 
                 disabled={isCreating || !createPlaylistName.trim()}
-                className="w-full py-3 bg-purple-500 hover:bg-purple-400 disabled:opacity-50 disabled:hover:bg-purple-500 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:hover:bg-purple-600 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-md"
               >
                 {isCreating ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : "Create"}
               </button>

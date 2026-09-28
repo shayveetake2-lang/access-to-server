@@ -101,7 +101,9 @@ export function getSubsonicAuthParams(user = null, forceNew = false) {
   } 
   // Phase 2: Session Bearer Token Fallback (If subsonic hash generation failed backend-side)
   else if (credentials.token) {
-    params = `u=${encodeURIComponent(credentials.username)}&p=${encodeURIComponent(credentials.token)}&v=1.16.1&c=Aether&f=json`;
+    const salt = _staticSessionSalt;
+    const token = md5(credentials.token + salt);
+    params = `u=${encodeURIComponent(credentials.username)}&t=${token}&s=${salt}&p=${encodeURIComponent(credentials.token)}&v=1.16.1&c=Aether&f=json`;
   } 
   // Phase 3: Legacy random salt and MD5 token (requires plaintext password)
   else if (credentials.password) {

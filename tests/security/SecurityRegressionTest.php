@@ -476,8 +476,8 @@ class SecurityRegressionTest extends MockTestCase
         $html = file_get_contents($htmlFile);
         $this->assertStringContainsString('id="root"', $html, 'dist/index.html must contain #root mounting container.');
 
-        // Extract bundle filename from index.html
-        preg_match('/src="\.\/assets\/(index-[a-zA-Z0-9_-]+\.js)"/', $html, $matches);
+        // Extract bundle filename from index.html (supports Vite dot or dash hash separator)
+        preg_match('/src="\.\/assets\/(index[\.-][a-zA-Z0-9_-]+\.js)"/', $html, $matches);
         $this->assertNotEmpty($matches[1] ?? '', 'dist/index.html must reference a compiled JS bundle.');
 
         $bundleFile = $this->projectRoot . '/modern-music-app/dist/assets/' . $matches[1];

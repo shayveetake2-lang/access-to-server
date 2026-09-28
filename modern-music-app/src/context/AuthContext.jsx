@@ -65,8 +65,8 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const getAuthParams = (credentials) => {
-    return getSubsonicAuthParams(credentials || user);
+  const getAuthParams = (credentials, forceNew = false) => {
+    return getSubsonicAuthParams(credentials || user, forceNew);
   };
 
   const verifyToken = async (credentials) => {

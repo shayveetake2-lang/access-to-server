@@ -13,7 +13,7 @@ export default function MobileNav() {
   return (
     <nav 
       aria-label="Mobile Navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-950/95 backdrop-blur-2xl border-t border-white/10 px-2 pt-1 pb-[max(env(safe-area-inset-bottom,0px),0.5rem)] select-none shadow-[0_-8px_24px_rgba(0,0,0,0.6)] h-[calc(3.4rem+max(env(safe-area-inset-bottom,0px),0.5rem))]"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-t border-slate-200 dark:border-white/10 px-2 pt-1 pb-[max(env(safe-area-inset-bottom,0px),0.5rem)] select-none shadow-[0_-8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_24px_rgba(0,0,0,0.6)] h-[calc(3.4rem+max(env(safe-area-inset-bottom,0px),0.5rem))] transition-colors"
     >
       <div className="flex items-center justify-around max-w-lg mx-auto h-11">
         {tabs.map(({ label, path, icon: Icon }) => (
@@ -24,8 +24,8 @@ export default function MobileNav() {
             className={({ isActive }) =>
               `flex flex-col items-center justify-center flex-1 py-1.5 px-2 rounded-xl transition-all duration-200 active:scale-90 ${
                 isActive
-                  ? 'text-purple-400 font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'text-purple-600 dark:text-purple-400 font-semibold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
               }`
             }
           >
@@ -43,4 +43,3 @@ export default function MobileNav() {
     </nav>
   );
 }
-

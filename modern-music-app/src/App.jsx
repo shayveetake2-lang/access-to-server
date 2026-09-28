@@ -29,7 +29,7 @@ function ProtectedLayout() {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="min-h-[100dvh] bg-slate-950 flex items-center justify-center"><div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>;
+    return <div className="min-h-[100dvh] bg-slate-50 dark:bg-slate-950 flex items-center justify-center"><div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>;
   }
   
   if (!user) {
@@ -37,7 +37,7 @@ function ProtectedLayout() {
   }
 
   return (
-    <div className="flex h-[100dvh] min-h-[100dvh] max-h-[100dvh] overflow-hidden text-slate-200 bg-slate-950">
+    <div className="flex h-[100dvh] min-h-[100dvh] max-h-[100dvh] overflow-hidden text-gray-900 dark:text-slate-200 bg-slate-50 dark:bg-slate-950">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <TopBar />
