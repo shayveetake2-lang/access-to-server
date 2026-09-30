@@ -1545,36 +1545,86 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
         $exactQ = $q;
         $startQ = $q . '%';
 
-        // 1. Search Songs
-        $songStmt = $pdo->prepare("
-            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
-                   s.total_count as playCount,
-                   COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
-                   COALESCE(alb.name, 'Unknown Album') as album, COALESCE(alb.id, 0) as albumId
-            FROM song s
-            LEFT JOIN artist art ON s.artist = art.id
-            LEFT JOIN album alb ON s.album = alb.id
-            WHERE s.enabled = 1
-              AND (s.title LIKE :q1 OR art.name LIKE :q2 OR alb.name LIKE :q3)
-            ORDER BY 
-              CASE 
-                WHEN s.title = :exact1 THEN 0
-                WHEN s.title LIKE :start1 THEN 1
-                WHEN art.name LIKE :start2 THEN 2
-                ELSE 3 
-              END,
-              s.total_count DESC, s.title ASC
-            LIMIT :lim
-        ");
-        $songStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
-        $songStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
-        $songStmt->bindValue(':q3', $likeQ, PDO::PARAM_STR);
-        $songStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-        $songStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-        $songStmt->bindValue(':start2', $startQ, PDO::PARAM_STR);
-        $songStmt->bindValue(':lim', $songCount, PDO::PARAM_INT);
-        $songStmt->execute();
-        $songRows = $songStmt->fetchAll(PDO::FETCH_ASSOC);
+        // --- Boolean Fulltext Preparation ---
+        $useFulltext = (mb_strlen($q) >= 3);
+        $ftsQuery = '';
+        if ($useFulltext) {
+            // Sanitize boolean mode operator characters to prevent syntax errors
+            $cleanQ = preg_replace('/[+\-><()~*\"@]/u', ' ', $q);
+            $words = array_filter(explode(' ', trim($cleanQ)), fn($w) => mb_strlen($w) >= 2);
+            if (!empty($words)) {
+                $ftsQuery = implode(' ', array_map(fn($w) => '+' . $w . '*', $words));
+            } else {
+                $useFulltext = false;
+            }
+        }
+
+        // =========================================================
+        // 1. Search Songs (Option A: Match BOTH Title and Artist)
+        // =========================================================
+        $songRows = [];
+        if ($useFulltext) {
+            $songStmt = $pdo->prepare("
+                SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                       s.total_count as playCount,
+                       COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
+                       COALESCE(alb.name, 'Unknown Album') as album, COALESCE(alb.id, 0) as albumId
+                FROM song s
+                LEFT JOIN artist art ON s.artist = art.id
+                LEFT JOIN album alb ON s.album = alb.id
+                WHERE s.enabled = 1
+                  AND (MATCH(s.title) AGAINST(:fts IN BOOLEAN MODE) OR MATCH(art.name) AGAINST(:fts IN BOOLEAN MODE))
+                ORDER BY 
+                  CASE 
+                    WHEN s.title = :exact1 THEN 0
+                    WHEN s.title LIKE :start1 THEN 1
+                    WHEN art.name LIKE :start2 THEN 2
+                    ELSE 3 
+                  END,
+                  s.total_count DESC, s.title ASC
+                LIMIT :lim
+            ");
+            $songStmt->bindValue(':fts', $ftsQuery, PDO::PARAM_STR);
+            $songStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':start2', $startQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':lim', $songCount, PDO::PARAM_INT);
+            $songStmt->execute();
+            $songRows = $songStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // Graceful LIKE Fallback for Songs (if < 3 chars OR fulltext returned 0 rows)
+        if (empty($songRows)) {
+            $songStmt = $pdo->prepare("
+                SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                       s.total_count as playCount,
+                       COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
+                       COALESCE(alb.name, 'Unknown Album') as album, COALESCE(alb.id, 0) as albumId
+                FROM song s
+                LEFT JOIN artist art ON s.artist = art.id
+                LEFT JOIN album alb ON s.album = alb.id
+                WHERE s.enabled = 1
+                  AND (s.title LIKE :q1 OR art.name LIKE :q2 OR alb.name LIKE :q3)
+                ORDER BY 
+                  CASE 
+                    WHEN s.title = :exact1 THEN 0
+                    WHEN s.title LIKE :start1 THEN 1
+                    WHEN art.name LIKE :start2 THEN 2
+                    ELSE 3 
+                  END,
+                  s.total_count DESC, s.title ASC
+                LIMIT :lim
+            ");
+            $songStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':q3', $likeQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':start2', $startQ, PDO::PARAM_STR);
+            $songStmt->bindValue(':lim', $songCount, PDO::PARAM_INT);
+            $songStmt->execute();
+            $songRows = $songStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $songs = [];
         foreach ($songRows as $r) {
@@ -1603,30 +1653,60 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
             ];
         }
 
-        // 2. Search Albums
-        $albStmt = $pdo->prepare("
-            SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
-                   COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
-            FROM album alb
-            LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
-            WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
-              AND (alb.name LIKE :q1 OR art.name LIKE :q2)
-            ORDER BY 
-              CASE 
-                WHEN alb.name = :exact1 THEN 0
-                WHEN alb.name LIKE :start1 THEN 1
-                ELSE 2 
-              END,
-              alb.name ASC
-            LIMIT :lim
-        ");
-        $albStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
-        $albStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
-        $albStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-        $albStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-        $albStmt->bindValue(':lim', $albumCount, PDO::PARAM_INT);
-        $albStmt->execute();
-        $albRows = $albStmt->fetchAll(PDO::FETCH_ASSOC);
+        // =========================================================
+        // 2. Search Albums (MATCH/AGAINST with LIKE Fallback)
+        // =========================================================
+        $albRows = [];
+        if ($useFulltext) {
+            $albStmt = $pdo->prepare("
+                SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
+                       COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
+                FROM album alb
+                LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
+                WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
+                  AND MATCH(alb.name) AGAINST(:fts IN BOOLEAN MODE)
+                ORDER BY 
+                  CASE 
+                    WHEN alb.name = :exact1 THEN 0
+                    WHEN alb.name LIKE :start1 THEN 1
+                    ELSE 2 
+                  END,
+                  alb.name ASC
+                LIMIT :lim
+            ");
+            $albStmt->bindValue(':fts', $ftsQuery, PDO::PARAM_STR);
+            $albStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+            $albStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+            $albStmt->bindValue(':lim', $albumCount, PDO::PARAM_INT);
+            $albStmt->execute();
+            $albRows = $albStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        if (empty($albRows)) {
+            $albStmt = $pdo->prepare("
+                SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
+                       COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
+                FROM album alb
+                LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
+                WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
+                  AND (alb.name LIKE :q1 OR art.name LIKE :q2)
+                ORDER BY 
+                  CASE 
+                    WHEN alb.name = :exact1 THEN 0
+                    WHEN alb.name LIKE :start1 THEN 1
+                    ELSE 2 
+                  END,
+                  alb.name ASC
+                LIMIT :lim
+            ");
+            $albStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
+            $albStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
+            $albStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+            $albStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+            $albStmt->bindValue(':lim', $albumCount, PDO::PARAM_INT);
+            $albStmt->execute();
+            $albRows = $albStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $albums = [];
         foreach ($albRows as $r) {
@@ -1645,30 +1725,61 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
             ];
         }
 
-        // 3. Search Artists
-        $artStmt = $pdo->prepare("
-            SELECT art.id, art.name,
-                   COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount
-            FROM artist art
-            LEFT JOIN album alb ON alb.album_artist = art.id
-            WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
-              AND art.name LIKE :q
-            GROUP BY art.id, art.name, art.album_count
-            ORDER BY 
-              CASE 
-                WHEN art.name = :exact1 THEN 0
-                WHEN art.name LIKE :start1 THEN 1
-                ELSE 2 
-              END,
-              art.name ASC
-            LIMIT :lim
-        ");
-        $artStmt->bindValue(':q', $likeQ, PDO::PARAM_STR);
-        $artStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-        $artStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-        $artStmt->bindValue(':lim', $artistCount, PDO::PARAM_INT);
-        $artStmt->execute();
-        $artRows = $artStmt->fetchAll(PDO::FETCH_ASSOC);
+        // =========================================================
+        // 3. Search Artists (MATCH/AGAINST with LIKE Fallback)
+        // =========================================================
+        $artRows = [];
+        if ($useFulltext) {
+            $artStmt = $pdo->prepare("
+                SELECT art.id, art.name,
+                       COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount
+                FROM artist art
+                LEFT JOIN album alb ON alb.album_artist = art.id
+                WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
+                  AND MATCH(art.name) AGAINST(:fts IN BOOLEAN MODE)
+                GROUP BY art.id, art.name, art.album_count
+                ORDER BY 
+                  CASE 
+                    WHEN art.name = :exact1 THEN 0
+                    WHEN art.name LIKE :start1 THEN 1
+                    ELSE 2 
+                  END,
+                  art.name ASC
+                LIMIT :lim
+            ");
+            $artStmt->bindValue(':fts', $ftsQuery, PDO::PARAM_STR);
+            $artStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+            $artStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+            $artStmt->bindValue(':lim', $artistCount, PDO::PARAM_INT);
+            $artStmt->execute();
+            $artRows = $artStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        if (empty($artRows)) {
+            $artStmt = $pdo->prepare("
+                SELECT art.id, art.name,
+                       COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount
+                FROM artist art
+                LEFT JOIN album alb ON alb.album_artist = art.id
+                WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
+                  AND art.name LIKE :q
+                GROUP BY art.id, art.name, art.album_count
+                ORDER BY 
+                  CASE 
+                    WHEN art.name = :exact1 THEN 0
+                    WHEN art.name LIKE :start1 THEN 1
+                    ELSE 2 
+                  END,
+                  art.name ASC
+                LIMIT :lim
+            ");
+            $artStmt->bindValue(':q', $likeQ, PDO::PARAM_STR);
+            $artStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+            $artStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+            $artStmt->bindValue(':lim', $artistCount, PDO::PARAM_INT);
+            $artStmt->execute();
+            $artRows = $artStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $artists = [];
         foreach ($artRows as $r) {

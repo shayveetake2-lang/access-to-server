@@ -40,7 +40,8 @@ import sys
 # 1. Environment & Cron Safeguards (macOS M1)
 # ---------------------------------------------------------------------------
 # Ensure Homebrew and standard system binary paths are present for cron
-os.environ["PATH"] = f"/opt/homebrew/bin:/usr/local/bin:{os.environ.get('PATH', '')}"
+_HOME = os.path.expanduser("~")
+os.environ["PATH"] = f"{_HOME}/bin:/opt/homebrew/bin:/usr/local/bin:{os.environ.get('PATH', '')}"
 
 import fcntl
 import json
@@ -80,28 +81,37 @@ logging.basicConfig(
 # Configuration & Constants
 # ---------------------------------------------------------------------------
 ACOUSTID_API_KEY = os.environ.get("ACOUSTID_API_KEY", "ptOkahMcIt")
+AGENT_ADMIN_TOKEN = os.environ.get("AGENT_ADMIN_TOKEN", "aether_agent_secret_2026")
 
 MUSICBRAINZ_APP = "AetherLibraryAgent"
 MUSICBRAINZ_VERSION = "1.0"
 MUSICBRAINZ_CONTACT = "admin@serverflow.icu"
 
-PRIMARY_DRIVE = "/Volumes/htdocs"
-PRIMARY_STAGING = Path("/Volumes/htdocs/staging")
-BACKUP_STAGING = Path("/Volumes/Music_External/Staging")
+PRIMARY_DRIVE = "/Applications/MAMP/htdocs"
+PRIMARY_STAGING = Path("/Applications/MAMP/htdocs/staging")
+BACKUP_STAGING = Path("/Volumes/USBDrive/Staging")
 MIN_FREE_SPACE_GB = 15.0
 
 GET_REQUESTS_URL = "http://10.247.192.231:8888/api/media/get_requests.php"
-UPDATE_REQUEST_URL = "http://10.247.192.231:8888/api/media/update_request.php"
+UPDATE_REQUEST_URL = "http://10.247.192.231:8888/api/media/update_request_status.php"
 SYNC_URL = "http://10.247.192.231:8888/auto_organizer.php"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPORT_FILE = SCRIPT_DIR / "missing_albums_report.txt"
+LINK_INBOX_FILE = SCRIPT_DIR / "link_inbox.txt"
 LOCK_FILE_PATH = "/tmp/library_agent.lock"
 BATCH_SIZE = 100
 
 # Rate limiter state for MusicBrainz
 _LAST_MB_CALL = 0.0
 _LOCK_FD: Optional[int] = None
+
+
+def get_auth_headers() -> Dict[str, str]:
+    """Return Bearer authorization headers for the home server admin API."""
+    if AGENT_ADMIN_TOKEN:
+        return {"Authorization": f"Bearer {AGENT_ADMIN_TOKEN}"}
+    return {}
 
 
 # ---------------------------------------------------------------------------
@@ -410,25 +420,107 @@ def tag_audio_file(
 
 
 # ---------------------------------------------------------------------------
-# Module 2: The Request Priority Engine
+# Module 2a: Link Inbox Processor (User Explicit Additions)
+# ---------------------------------------------------------------------------
+def process_link_inbox(staging_dir: Path) -> int:
+    """
+    Read scripts/link_inbox.txt line-by-line.
+    If a line starts with 'http', treat as a direct URL to download.
+    Otherwise treat as a text query and prepend ytsearch1: prefix.
+    Downloads, tags with ID3v2.3 UTF-16, and moves to staging.
+    Atomically clears link_inbox.txt upon completion so files are never re-downloaded.
+    Returns the number of processed inbox items.
+    """
+    if not LINK_INBOX_FILE.exists():
+        LINK_INBOX_FILE.touch()
+        return 0
+
+    try:
+        with open(LINK_INBOX_FILE, "r", encoding="utf-8") as f:
+            raw_lines = f.readlines()
+    except Exception as e:
+        logging.error(f"Failed to read link inbox: {e}")
+        return 0
+
+    items = [l.strip() for l in raw_lines if l.strip() and not l.strip().startswith("#")]
+    if not items:
+        logging.info("Link inbox is empty.")
+        return 0
+
+    logging.info(f"Discovered {len(items)} item(s) in link inbox. Processing first...")
+    processed_count = 0
+
+    for idx, item in enumerate(items, 1):
+        logging.info(f"[{idx}/{len(items)}] Processing inbox item: '{item}'")
+        if item.lower().startswith("http://") or item.lower().startswith("https://"):
+            query = item
+            folder_name = sanitize_name(item.split("?")[0].rstrip("/").split("/")[-1]) or f"Inbox_Item_{idx}"
+            fallback_title = "Unknown Track"
+            fallback_artist = "Unknown Artist"
+        else:
+            query = f'ytsearch1:"{item} audio"'
+            folder_name = sanitize_name(item) or f"Inbox_Item_{idx}"
+            if " - " in item:
+                parts = item.split(" - ", 1)
+                fallback_artist = parts[0].strip()
+                fallback_title = parts[1].strip()
+            else:
+                fallback_artist = "Unknown Artist"
+                fallback_title = item.strip()
+
+        item_dir = staging_dir / folder_name
+        mp3_path = download_audio_query(query, item_dir)
+        if mp3_path:
+            tag_audio_file(
+                mp3_path=mp3_path,
+                fallback_artist=fallback_artist,
+                fallback_title=fallback_title,
+                fallback_album=f"{fallback_title} - Single",
+            )
+            processed_count += 1
+        else:
+            logging.error(f"Failed to download audio for inbox item: '{item}'")
+
+        time.sleep(random.uniform(8.0, 12.0))
+
+    # Atomically clear link_inbox.txt upon completion (tmp swap for safety)
+    tmp_inbox = SCRIPT_DIR / "link_inbox.txt.tmp"
+    try:
+        with open(tmp_inbox, "w", encoding="utf-8") as f:
+            f.write("# Drop YouTube URLs or 'Artist - Track/Album' queries here (one per line).\n")
+        os.replace(tmp_inbox, LINK_INBOX_FILE)
+        logging.info("Successfully cleared link_inbox.txt.")
+    except Exception as e:
+        logging.error(f"Failed to atomically clear link inbox file: {e}")
+
+    return processed_count
+
+
+# ---------------------------------------------------------------------------
+# Module 2b: The Request Priority Engine
 # ---------------------------------------------------------------------------
 def process_priority_requests(staging_dir: Path) -> int:
     """
-    Check the API for pending requests.
-    Downloads, tags, and marks them 'Fulfilled' before processing the backlog.
+    Check the API for pending requests using Bearer authorization.
+    Downloads, tags, and marks them 'Fulfilled' in update_request_status.php.
     Returns the number of processed requests.
     """
     logging.info("Checking priority music requests from home server API...")
     try:
-        resp = requests.get(GET_REQUESTS_URL, timeout=30)
+        resp = requests.get(GET_REQUESTS_URL, headers=get_auth_headers(), timeout=30)
         resp.raise_for_status()
-        data = resp.json()
+        raw_data = resp.json()
     except Exception as exc:
         logging.error(f"Could not reach requests API at {GET_REQUESTS_URL}: {exc}")
         return 0
 
-    if not isinstance(data, list):
-        logging.info("Priority requests endpoint did not return a list. Moving on.")
+    # Accommodate both direct list responses or wrapped {'requests': [...]} responses
+    if isinstance(raw_data, list):
+        data = raw_data
+    elif isinstance(raw_data, dict) and "requests" in raw_data:
+        data = raw_data["requests"]
+    else:
+        logging.info("Priority requests endpoint did not return recognizable request data. Moving on.")
         return 0
 
     pending = [
@@ -469,12 +561,13 @@ def process_priority_requests(staging_dir: Path) -> int:
             )
             processed_count += 1
 
-            # Update request status to 'Fulfilled'
+            # Update request status to 'Fulfilled' with JSON payload and Bearer token
             if req_id is not None:
                 try:
                     update_resp = requests.post(
                         UPDATE_REQUEST_URL,
-                        data={"id": req_id, "status": "Fulfilled"},
+                        json={"id": int(req_id), "status": "Fulfilled"},
+                        headers=get_auth_headers(),
                         timeout=15,
                     )
                     logging.info(f"Updated request #{req_id} to 'Fulfilled' (HTTP {update_resp.status_code})")
@@ -610,16 +703,19 @@ def main() -> None:
         staging_dir = get_staging_directory()
         logging.info(f"Staging directory active: {staging_dir}")
 
-        # 2. Priority Requests Engine
+        # 2. Link Inbox Processor (User explicit additions — highest priority)
+        inbox_processed = process_link_inbox(staging_dir)
+
+        # 3. Priority Requests Engine (Portal submissions)
         requests_processed = process_priority_requests(staging_dir)
 
-        # 3. Backlog Queue Processor
+        # 4. Backlog Queue Processor (Missing albums backlog)
         backlog_processed = process_backlog(staging_dir)
 
-        total_processed = requests_processed + backlog_processed
-        logging.info(f"=== Library Agent Execution Summary: {total_processed} items processed (Requests: {requests_processed}, Backlog: {backlog_processed}) ===")
+        total_processed = inbox_processed + requests_processed + backlog_processed
+        logging.info(f"=== Library Agent Execution Summary: {total_processed} items processed (Inbox: {inbox_processed}, Requests: {requests_processed}, Backlog: {backlog_processed}) ===")
 
-        # 4. Auto-Sync Trigger (Protected for 2011 MacBook Pro)
+        # 5. Auto-Sync Trigger (Protected for 2011 MacBook Pro)
         trigger_auto_sync(total_processed)
 
     except Exception as fatal_err:

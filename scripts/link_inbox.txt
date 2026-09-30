@@ -1,0 +1,6 @@
+# Drop YouTube URLs or "Artist - Track/Album" queries here (one per line).
+# The agent processes this file first and clears its contents automatically.
+# Examples:
+#   https://www.youtube.com/watch?v=dQw4w9WgXcQ
+#   Daft Punk - Discovery full album
+#   The Weeknd - Blinding Lights
