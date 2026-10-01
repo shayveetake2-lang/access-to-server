@@ -306,8 +306,8 @@ $results[] = $sitesCheck;
 
                 <form onsubmit="submitAdminLogin(event);" class="space-y-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
-                        <input type="text" id="admin-username-input" class="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Username / Email</label>
+                        <input type="text" id="admin-username-input" placeholder="Username or email address" class="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>

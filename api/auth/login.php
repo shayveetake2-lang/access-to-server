@@ -54,7 +54,17 @@ function getAmpacheConnectionLogin() {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT id, username, password_hash, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb FROM sys_users WHERE username = :identifier LIMIT 1");
+    $hasEmailColumn = false;
+    try {
+        $pdo->query("SELECT email FROM sys_users LIMIT 1");
+        $hasEmailColumn = true;
+    } catch (\Exception $colCheckErr) {}
+
+    if ($hasEmailColumn) {
+        $stmt = $pdo->prepare("SELECT id, username, password_hash, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb FROM sys_users WHERE LOWER(username) = LOWER(:identifier) OR LOWER(email) = LOWER(:identifier) LIMIT 1");
+    } else {
+        $stmt = $pdo->prepare("SELECT id, username, password_hash, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb FROM sys_users WHERE LOWER(username) = LOWER(:identifier) LIMIT 1");
+    }
     $stmt->execute([':identifier' => $username]);
     $user = $stmt->fetch();
 

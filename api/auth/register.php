@@ -46,9 +46,14 @@ $username = trim($data['username'] ?? $_POST['username'] ?? '');
 $password = trim($data['password'] ?? $_POST['password'] ?? '');
 $email = trim($data['email'] ?? $_POST['email'] ?? '');
 
-if (empty($username) || empty($password) || empty($email)) {
+if (empty($email)) {
+    // Graceful fallback for client forms (e.g. server admin modal) that only capture username and password
+    $email = strtolower($username) . '@local.server';
+}
+
+if (empty($username) || empty($password)) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Username, email, and password are required.']);
+    echo json_encode(['status' => 'error', 'message' => 'Username and password are required.']);
     exit;
 }
 
@@ -116,16 +121,21 @@ try {
 
     // Check if username/email already exists
     if ($hasEmailColumn) {
-        $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username OR email = :email LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, username, email FROM sys_users WHERE LOWER(username) = LOWER(:username) OR LOWER(email) = LOWER(:email) LIMIT 1");
         $stmt->execute([':username' => $username, ':email' => $email]);
     } else {
-        $stmt = $pdo->prepare("SELECT id FROM sys_users WHERE username = :username LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, username FROM sys_users WHERE LOWER(username) = LOWER(:username) LIMIT 1");
         $stmt->execute([':username' => $username]);
     }
 
-    if ($stmt->fetch()) {
+    $existing = $stmt->fetch();
+    if ($existing) {
         http_response_code(409); // Conflict
-        echo json_encode(['status' => 'error', 'message' => 'Username or email already exists.']);
+        $isEmailMatch = ($hasEmailColumn && !empty($existing['email']) && strtolower($existing['email']) === strtolower($email));
+        $msg = $isEmailMatch 
+            ? 'An account with this email already exists. You can sign in using this email address.' 
+            : 'Username already taken. Please choose another username.';
+        echo json_encode(['status' => 'error', 'message' => $msg]);
         exit;
     }
 
@@ -212,7 +222,7 @@ try {
     
     if ($e->getCode() == 23000) {
         http_response_code(409);
-        echo json_encode(['status' => 'error', 'message' => 'Username or email already taken.']);
+        echo json_encode(['status' => 'error', 'message' => 'An account with this username or email already exists. Please sign in instead.']);
     } else {
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);

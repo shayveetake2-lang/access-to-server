@@ -82,7 +82,14 @@ export default function Register() {
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm mb-6 text-center">
-            {error}
+            <p>{error}</p>
+            {error.includes('already exists') && (
+              <p className="mt-1.5 text-xs text-slate-300">
+                <Link to="/login" className="underline font-semibold text-purple-400 hover:text-purple-300">
+                  Click here to Sign In directly &rarr;
+                </Link>
+              </p>
+            )}
           </div>
         )}
 

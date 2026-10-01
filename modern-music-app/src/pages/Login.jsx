@@ -49,12 +49,13 @@ export default function Login() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Username</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Username or Email</label>
             <input 
               type="text" 
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+              className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder-slate-500"
+              placeholder="Username or email address"
               autoComplete="username"
               required
             />
