@@ -27,6 +27,7 @@ export async function adminPost(action, payload = {}) {
     body: JSON.stringify({
       action,
       ...payload,
+      token: user?.token || '',
       u: authParams.get('u') || user?.username || '',
       t: authParams.get('t') || '',
       s: authParams.get('s') || '',

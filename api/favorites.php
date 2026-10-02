@@ -51,8 +51,8 @@ $currentUser = null;
 if (!empty($token)) {
     try {
         $tokenHash = hash('sha256', $token);
-        $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE (token_hash = :th OR auth_token = :th OR auth_token = :t) LIMIT 1");
-        $stmt->execute([':th' => $tokenHash, ':t' => $token]);
+        $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE (token_hash = :th1 OR auth_token = :th2 OR auth_token = :t) LIMIT 1");
+        $stmt->execute([':th1' => $tokenHash, ':th2' => $tokenHash, ':t' => $token]);
         $currentUser = $stmt->fetch();
     } catch (\Exception $e) {}
 }

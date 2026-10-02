@@ -30,7 +30,7 @@ $currentAdminUser = $_SESSION['username'] ?? $_SESSION['admin_user'] ?? 'admin';
 // ─── 1. LIST ALL USERS ───
 if ($action === 'list') {
     try {
-        $stmt = $pdo->query("SELECT id, username, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb, created_at FROM sys_users ORDER BY id ASC");
+        $stmt = $pdo->query("SELECT id, username, email, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb, created_at FROM sys_users ORDER BY id ASC");
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode([
             'status' => 'success',
@@ -46,8 +46,8 @@ if ($action === 'list') {
 
 // ─── 2. UPDATE USER ROLE (Promote to Admin / Demote to User) ───
 if ($action === 'update_role') {
-    $userId = intval($data['id'] ?? $data['user_id'] ?? $_POST['id'] ?? $_POST['user_id'] ?? 0);
-    $newRole = strtolower(trim($data['role'] ?? $data['new_role'] ?? $_POST['role'] ?? $_POST['new_role'] ?? ''));
+    $userId = intval($data['id'] ?? $data['user_id'] ?? $_POST['id'] ?? $_POST['user_id'] ?? $_REQUEST['id'] ?? $_REQUEST['user_id'] ?? 0);
+    $newRole = strtolower(trim($data['role'] ?? $data['new_role'] ?? $_POST['role'] ?? $_POST['new_role'] ?? $_REQUEST['role'] ?? $_REQUEST['new_role'] ?? ''));
 
     if ($newRole === 'user') {
         $newRole = 'member';
@@ -106,8 +106,8 @@ if ($action === 'update_role') {
 
 // ─── 3. CHANGE USER PASSWORD ───
 if ($action === 'change_password') {
-    $userId = intval($data['id'] ?? $_POST['id'] ?? 0);
-    $newPassword = trim($data['password'] ?? $_POST['password'] ?? '');
+    $userId = intval($data['id'] ?? $data['user_id'] ?? $_POST['id'] ?? $_POST['user_id'] ?? $_REQUEST['id'] ?? $_REQUEST['user_id'] ?? 0);
+    $newPassword = trim($data['password'] ?? $_POST['password'] ?? $_REQUEST['password'] ?? '');
 
     if ($userId <= 0 || strlen($newPassword) < 4) {
         http_response_code(400);
@@ -223,7 +223,7 @@ if ($action === 'add') {
 
 // ─── 6. DELETE USER ───
 if ($action === 'delete') {
-    $userId = intval($data['id'] ?? $_POST['id'] ?? 0);
+    $userId = intval($data['id'] ?? $data['user_id'] ?? $_POST['id'] ?? $_POST['user_id'] ?? $_REQUEST['id'] ?? $_REQUEST['user_id'] ?? 0);
 
     if ($userId <= 0) {
         http_response_code(400);

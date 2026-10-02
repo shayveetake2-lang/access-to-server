@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database, Music, X, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getAmpacheUrl, getApiProxyUrl } from '../utils/api';
+import { getBaseUrl, getAmpacheUrl, getApiProxyUrl } from '../utils/api';
 import AdminMetadataEditor from '../components/AdminMetadataEditor';
 import GenreManager from '../components/admin/GenreManager';
 import AdminContentAssigner from '../components/admin/AdminContentAssigner';
@@ -30,20 +30,27 @@ export default function AdminSettings() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(getAmpacheUrl(`action=getUsers&${getAuthParams(currentUser)}`));
+      const res = await fetch(`${getBaseUrl()}/api/system/admin_accounts.php?action=list`, {
+        headers: {
+          'Authorization': `Bearer ${currentUser?.token || ''}`
+        }
+      });
       const data = await res.json();
-      if (data?.['subsonic-response']?.status === 'ok') {
-        const u = data['subsonic-response'].users?.user || [];
-        setUsers(Array.isArray(u) ? u : [u]);
+      if (data?.status === 'success') {
+        const u = (data.users || []).map(user => ({
+          ...user,
+          adminRole: user.role === 'admin'
+        }));
+        setUsers(u);
       } else {
-        setError("Failed to load users. Ensure you have Admin privileges.");
+        setError(data?.message || "Failed to load users. Ensure you have Admin privileges.");
       }
     } catch (err) {
       setError("Network error loading users.");
     } finally {
       setLoading(false);
     }
-  }, [currentUser, getAuthParams]);
+  }, [currentUser]);
 
   useEffect(() => {
     if (adminTab === 'users') {
@@ -60,16 +67,30 @@ export default function AdminSettings() {
     e.preventDefault();
     if (!resetModalUser || !newPasswordInput.trim()) return;
 
+    const userToUpdate = users.find(u => u.username === resetModalUser);
+    if (!userToUpdate) return;
+
     setIsResetting(true);
     try {
-      const res = await fetch(getAmpacheUrl(`action=updateUser&username=${encodeURIComponent(resetModalUser)}&password=${encodeURIComponent(newPasswordInput.trim())}&${getAuthParams(currentUser)}`));
+      const res = await fetch(`${getBaseUrl()}/api/system/admin_accounts.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.token || ''}`
+        },
+        body: JSON.stringify({
+          action: 'change_password',
+          id: userToUpdate.id,
+          password: newPasswordInput.trim()
+        })
+      });
       const data = await res.json();
-      if (data?.['subsonic-response']?.status === 'ok') {
+      if (data?.status === 'success') {
         showToast(`Password for ${resetModalUser} reset successfully!`, 'success');
         setResetModalUser(null);
         setNewPasswordInput('');
       } else {
-        showToast("Failed to reset password.", 'error');
+        showToast(data?.message || "Failed to reset password.", 'error');
       }
     } catch (err) {
       showToast("Network error resetting password.", 'error');
@@ -84,32 +105,59 @@ export default function AdminSettings() {
     if (!confirm) return;
 
     try {
-      const newRole = !isAdmin ? 'true' : 'false';
+      const newRole = isAdmin ? 'member' : 'admin';
       
-      // 1. Subsonic API Update
-      const res = await fetch(getAmpacheUrl(`action=updateUser&username=${encodeURIComponent(u.username)}&adminRole=${newRole}&${getAuthParams(currentUser)}`));
+      const res = await fetch(`${getBaseUrl()}/api/system/admin_accounts.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.token || ''}`
+        },
+        body: JSON.stringify({
+          action: 'update_role',
+          id: u.id,
+          role: newRole
+        })
+      });
       const data = await res.json();
 
-      // 2. Direct Ampache DB Persistence Proxy
-      try {
-        await fetch(`${getApiProxyUrl()}?action=updateUserRole&username=${encodeURIComponent(u.username)}&adminRole=${newRole}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${currentUser?.token || ''}`
-          }
-        });
-      } catch (pe) {
-        console.debug("Role proxy sync:", pe);
-      }
-
-      if (data?.['subsonic-response']?.status === 'ok') {
+      if (data?.status === 'success') {
         showToast(`${u.username} role updated to ${!isAdmin ? 'Admin' : 'Standard User'}!`, 'success');
         fetchUsers();
       } else {
-        showToast("Failed to update user role.", 'error');
+        showToast(data?.message || "Failed to update user role.", 'error');
       }
     } catch (err) {
       showToast("Network error updating role.", 'error');
+    }
+  };
+
+  const handleDeleteUser = async (u) => {
+    const confirm = window.confirm(`Are you sure you want to permanently delete user "${u.username}"?`);
+    if (!confirm) return;
+
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/system/admin_accounts.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.token || ''}`
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          id: u.id
+        })
+      });
+      const data = await res.json();
+
+      if (data?.status === 'success') {
+        showToast(`User ${u.username} deleted successfully.`, 'success');
+        fetchUsers();
+      } else {
+        showToast(data?.message || "Failed to delete user.", 'error');
+      }
+    } catch (err) {
+      showToast("Network error deleting user.", 'error');
     }
   };
 
@@ -261,6 +309,14 @@ export default function AdminSettings() {
                         title="Toggle Admin Role"
                       >
                         <ArrowUpCircle size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(u)}
+                        disabled={u.username === currentUser.username || u.username === 'admin'}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-slate-300 hover:text-rose-400 transition-colors disabled:opacity-30"
+                        title="Delete User"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </td>
                   </tr>

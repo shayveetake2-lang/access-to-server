@@ -73,8 +73,8 @@ if (!empty($token)) {
     // Check against sys_users table (standard ServerFlow hex token)
     if (!$currentUser) {
         $tokenHash = hash('sha256', $token);
-        $stmt = $pdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :th OR auth_token = :th OR auth_token = :t) LIMIT 1");
-        $stmt->execute([':th' => $tokenHash, ':t' => $token]);
+        $stmt = $pdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :th1 OR auth_token = :th2 OR auth_token = :t) LIMIT 1");
+        $stmt->execute([':th1' => $tokenHash, ':th2' => $tokenHash, ':t' => $token]);
         $u = $stmt->fetch();
         if ($u) {
             if (!empty($u['token_expires_at']) && (strtotime($u['token_expires_at']) < time())) {
@@ -90,8 +90,8 @@ if (!empty($token)) {
 // B. Fallback to active PHP Session
 if (!$currentUser && !empty($_SESSION['auth_token'])) {
     $tokenHash = hash('sha256', $_SESSION['auth_token']);
-    $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE (token_hash = :th OR auth_token = :th OR auth_token = :t) LIMIT 1");
-    $stmt->execute([':th' => $tokenHash, ':t' => $_SESSION['auth_token']]);
+    $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE (token_hash = :th1 OR auth_token = :th2 OR auth_token = :t) LIMIT 1");
+    $stmt->execute([':th1' => $tokenHash, ':th2' => $tokenHash, ':t' => $_SESSION['auth_token']]);
     $currentUser = $stmt->fetch();
 }
 if (!$currentUser && !empty($_SESSION['role'])) {

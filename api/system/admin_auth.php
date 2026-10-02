@@ -73,8 +73,8 @@ if ($action === 'status') {
     if (!empty($token) && empty($_SESSION['auth_token'])) {
         try {
             $tokenHash = hash('sha256', $token);
-            $stmt = $pdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :h OR auth_token = :h OR auth_token = :t) LIMIT 1");
-            $stmt->execute([':h' => $tokenHash, ':t' => $token]);
+            $stmt = $pdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :h1 OR auth_token = :h2 OR auth_token = :t) LIMIT 1");
+            $stmt->execute([':h1' => $tokenHash, ':h2' => $tokenHash, ':t' => $token]);
             if ($u = $stmt->fetch()) {
                 $isExpired = !empty($u['token_expires_at']) && (strtotime($u['token_expires_at']) < time());
                 if (!$isExpired) {

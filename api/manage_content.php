@@ -99,25 +99,22 @@ $action = $body['action'] ?? '';
 $is_admin = false;
 
 // 1. Check for JWT Bearer token
+require_once __DIR__ . '/auth/jwt_utils.php';
 $headers = function_exists('getallheaders') ? getallheaders() : [];
 $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+
+$jwtToken = '';
 if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
-    $jwt = trim($m[1]);
-    $parts = explode('.', $jwt);
-    if (count($parts) === 3) {
-        $header = $parts[0];
-        $payload_b64 = $parts[1];
-        $signature_provided = $parts[2];
-        
-        $jwt_secret = getenv('JWT_SECRET') ?: 'default-secret-key-change-me';
-        $signature_expected = base64_encode(hash_hmac('sha256', "$header.$payload_b64", $jwt_secret, true));
-        
-        if (hash_equals($signature_expected, $signature_provided)) {
-            $payload = json_decode(base64_decode(strtr($payload_b64, '-_', '+/')), true);
-            if (is_array($payload) && isset($payload['role']) && $payload['role'] === 'admin') {
-                $is_admin = true;
-            }
-        }
+    $jwtToken = trim($m[1]);
+}
+if ($jwtToken === '' && !empty($body['token'])) {
+    $jwtToken = trim((string)$body['token']);
+}
+
+if ($jwtToken !== '') {
+    $payload = verifyAndDecodeJwt($jwtToken);
+    if ($payload !== null && isset($payload['role']) && $payload['role'] === 'admin') {
+        $is_admin = true;
     }
 }
 

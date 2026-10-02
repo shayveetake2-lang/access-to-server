@@ -8,6 +8,5 @@
         "**/.git/**": true,
         "**/sites/**": true
     },
-    "git.ignoreLimitWarning": true,
-    "python.defaultInterpreterPath": "/Applications/Xcode.app/Contents/Developer/usr/bin/python3"
+    "git.ignoreLimitWarning": true
 }

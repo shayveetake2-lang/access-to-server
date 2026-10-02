@@ -22,8 +22,8 @@ if (!resolveMediaAdmin($pdo, $body)) {
     exit;
 }
 
-$id = isset($body['id']) ? (int)$body['id'] : 0;
-$status = trim($body['status'] ?? '');
+$id = isset($body['id']) ? (int)$body['id'] : (int)($_POST['id'] ?? $_REQUEST['id'] ?? 0);
+$status = trim($body['status'] ?? $_POST['status'] ?? $_REQUEST['status'] ?? '');
 $allowed = ['Pending', 'Approved', 'Fulfilled', 'Dismissed'];
 
 if ($id <= 0) {

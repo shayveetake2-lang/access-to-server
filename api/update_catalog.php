@@ -79,8 +79,8 @@ if (!empty($token)) {
     // 1b. Validate against sys_users token hash
     if (!$requester && $pdo) {
         $tokenHash = hash('sha256', $token);
-        $stmt = $pdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :th OR auth_token = :th OR auth_token = :t) LIMIT 1");
-        $stmt->execute([':th' => $tokenHash, ':t' => $token]);
+        $stmt = $pdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :th1 OR auth_token = :th2 OR auth_token = :t) LIMIT 1");
+        $stmt->execute([':th1' => $tokenHash, ':th2' => $tokenHash, ':t' => $token]);
         $u = $stmt->fetch();
         if ($u) {
             if (!empty($u['token_expires_at']) && (strtotime($u['token_expires_at']) < time())) {
@@ -96,8 +96,8 @@ if (!empty($token)) {
 // 1c. Validate active session
 if (!$requester && !empty($_SESSION['auth_token']) && $pdo) {
     $tokenHash = hash('sha256', $_SESSION['auth_token']);
-    $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE (token_hash = :th OR auth_token = :th OR auth_token = :t) LIMIT 1");
-    $stmt->execute([':th' => $tokenHash, ':t' => $_SESSION['auth_token']]);
+    $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE (token_hash = :th1 OR auth_token = :th2 OR auth_token = :t) LIMIT 1");
+    $stmt->execute([':th1' => $tokenHash, ':th2' => $tokenHash, ':t' => $_SESSION['auth_token']]);
     $requester = $stmt->fetch();
 }
 if (!$requester && !empty($_SESSION['role'])) {

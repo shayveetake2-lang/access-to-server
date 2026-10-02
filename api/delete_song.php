@@ -119,8 +119,8 @@ if (!empty($token)) {
 
     if (!$requester && $sysPdo) {
         $tokenHash = hash('sha256', $token);
-        $stmt = $sysPdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :th OR auth_token = :th OR auth_token = :t) LIMIT 1");
-        $stmt->execute([':th' => $tokenHash, ':t' => $token]);
+        $stmt = $sysPdo->prepare("SELECT id, username, role, token_expires_at FROM sys_users WHERE (token_hash = :th1 OR auth_token = :th2 OR auth_token = :t) LIMIT 1");
+        $stmt->execute([':th1' => $tokenHash, ':th2' => $tokenHash, ':t' => $token]);
         $u = $stmt->fetch();
         if ($u && (empty($u['token_expires_at']) || strtotime($u['token_expires_at']) >= time())) {
             $requester = $u;

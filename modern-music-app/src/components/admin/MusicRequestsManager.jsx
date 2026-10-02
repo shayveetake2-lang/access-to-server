@@ -20,6 +20,7 @@ export default function MusicRequestsManager() {
   const authBody = useCallback(() => {
     const authParams = new URLSearchParams(getSubsonicAuthParams(user, true));
     return {
+      token: user?.token || '',
       u: authParams.get('u') || user?.username || '',
       t: authParams.get('t') || '',
       s: authParams.get('s') || '',
@@ -32,7 +33,10 @@ export default function MusicRequestsManager() {
     try {
       const res = await fetch(getMediaRequestsUrl('get_requests.php'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token || ''}`
+        },
         body: JSON.stringify(authBody()),
       });
       const data = await res.json();
@@ -46,7 +50,7 @@ export default function MusicRequestsManager() {
     } finally {
       setLoading(false);
     }
-  }, [authBody]);
+  }, [authBody, user]);
 
   useEffect(() => {
     fetchRequests();
@@ -61,7 +65,7 @@ export default function MusicRequestsManager() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user?.token || ''}`
         },
-        body: JSON.stringify({ ...authBody(), id, status }),
+        body: JSON.stringify({ ...authBody(), id, status, token: user?.token || '' }),
       });
       const data = await res.json();
       if (data?.status === 'success') {

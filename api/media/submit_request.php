@@ -26,10 +26,10 @@ if (!$requester) {
 
 // Accept both the legacy ServerFlow fields (title/type) and the Aether fields
 // (trackTitle/artistName/notes/mediaType) so either caller works unchanged.
-$trackTitle = trim($data['trackTitle'] ?? $data['title'] ?? '');
-$artistName = trim($data['artistName'] ?? '');
-$notes      = trim($data['notes'] ?? '');
-$mediaType  = trim($data['mediaType'] ?? $data['type'] ?? 'Song');
+$trackTitle = trim($data['trackTitle'] ?? $data['title'] ?? $_POST['trackTitle'] ?? $_POST['title'] ?? $_REQUEST['trackTitle'] ?? $_REQUEST['title'] ?? '');
+$artistName = trim($data['artistName'] ?? $_POST['artistName'] ?? $_REQUEST['artistName'] ?? '');
+$notes      = trim($data['notes'] ?? $_POST['notes'] ?? $_REQUEST['notes'] ?? '');
+$mediaType  = trim($data['mediaType'] ?? $data['type'] ?? $_POST['mediaType'] ?? $_POST['type'] ?? $_REQUEST['mediaType'] ?? $_REQUEST['type'] ?? 'Song');
 
 if ($trackTitle === '') {
     http_response_code(400);
@@ -43,15 +43,16 @@ try {
     // this server's SQLite (3.19.3) can't rename them away.
     $stmt = $pdo->prepare(
         "INSERT INTO media_requests (user_id, requester_name, media_title, track_title, artist_name, notes, media_type, created_at, status)
-         VALUES (:uid, :requester, :title, :title, :artist, :notes, :type, CURRENT_TIMESTAMP, 'Pending')"
+         VALUES (:uid, :requester, :media_title, :track_title, :artist, :notes, :type, CURRENT_TIMESTAMP, 'Pending')"
     );
     $stmt->execute([
-        ':uid'       => $requester['id'],
-        ':requester' => $requester['username'],
-        ':title'     => $trackTitle,
-        ':artist'    => $artistName,
-        ':notes'     => $notes,
-        ':type'      => $mediaType,
+        ':uid'         => $requester['id'],
+        ':requester'   => $requester['username'],
+        ':media_title' => $trackTitle,
+        ':track_title' => $trackTitle,
+        ':artist'      => $artistName,
+        ':notes'       => $notes,
+        ':type'        => $mediaType,
     ]);
     echo json_encode(['status' => 'success', 'message' => 'Request submitted successfully!', 'id' => (int)$pdo->lastInsertId()]);
 } catch (Exception $e) {

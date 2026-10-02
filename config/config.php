@@ -55,6 +55,7 @@ if (!class_exists('SQLitePDO')) {
             return $sql;
         }
 
+        #[\ReturnTypeWillChange]
         public function exec($statement) {
             $trimmed = trim($statement);
             if (preg_match("/^\s*(CREATE DATABASE|USE)\b/i", $trimmed)) {
@@ -63,10 +64,12 @@ if (!class_exists('SQLitePDO')) {
             return parent::exec($this->cleanSql($statement));
         }
 
+        #[\ReturnTypeWillChange]
         public function prepare($query, $options = array()) {
             return parent::prepare($this->cleanSql($query), $options);
         }
 
+        #[\ReturnTypeWillChange]
         public function query($query, $fetchMode = null, ...$args) {
             $trimmed = trim($query);
             $clean = $this->cleanSql($query);

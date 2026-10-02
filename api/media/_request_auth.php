@@ -54,12 +54,30 @@ function verifyAmpacheUser(string $username, string $token, string $salt): ?arra
 // Resolves the requesting identity for any authenticated user (not necessarily admin).
 // Returns ['id' => sys_users.id|0, 'username' => string] or null if unauthenticated.
 function resolveMediaRequester(PDO $pdo, array $body = []): ?array {
-    // 1. ServerFlow sys_users Bearer token
+    // 1. ServerFlow sys_users Bearer token or body token (JWT or DB hash)
     $token = getBearerToken();
+    if ($token === '' && !empty($body['token'])) {
+        $token = trim((string)$body['token']);
+    }
+    if ($token === '' && !empty($_POST['token'])) {
+        $token = trim((string)$_POST['token']);
+    }
+
     if ($token !== '') {
+        require_once __DIR__ . '/../auth/jwt_utils.php';
+        if (substr_count($token, '.') === 2) {
+            $payload = verifyAndDecodeJwt($token);
+            if ($payload !== null) {
+                return [
+                    'id' => (int)($payload['user_id'] ?? $payload['sub'] ?? 0),
+                    'username' => (string)($payload['username'] ?? 'user')
+                ];
+            }
+        }
+
         $tokenHash = hash('sha256', $token);
-        $stmt = $pdo->prepare("SELECT id, username FROM sys_users WHERE (token_hash = :h OR auth_token = :h OR auth_token = :t) LIMIT 1");
-        $stmt->execute([':h' => $tokenHash, ':t' => $token]);
+        $stmt = $pdo->prepare("SELECT id, username FROM sys_users WHERE (token_hash = :h1 OR auth_token = :h2 OR auth_token = :t) LIMIT 1");
+        $stmt->execute([':h1' => $tokenHash, ':h2' => $tokenHash, ':t' => $token]);
         if ($u = $stmt->fetch(PDO::FETCH_ASSOC)) {
             return ['id' => (int)$u['id'], 'username' => $u['username']];
         }
@@ -81,10 +99,28 @@ function resolveMediaRequester(PDO $pdo, array $body = []): ?array {
 // or Ampache adminRole=true). Returns the same shape as resolveMediaRequester().
 function resolveMediaAdmin(PDO $pdo, array $body = []): ?array {
     $token = getBearerToken();
+    if ($token === '' && !empty($body['token'])) {
+        $token = trim((string)$body['token']);
+    }
+    if ($token === '' && !empty($_POST['token'])) {
+        $token = trim((string)$_POST['token']);
+    }
+
     if ($token !== '') {
+        require_once __DIR__ . '/../auth/jwt_utils.php';
+        if (substr_count($token, '.') === 2) {
+            $payload = verifyAndDecodeJwt($token);
+            if ($payload !== null && !empty($payload['role']) && $payload['role'] === 'admin') {
+                return [
+                    'id' => (int)($payload['user_id'] ?? $payload['sub'] ?? 0),
+                    'username' => (string)($payload['username'] ?? 'admin')
+                ];
+            }
+        }
+
         $tokenHash = hash('sha256', $token);
-        $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE (token_hash = :h OR auth_token = :h OR auth_token = :t) LIMIT 1");
-        $stmt->execute([':h' => $tokenHash, ':t' => $token]);
+        $stmt = $pdo->prepare("SELECT id, username, role FROM sys_users WHERE (token_hash = :h1 OR auth_token = :h2 OR auth_token = :t) LIMIT 1");
+        $stmt->execute([':h1' => $tokenHash, ':h2' => $tokenHash, ':t' => $token]);
         if ($u = $stmt->fetch(PDO::FETCH_ASSOC)) {
             if ($u['role'] === 'admin') {
                 return ['id' => (int)$u['id'], 'username' => $u['username']];

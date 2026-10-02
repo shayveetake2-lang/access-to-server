@@ -61,11 +61,12 @@ try {
     } catch (\Exception $colCheckErr) {}
 
     if ($hasEmailColumn) {
-        $stmt = $pdo->prepare("SELECT id, username, password_hash, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb FROM sys_users WHERE LOWER(username) = LOWER(:identifier) OR LOWER(email) = LOWER(:identifier) LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, username, password_hash, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb FROM sys_users WHERE LOWER(username) = LOWER(:identifier_user) OR LOWER(email) = LOWER(:identifier_email) LIMIT 1");
+        $stmt->execute([':identifier_user' => $username, ':identifier_email' => $username]);
     } else {
         $stmt = $pdo->prepare("SELECT id, username, password_hash, role, COALESCE(storage_limit_mb, 100) AS storage_limit_mb, COALESCE(storage_used_mb, 0.0) AS storage_used_mb FROM sys_users WHERE LOWER(username) = LOWER(:identifier) LIMIT 1");
+        $stmt->execute([':identifier' => $username]);
     }
-    $stmt->execute([':identifier' => $username]);
     $user = $stmt->fetch();
 
     if (!$user) {
