@@ -969,6 +969,13 @@ if ($action === 'getTopSongs') {
             $orderBy = "COALESCE(oc_daily.daily_plays, 0) DESC, s.total_count DESC, s.id DESC";
         }
 
+        $periodFilter = "";
+        if ($period === 'daily') {
+            $periodFilter = " HAVING dailyPlays > 0 ";
+        } elseif ($period === 'weekly') {
+            $periodFilter = " HAVING weeklyPlays > 0 ";
+        }
+
         $sql = "
             SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
                    s.total_count as playCount,
@@ -992,6 +999,7 @@ if ($action === 'getTopSongs') {
                 GROUP BY object_id
             ) oc_weekly ON oc_weekly.object_id = s.id
             WHERE s.enabled = 1
+            {$periodFilter}
             ORDER BY {$orderBy}
             LIMIT :lim
         ";
@@ -2397,3 +2405,11 @@ if ($action === 'register') {
 
 http_response_code(400);
 echo json_encode(['status' => 'error', 'message' => 'Invalid action specified.']);
+
+if ($action === 'debug_db') {
+    $pdo = getProxyPdo();
+    $stmt = $pdo->query("SELECT * FROM object_count LIMIT 1");
+    echo json_encode($stmt->fetch(PDO::FETCH_ASSOC));
+    exit;
+}
+

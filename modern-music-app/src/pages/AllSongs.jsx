@@ -289,41 +289,20 @@ export default function AllSongs() {
 
   // ── 2. Fetch Top 100 Charts ──
   const fetchChartSongs = useCallback(async (activePeriod = period) => {
-    const chartCacheKey = `aether_chart_songs_${activePeriod}`;
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      try {
-        const cached = sessionStorage.getItem(chartCacheKey);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < 60000) { // 60-second TTL
-            setChartSongs(parsed.songs);
-            setIsChartLoading(false);
-            return;
-          }
-        }
-      } catch (e) {}
-    }
-
     setIsChartLoading(true);
     try {
       let loadedSongs = [];
       try {
-        const proxyRes = await fetch(`${getApiProxyUrl()}?action=getTopSongs&size=100&period=${activePeriod}`);
+        const cacheBuster = Date.now();
+        const proxyRes = await fetch(`${getApiProxyUrl()}?action=getTopSongs&size=100&period=${activePeriod}&_t=${cacheBuster}`, {
+          cache: 'no-store'
+        });
         const proxyData = await proxyRes.json();
         if (proxyData?.status === 'ok' && Array.isArray(proxyData.songs)) {
           loadedSongs = proxyData.songs;
         }
       } catch (pe) {
         console.debug("Proxy top songs fetch notice:", pe);
-      }
-
-      if (typeof window !== 'undefined' && window.sessionStorage && loadedSongs.length > 0) {
-        try {
-          sessionStorage.setItem(chartCacheKey, JSON.stringify({
-            timestamp: Date.now(),
-            songs: loadedSongs
-          }));
-        } catch (e) {}
       }
 
       setChartSongs(loadedSongs);
