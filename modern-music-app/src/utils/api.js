@@ -230,26 +230,30 @@ export function applyUnknownArtistFallback(items = [], unknownArtistId = null) {
 
 let _searchAbortController = null;
 
-export function searchSubsonic(query, user = null) {
+export function searchSubsonic(query, user = null, options = {}) {
   return new Promise((resolve) => {
     const trimmedQuery = (query || '').trim();
     if (trimmedQuery.length < 2) return resolve({});
 
-    // AbortController cancels the previous in-flight request — caller (TopBar)
-    // already debounces keystrokes, so no extra delay is added here.
+    const songCount = options.songCount ?? 8;
+    const albumCount = options.albumCount ?? 4;
+    const artistCount = options.artistCount ?? 4;
+
+    // AbortController cancels the previous in-flight request — caller (SearchBar)
+    // debounces keystrokes, so no extra delay is added here.
     if (_searchAbortController) _searchAbortController.abort();
     _searchAbortController = new AbortController();
     const signal = _searchAbortController.signal;
 
     (async () => {
-      const cacheKey = `aether_search_v2_${trimmedQuery.toLowerCase()}`;
+      const cacheKey = `aether_search_v3_${trimmedQuery.toLowerCase()}_${songCount}_${albumCount}_${artistCount}`;
       if (typeof window !== 'undefined' && window.sessionStorage) {
         try {
           const cached = sessionStorage.getItem(cacheKey);
           if (cached) {
             const parsed = JSON.parse(cached);
             const hasCachedResults = (parsed.data?.song?.length > 0) || (parsed.data?.album?.length > 0) || (parsed.data?.artist?.length > 0);
-            if (hasCachedResults && (Date.now() - parsed.timestamp < 600000)) { // 5-minute TTL
+            if (hasCachedResults && (Date.now() - parsed.timestamp < 60000)) { // 60s TTL
               return resolve(parsed.data);
             }
           }
@@ -262,8 +266,8 @@ export function searchSubsonic(query, user = null) {
 
       // 1. Primary: Direct high-performance MySQL pipeline via api_proxy.php
       try {
-        const proxyUrl = `${getApiProxyUrl()}?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=150&albumCount=20&artistCount=20&_t=${Date.now()}`;
-        const proxyRes = await fetch(proxyUrl, { cache: 'no-store', signal });
+        const proxyUrl = `${getApiProxyUrl()}?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=${songCount}&albumCount=${albumCount}&artistCount=${artistCount}`;
+        const proxyRes = await fetch(proxyUrl, { cache: 'default', signal });
         const proxyData = await proxyRes.json();
         if (proxyData?.status === 'ok') {
           const rawSong = proxyData.song || proxyData?.['subsonic-response']?.searchResult3?.song || proxyData?.['subsonic-response']?.searchResult2?.song || [];
@@ -285,7 +289,7 @@ export function searchSubsonic(query, user = null) {
           const auth = getSubsonicAuthParams(user);
           if (auth && auth.includes('u=')) {
             const authClean = auth.startsWith('&') || auth.startsWith('?') ? auth.slice(1) : auth;
-            const subRes = await fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=150&albumCount=20&artistCount=20&${authClean}&_t=${Date.now()}`, { cache: 'no-store', signal })
+            const subRes = await fetch(`${getBaseUrl()}/ampache/public/rest/index.php?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=${songCount}&albumCount=${albumCount}&artistCount=${artistCount}&${authClean}`, { cache: 'default', signal })
               .then(res => res.json())
               .catch(e => { if (e.name !== 'AbortError') return null; throw e; });
 
@@ -676,7 +680,8 @@ export async function fetchStarredAlbumsAndArtists(user = null) {
 
   // 1. Try high-speed database proxy first
   try {
-    const res = await fetch(`${getApiProxyUrl()}?action=getStarred2${uParam}&${cacheBust}`, { cache: 'no-store' });
+    const headers = user?.token ? { 'Authorization': `Bearer ${user.token}` } : {};
+    const res = await fetch(`${getApiProxyUrl()}?action=getStarred2${uParam}&${cacheBust}`, { cache: 'no-store', headers });
     const data = await res.json();
     if (data?.status === 'ok') {
       const rawAlbums = data.albums || data['subsonic-response']?.starred2?.album || [];
@@ -727,7 +732,8 @@ export async function toggleStarredItem({ albumId, artistId, songId } = {}, star
       if (artistId) pUrl += `&artistId=${encodeURIComponent(artistId)}`;
     }
 
-    const res = await fetch(pUrl);
+    const headers = user?.token ? { 'Authorization': `Bearer ${user.token}` } : {};
+    const res = await fetch(pUrl, { headers });
     const data = await res.json();
     if (data?.status === 'ok') return true;
   } catch (e) {
@@ -828,7 +834,8 @@ export async function createSubsonicPlaylist(name, songIds = [], isPublic = fals
     }
     // Also guarantee persistence via database proxy
     try {
-      await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${createdId}&public=${isPublic ? 'true' : 'false'}`);
+      const headers = user?.token ? { 'Authorization': `Bearer ${user.token}` } : {};
+      await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${createdId}&public=${isPublic ? 'true' : 'false'}`, { headers });
     } catch (pe) {
       console.debug("Proxy visibility sync notice:", pe);
     }

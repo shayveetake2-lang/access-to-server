@@ -58,7 +58,8 @@ export function PlaylistModalProvider({ children }) {
           }
           // Direct DB persistence via API proxy
           try {
-            await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${newId}&public=${isPublic ? 'true' : 'false'}`);
+            const headers = user?.token ? { 'Authorization': `Bearer ${user.token}` } : {};
+            await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${newId}&public=${isPublic ? 'true' : 'false'}`, { headers });
           } catch (pe) {
             console.debug("Proxy visibility notice:", pe);
           }

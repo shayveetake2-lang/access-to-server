@@ -133,7 +133,8 @@ export default function PlaylistDetails() {
     try {
       // 2. Direct MySQL database update via proxy (guaranteed persistence)
       try {
-        await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${id}&public=${nextPublic ? 'true' : 'false'}`);
+        const headers = user?.token ? { 'Authorization': `Bearer ${user.token}` } : {};
+        await fetch(`${getApiProxyUrl()}?action=togglePlaylistVisibility&id=${id}&public=${nextPublic ? 'true' : 'false'}`, { headers });
       } catch (pe) {
         console.debug("Proxy toggle notice:", pe);
       }

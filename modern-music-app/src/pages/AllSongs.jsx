@@ -295,7 +295,7 @@ export default function AllSongs() {
         const cached = sessionStorage.getItem(chartCacheKey);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < 600000) { // 5-minute TTL
+          if (Date.now() - parsed.timestamp < 60000) { // 60-second TTL
             setChartSongs(parsed.songs);
             setIsChartLoading(false);
             return;
@@ -310,21 +310,11 @@ export default function AllSongs() {
       try {
         const proxyRes = await fetch(`${getApiProxyUrl()}?action=getTopSongs&size=100&period=${activePeriod}`);
         const proxyData = await proxyRes.json();
-        if (proxyData?.status === 'ok' && Array.isArray(proxyData.songs) && proxyData.songs.length > 0) {
+        if (proxyData?.status === 'ok' && Array.isArray(proxyData.songs)) {
           loadedSongs = proxyData.songs;
         }
       } catch (pe) {
-        console.debug("Proxy top songs fallback:", pe);
-      }
-
-      if (loadedSongs.length === 0) {
-        const response = await fetch(getAmpacheUrl(`action=getRandomSongs&size=100&${getAuthParams(user)}`));
-        const data = await response.json();
-        if (data?.['subsonic-response']?.status === 'ok') {
-          const raw = data['subsonic-response'].randomSongs?.song;
-          loadedSongs = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-          loadedSongs.sort((a, b) => (b.playCount || 0) - (a.playCount || 0));
-        }
+        console.debug("Proxy top songs fetch notice:", pe);
       }
 
       if (typeof window !== 'undefined' && window.sessionStorage && loadedSongs.length > 0) {
@@ -339,10 +329,11 @@ export default function AllSongs() {
       setChartSongs(loadedSongs);
     } catch (err) {
       console.error("Failed to fetch chart songs:", err);
+      setChartSongs([]);
     } finally {
       setIsChartLoading(false);
     }
-  }, [period, user, getAuthParams]);
+  }, [period]);
 
   useEffect(() => {
     if (activeTab === 'top100') {
@@ -418,7 +409,7 @@ export default function AllSongs() {
           <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
             {activeTab === 'library' 
               ? 'Infinite-scrolling high performance browser across your entire 10k+ music library.' 
-              : 'Cross-user trending leaderboard ranked by daily, weekly, and all-time stream count.'}
+              : 'Cross-user trending leaderboard ranked by daily, weekly, and all-time stream count. Resetting daily at midnight NZST.'}
           </p>
         </div>
 
@@ -562,11 +553,15 @@ export default function AllSongs() {
       ) : currentActiveSongs.length === 0 ? (
         <div className="text-center py-20 bg-slate-900/40 rounded-3xl border border-white/5 p-8 max-w-md mx-auto">
           <Music size={40} className="mx-auto text-slate-500 mb-3" />
-          <h3 className="text-lg font-bold text-white mb-1">No songs found</h3>
+          <h3 className="text-lg font-bold text-white mb-1">
+            {activeTab === 'top100' ? 'No chart activity yet' : 'No songs found'}
+          </h3>
           <p className="text-xs sm:text-sm text-slate-400 mb-4">
-            {searchQuery ? `No tracks matched "${searchQuery}".` : 'No songs available in this view.'}
+            {activeTab === 'top100'
+              ? `No tracks have been played yet for this ${period} period. Start listening to build the leaderboard!`
+              : searchQuery ? `No tracks matched "${searchQuery}".` : 'No songs available in this view.'}
           </p>
-          {searchQuery && (
+          {searchQuery && activeTab === 'library' && (
             <button
               onClick={() => setSearchQuery('')}
               className="px-4 py-2 rounded-full bg-purple-500 hover:bg-purple-400 text-white text-xs font-semibold"

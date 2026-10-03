@@ -35,15 +35,21 @@ export function PlayerProvider({ children }) {
   const { user, getAuthParams } = useAuth();
   const playNextRef = useRef();
   const recordedTracksRef = useRef(new Set());
+  const hasRecordedCurrentTrackRef = useRef(false);
 
   const recordPlayEvent = (track) => {
-    if (!track || !track.id) return;
+    const activeUser = userRef.current;
+    const token = activeUser?.token || activeUser?.jwt;
+    if (!track || !track.id || !token) return;
     const trackKey = `${track.id}_${Math.floor(Date.now() / 60000)}`;
     if (recordedTracksRef.current.has(trackKey)) return;
     recordedTracksRef.current.add(trackKey);
     try {
-      const uParam = user?.username ? `&u=${encodeURIComponent(user.username)}` : '';
-      fetch(`${getApiProxyUrl()}?action=recordPlay&id=${encodeURIComponent(track.id)}${uParam}`).catch(() => {});
+      fetch(`${getApiProxyUrl()}?action=recordPlay&id=${encodeURIComponent(track.id)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }).catch(() => {});
     } catch (e) {}
   };
 
@@ -66,6 +72,15 @@ export function PlayerProvider({ children }) {
       setProgress(cur);
       const dur = audioRef.current.duration || currentTrackRef.current?.duration || 0;
       setDuration(dur);
+
+      // Log play only once track has played for 30s or 50% of duration
+      if (!hasRecordedCurrentTrackRef.current && currentTrackRef.current && cur > 1) {
+        const threshold = dur > 0 ? Math.min(30, dur * 0.5) : 30;
+        if (cur >= threshold) {
+          hasRecordedCurrentTrackRef.current = true;
+          recordPlayEvent(currentTrackRef.current);
+        }
+      }
 
       if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession && dur > 0 && isFinite(dur)) {
         try {
@@ -317,7 +332,7 @@ export function PlayerProvider({ children }) {
     if (playPromise !== undefined) {
       playPromise.catch(e => console.warn("[Aether Audio] Play notice on swapped audio:", e));
     }
-    recordPlayEvent(nextTrack);
+    hasRecordedCurrentTrackRef.current = false;
   };
 
   const setPrefetchBuffer = (audio, track, index) => {
@@ -399,7 +414,7 @@ export function PlayerProvider({ children }) {
     audioRef.current.src = getStreamUrl(track.id, getAuthParams(user));
     audioRef.current.play().catch(e => console.log("Autoplay blocked or error"));
     setIsPlaying(true);
-    recordPlayEvent(track);
+    hasRecordedCurrentTrackRef.current = false;
   };
 
   const playQueue = (tracks, index = 0) => {

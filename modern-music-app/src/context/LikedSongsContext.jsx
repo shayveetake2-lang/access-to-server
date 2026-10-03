@@ -54,7 +54,8 @@ export function LikedSongsProvider({ children }) {
 
     // 1. Try high-speed database proxy first
     try {
-      const res = await fetch(`${getApiProxyUrl()}?action=getStarred2${uParam}&${cacheBust}`, { cache: 'no-store' });
+      const headers = user?.token ? { 'Authorization': `Bearer ${user.token}` } : {};
+      const res = await fetch(`${getApiProxyUrl()}?action=getStarred2${uParam}&${cacheBust}`, { cache: 'no-store', headers });
       const data = await res.json();
       if (data?.status === 'ok') {
         const raw = data.songs || data['subsonic-response']?.starred2?.song;
@@ -126,7 +127,8 @@ export function LikedSongsProvider({ children }) {
 
     // 1. Try high-speed database proxy first (immediate persistence in user_flag)
     try {
-      const pRes = await fetch(`${getApiProxyUrl()}?action=${action}&id=${encodeURIComponent(id)}${uParam}`);
+      const headers = user?.token ? { 'Authorization': `Bearer ${user.token}` } : {};
+      const pRes = await fetch(`${getApiProxyUrl()}?action=${action}&id=${encodeURIComponent(id)}${uParam}`, { headers });
       const pData = await pRes.json();
       if (pData?.status === 'ok') {
         success = true;

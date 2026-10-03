@@ -14,11 +14,60 @@ if (!in_array($_action, $_mediaActions)) {
 }
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+
+// Restricted CORS Allowlist
+$allowedOriginsList = [
+    'https://serverflow.icu',
+    'https://www.serverflow.icu',
+    'http://localhost:8888',
+    'http://127.0.0.1:8888',
+    'http://10.247.192.231:8888',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173'
+];
+$envOrigins = getenv('CORS_ALLOWED_ORIGINS');
+if (!empty($envOrigins)) {
+    $extraOrigins = array_map('trim', explode(',', $envOrigins));
+    $allowedOriginsList = array_merge($allowedOriginsList, $extraOrigins);
+}
+
+$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+$corsOrigin = null;
+
+if (!empty($origin)) {
+    $originTrimmed = rtrim($origin, '/');
+    $originHost = parse_url($origin, PHP_URL_HOST);
+    $isAllowed = false;
+    foreach ($allowedOriginsList as $allowed) {
+        $allowedTrimmed = rtrim($allowed, '/');
+        if (strcasecmp($originTrimmed, $allowedTrimmed) === 0 || strcasecmp($originHost, $allowed) === 0) {
+            $isAllowed = true;
+            break;
+        }
+    }
+    if (!$isAllowed && $originHost) {
+        if (strncmp($originHost, '10.', 3) === 0 ||
+            strncmp($originHost, '192.168.', 8) === 0 ||
+            strncmp($originHost, '172.', 4) === 0 ||
+            $originHost === 'localhost' ||
+            $originHost === '127.0.0.1') {
+            $isAllowed = true;
+        }
+    }
+    if ($isAllowed) {
+        $corsOrigin = $origin;
+    }
+}
+
+if ($corsOrigin !== null) {
+    header('Access-Control-Allow-Origin: ' . $corsOrigin);
+    header('Access-Control-Allow-Credentials: true');
+    header('Vary: Origin');
+}
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, Range, X-Requested-With');
 header('Access-Control-Expose-Headers: Content-Range, Accept-Ranges, Content-Length');
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
@@ -53,6 +102,25 @@ function getProxyPdo() {
     static $pdo = null;
     if ($pdo !== null) return $pdo;
 
+    static $cachedDsn = null;
+    static $cachedUser = null;
+    static $cachedPass = null;
+
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT => 2,
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+    ];
+
+    if ($cachedDsn !== null) {
+        try {
+            $pdo = new PDO($cachedDsn, $cachedUser, $cachedPass, $options);
+            return $pdo;
+        } catch (\Exception $e) {
+            $cachedDsn = null;
+        }
+    }
+
     $cfgFile = __DIR__ . '/../ampache/config/ampache.cfg.php';
     $cfg = file_exists($cfgFile) ? @parse_ini_file($cfgFile) : [];
 
@@ -72,22 +140,27 @@ function getProxyPdo() {
         '3307'
     ]));
 
+    $configuredPass = defined('AMPACHE_DB_PASS') ? AMPACHE_DB_PASS : getProxyEnv('AMPACHE_DB_PASS', 'ServerAppSecurePass2026!');
+    $configuredUser = defined('AMPACHE_DB_USER') ? AMPACHE_DB_USER : getProxyEnv('AMPACHE_DB_USER', 'server_app');
+
     $creds = [
+        [$configuredUser, $configuredPass],
         [!empty($cfg['database_username']) ? $cfg['database_username'] : 'server_app', !empty($cfg['database_password']) ? $cfg['database_password'] : 'password'],
         ['server_app', 'password'],
         ['ampache_user', 'password'],
     ];
 
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_TIMEOUT => 2
-    ];
-
     foreach ($hosts as $h) {
         foreach ($ports as $p) {
-            foreach ($creds as [$u, $pwd]) {
+            foreach ($creds as $cred) {
+                $u = $cred[0];
+                $pwd = $cred[1];
+                $dsn = "mysql:host={$h};port={$p};dbname={$dbname};charset=utf8mb4";
                 try {
-                    $pdo = new PDO("mysql:host={$h};port={$p};dbname={$dbname};charset=utf8mb4", $u, $pwd, $options);
+                    $pdo = new PDO($dsn, $u, $pwd, $options);
+                    $cachedDsn = $dsn;
+                    $cachedUser = $u;
+                    $cachedPass = $pwd;
                     return $pdo;
                 } catch (\Exception $e) {}
             }
@@ -96,9 +169,15 @@ function getProxyPdo() {
 
     $socket = '/Applications/MAMP/tmp/mysql/mysql.sock';
     if (file_exists($socket)) {
-        foreach ($creds as [$u, $pwd]) {
+        foreach ($creds as $cred) {
+            $u = $cred[0];
+            $pwd = $cred[1];
+            $dsn = "mysql:unix_socket={$socket};dbname={$dbname};charset=utf8mb4";
             try {
-                $pdo = new PDO("mysql:unix_socket={$socket};dbname={$dbname};charset=utf8mb4", $u, $pwd, $options);
+                $pdo = new PDO($dsn, $u, $pwd, $options);
+                $cachedDsn = $dsn;
+                $cachedUser = $u;
+                $cachedPass = $pwd;
                 return $pdo;
             } catch (\Exception $e) {}
         }
@@ -384,6 +463,97 @@ if ($action === 'getCoverArt' || $action === 'coverArt') {
 }
 
 // ── Starred Items Retrieval Endpoint (Subsonic getStarred2 Compatibility) ───
+// ── Shared JWT Authentication Helpers ────────────────────────────────────────
+// Loaded here (after the media endpoints, which never need auth) so every
+// user-scoped endpoint below can identify the caller from a signed JWT instead
+// of trusting a spoofable `u=` query parameter.
+require_once __DIR__ . '/../api/auth/jwt_utils.php';
+
+function getProxyAuthorizationHeader() {
+    $candidates = [];
+    if (function_exists('getallheaders')) {
+        foreach ((array)getallheaders() as $name => $value) {
+            if (strtolower($name) === 'authorization') {
+                $candidates[] = $value;
+            }
+        }
+    }
+    if (!empty($_SERVER['HTTP_AUTHORIZATION'])) $candidates[] = $_SERVER['HTTP_AUTHORIZATION'];
+    if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) $candidates[] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+    foreach ($candidates as $c) {
+        if (is_string($c) && trim($c) !== '') return trim($c);
+    }
+    return '';
+}
+
+function getVerifiedProxyUser() {
+    static $resolved = false;
+    static $payload = null;
+    if ($resolved) return $payload;
+    $resolved = true;
+
+    $authHeader = getProxyAuthorizationHeader();
+    $jwt = '';
+    if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
+        $jwt = trim($m[1]);
+    } elseif (!empty($_POST['token'])) {
+        // POST body token only — never accept JWTs in the query string (leaks into logs/history).
+        $jwt = trim($_POST['token']);
+    }
+    if ($jwt === '') return null;
+    $payload = verifyAndDecodeJwt($jwt);
+    return $payload;
+}
+
+/**
+ * Maps the verified JWT (ServerFlow sys_users identity) to the matching Ampache
+ * `user` row. The JWT `user_id` is a ServerFlow ID, NOT an Ampache ID, so the
+ * username is the only reliable join key between the two databases.
+ * Returns ['id' => int, 'username' => string, 'role' => string] or null.
+ */
+function resolveProxyAmpacheUser($pdo) {
+    static $cache = false;
+    if ($cache !== false) return $cache;
+    $cache = null;
+
+    $payload = getVerifiedProxyUser();
+    if (!$payload || !$pdo) return null;
+    $username = trim((string)($payload['username'] ?? ''));
+    if ($username === '') return null;
+
+    try {
+        $stmt = $pdo->prepare("SELECT id, username FROM user WHERE LOWER(username) = LOWER(:u) LIMIT 1");
+        $stmt->execute([':u' => $username]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && (int)$row['id'] > 0) {
+            $cache = [
+                'id' => (int)$row['id'],
+                'username' => $row['username'],
+                'role' => (isset($payload['role']) && $payload['role'] === 'admin') ? 'admin' : 'user'
+            ];
+        }
+    } catch (\Exception $e) {
+        error_log('[Aether] resolveProxyAmpacheUser failed: ' . $e->getMessage());
+    }
+    return $cache;
+}
+
+// ── Auth Diagnostic (no secrets) ────────────────────────────────────────────
+// Lets the frontend / admin confirm the Authorization header survives
+// Cloudflare + Apache and that the JWT maps to an Ampache account.
+if ($action === 'whoami') {
+    $payload = getVerifiedProxyUser();
+    $ampUser = $payload ? resolveProxyAmpacheUser(getProxyPdo()) : null;
+    echo json_encode([
+        'status' => 'ok',
+        'headerReceived' => getProxyAuthorizationHeader() !== '',
+        'authenticated' => $payload !== null,
+        'username' => $payload['username'] ?? null,
+        'ampacheLinked' => $ampUser !== null
+    ]);
+    exit;
+}
+
 if ($action === 'getStarred' || $action === 'getStarred2' || $action === 'getStarredSongs') {
     $pdo = getProxyPdo();
     if (!$pdo) {
@@ -392,16 +562,13 @@ if ($action === 'getStarred' || $action === 'getStarred2' || $action === 'getSta
         exit;
     }
 
-    $username = trim($_GET['u'] ?? ($input['u'] ?? ''));
-    $userId = 1;
-    if (!empty($username)) {
-        try {
-            $uStmt = $pdo->prepare("SELECT id FROM user WHERE username = :u LIMIT 1");
-            $uStmt->execute([':u' => $username]);
-            $foundUid = $uStmt->fetchColumn();
-            if ($foundUid) $userId = (int)$foundUid;
-        } catch (\Exception $e) {}
+    $ampUser = resolveProxyAmpacheUser($pdo);
+    if (!$ampUser) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized or user not found.']);
+        exit;
     }
+    $userId = $ampUser['id'];
 
     try {
         // 1. Starred Songs
@@ -538,16 +705,13 @@ if ($action === 'star' || $action === 'unstar' || $action === 'toggleStar') {
         exit;
     }
 
-    $username = trim($_GET['u'] ?? ($input['u'] ?? ''));
-    $userId = 1;
-    if (!empty($username)) {
-        try {
-            $uStmt = $pdo->prepare("SELECT id FROM user WHERE username = :u LIMIT 1");
-            $uStmt->execute([':u' => $username]);
-            $foundUid = $uStmt->fetchColumn();
-            if ($foundUid) $userId = (int)$foundUid;
-        } catch (\Exception $e) {}
+    $ampUser = resolveProxyAmpacheUser($pdo);
+    if (!$ampUser) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized or user not found.']);
+        exit;
     }
+    $userId = $ampUser['id'];
 
     $rawSongId = $_GET['id'] ?? ($input['id'] ?? ($_GET['songId'] ?? ($input['songId'] ?? null)));
     $rawAlbumId = $_GET['albumId'] ?? ($input['albumId'] ?? null);
@@ -640,6 +804,13 @@ if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibil
         exit;
     }
 
+    $ampUser = resolveProxyAmpacheUser($pdo);
+    if (!$ampUser) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized or user not found.']);
+        exit;
+    }
+
     $publicVal = $_GET['public'] ?? ($input['public'] ?? null);
     if ($publicVal === null) {
         // Auto-toggle current database state
@@ -673,25 +844,16 @@ if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibil
 }
 
 // ── User Role Toggle Endpoint (Guaranteed Ampache Database Persistence) ─────
-function verifyProxyAdminJwt() {
-    $headers = function_exists('getallheaders') ? getallheaders() : [];
-    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
-        $parts = explode('.', trim($m[1]));
-        if (count($parts) === 3) {
-            $secret = getProxyEnv('JWT_SECRET', 'default-secret-key-change-me');
-            $expected = base64_encode(hash_hmac('sha256', "{$parts[0]}.{$parts[1]}", $secret, true));
-            if (hash_equals($expected, $parts[2])) {
-                $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-                if (isset($payload['role']) && $payload['role'] === 'admin') return true;
-            }
-        }
-    }
-    return false;
-}
-
 if ($action === 'updateUserRole') {
-    if (!verifyProxyAdminJwt()) {
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $ampUser = resolveProxyAmpacheUser($pdo);
+    if (!$ampUser || $ampUser['role'] !== 'admin') {
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Unauthorized. Admin Bearer JWT required.']);
         exit;
@@ -703,13 +865,6 @@ if ($action === 'updateUserRole') {
     if (empty($targetUsername)) {
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Username parameter required.']);
-        exit;
-    }
-
-    $pdo = getProxyPdo();
-    if (!$pdo) {
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
         exit;
     }
 
@@ -734,13 +889,58 @@ if ($action === 'updateUserRole') {
     }
 }
 
-// ── Top 100 Songs Endpoint (Hardware-Optimized Daily & Trending Aggregation) ──
+// ── Top 100 Songs Shared Caching Helpers ─────────────────────────────────────
+function getAetherChartCache($period, $limit) {
+    $dir = sys_get_temp_dir() . '/aether_chart_cache';
+    $file = $dir . "/chart_{$period}_{$limit}.json";
+    if (!file_exists($file)) return null;
+    $mtime = @filemtime($file);
+    if ($mtime === false || (time() - $mtime > 60)) {
+        @unlink($file);
+        return null;
+    }
+    $content = @file_get_contents($file);
+    if (!$content) return null;
+    $data = @json_decode($content, true);
+    return is_array($data) ? $data : null;
+}
+
+function setAetherChartCache($period, $limit, array $data) {
+    $dir = sys_get_temp_dir() . '/aether_chart_cache';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    $file = $dir . "/chart_{$period}_{$limit}.json";
+    @file_put_contents($file, json_encode($data), LOCK_EX);
+}
+
+function bustAetherChartCache() {
+    $dir = sys_get_temp_dir() . '/aether_chart_cache';
+    if (is_dir($dir)) {
+        $files = @glob($dir . '/*.json');
+        if (is_array($files)) {
+            foreach ($files as $f) {
+                @unlink($f);
+            }
+        }
+    }
+}
+
+// ── Top 100 Songs Endpoint (Auckland Midnight Calendar Day & Pure Play Ranking) ──
 if ($action === 'getTopSongs') {
     $limit = intval($_GET['size'] ?? $_GET['count'] ?? ($input['size'] ?? 100));
     if ($limit < 1 || $limit > 200) $limit = 100;
     $period = strtolower(trim($_GET['period'] ?? ($input['period'] ?? 'daily')));
     if (!in_array($period, ['daily', 'weekly', 'alltime'])) {
         $period = 'daily';
+    }
+
+    $cachedChart = getAetherChartCache($period, $limit);
+    if ($cachedChart !== null) {
+        header('Cache-Control: public, max-age=60');
+        header('X-Aether-Chart-Cache: HIT');
+        echo json_encode($cachedChart);
+        exit;
     }
 
     $pdo = getProxyPdo();
@@ -751,17 +951,22 @@ if ($action === 'getTopSongs') {
     }
 
     try {
-        $dailySince = time() - 86400; // Past 24 hours
-        $weeklySince = time() - (7 * 86400); // Past 7 days
+        $tz = new DateTimeZone('Pacific/Auckland');
+        $dt = new DateTime('today midnight', $tz);
+        $dailySince = $dt->getTimestamp();
+
+        $weeklyDt = clone $dt;
+        $weeklyDt->modify('-7 days');
+        $weeklySince = $weeklyDt->getTimestamp();
 
         if ($period === 'alltime') {
             $orderBy = "s.total_count DESC, s.played DESC, s.id DESC";
         } elseif ($period === 'weekly') {
             $orderBy = "COALESCE(oc_weekly.weekly_plays, 0) DESC, s.total_count DESC, s.id DESC";
         } else {
-            // 'daily' default: rank primarily by streams in the past 24 hours across all users,
-            // with a composite score blend so today's streamed songs surge to the top while keeping a full 100 chart.
-            $orderBy = "(COALESCE(oc_daily.daily_plays, 0) * 1000 + COALESCE(oc_weekly.weekly_plays, 0) * 50 + s.total_count) DESC, s.played DESC, s.id DESC";
+            // Daily: Rank STRICTLY by plays within the current calendar day!
+            // All-time count is used strictly as a secondary tie-breaker.
+            $orderBy = "COALESCE(oc_daily.daily_plays, 0) DESC, s.total_count DESC, s.id DESC";
         }
 
         $sql = "
@@ -801,9 +1006,12 @@ if ($action === 'getTopSongs') {
         $songs = [];
         $rank = 1;
         foreach ($rows as $r) {
+            $cleanAlbId = (!empty($r['albumId']) && is_numeric($r['albumId'])) ? (int)$r['albumId'] : 0;
+            $cleanArtId = (!empty($r['artistId']) && is_numeric($r['artistId'])) ? (int)$r['artistId'] : 0;
             $subId = (string)(300000000 + (int)$r['id']);
-            $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
-            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+            $subAlbId = (string)(200000000 + $cleanAlbId);
+            $subArtId = (string)(100000000 + $cleanArtId);
+
             $songs[] = [
                 'id' => $subId,
                 'parent' => $subAlbId,
@@ -829,12 +1037,20 @@ if ($action === 'getTopSongs') {
             ];
         }
 
-        echo json_encode([
+        $result = [
             'status' => 'ok',
             'period' => $period,
             'count' => count($songs),
+            'generatedAt' => time(),
+            'windowStart' => ($period === 'daily' ? $dailySince : ($period === 'weekly' ? $weeklySince : 0)),
+            'timezone' => 'Pacific/Auckland',
             'songs' => $songs
-        ]);
+        ];
+
+        setAetherChartCache($period, $limit, $result);
+
+        header('Cache-Control: public, max-age=60');
+        echo json_encode($result);
         exit;
     } catch (\Exception $e) {
         http_response_code(500);
@@ -998,21 +1214,38 @@ if ($action === 'recordPlay' || $action === 'scrobble') {
         exit;
     }
 
-    $username = trim($_GET['u'] ?? ($input['u'] ?? ''));
-    $userId = 1; // Default fallback to system primary user
-    if (!empty($username)) {
-        try {
-            $uStmt = $pdo->prepare("SELECT id FROM user WHERE username = :u LIMIT 1");
-            $uStmt->execute([':u' => $username]);
-            $uRow = $uStmt->fetch(PDO::FETCH_ASSOC);
-            if ($uRow && !empty($uRow['id'])) {
-                $userId = (int)$uRow['id'];
-            }
-        } catch (\Exception $e) {}
+    // Authenticate user via JWT and map to Ampache user. Unauthenticated requests are silently skipped to protect leaderboard.
+    $ampUser = resolveProxyAmpacheUser($pdo);
+    if (!$ampUser) {
+        echo json_encode(['status' => 'skipped', 'message' => 'Unauthenticated or unresolved play skipped.']);
+        exit;
     }
+    $userId = $ampUser['id'];
 
     try {
         $now = time();
+
+        // Server-side debounce: ignore duplicate stream events for same (user, song) within 30 seconds
+        $checkRecent = $pdo->prepare("
+            SELECT id FROM object_count
+            WHERE object_type = 'song' AND count_type = 'stream' AND object_id = :sid AND user = :uid AND date >= :since
+            LIMIT 1
+        ");
+        $checkRecent->execute([
+            ':sid' => $cleanSongId,
+            ':uid' => $userId,
+            ':since' => $now - 30
+        ]);
+        if ($checkRecent->fetch()) {
+            echo json_encode([
+                'status' => 'ok',
+                'debounced' => true,
+                'message' => 'Play already recorded within threshold',
+                'songId' => $cleanSongId
+            ]);
+            exit;
+        }
+
         // 1. Insert stream event into Ampache's object_count table
         $ins = $pdo->prepare("
             INSERT IGNORE INTO object_count (object_type, object_id, date, user, agent, count_type)
@@ -1032,6 +1265,9 @@ if ($action === 'recordPlay' || $action === 'scrobble') {
                 WHERE id = :sid
             ");
             $upd->execute([':sid' => $cleanSongId]);
+
+            // Bust chart cache so next chart view reflects this stream
+            bustAetherChartCache();
         }
 
         echo json_encode([
@@ -1496,11 +1732,65 @@ if ($action === 'getArtist') {
     }
 }
 
+// ── High-Speed Search File Cache with Probabilistic GC (SSD Safe) ─────────────
+function getAetherSearchCache($cacheKey) {
+    $dir = sys_get_temp_dir() . '/aether_search_cache';
+    $file = $dir . '/' . $cacheKey . '.json';
+    if (!file_exists($file)) return null;
+    $mtime = @filemtime($file);
+    if ($mtime === false || (time() - $mtime > 60)) {
+        @unlink($file);
+        return null;
+    }
+    $content = @file_get_contents($file);
+    if (!$content) return null;
+    $data = @json_decode($content, true);
+    return is_array($data) ? $data : null;
+}
+
+function setAetherSearchCache($cacheKey, array $data) {
+    $dir = sys_get_temp_dir() . '/aether_search_cache';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    // Probabilistic Garbage Collection: 1 in 50 requests
+    if (mt_rand(1, 50) === 1) {
+        $files = @glob($dir . '/*.json');
+        if (is_array($files)) {
+            $now = time();
+            $count = 0;
+            foreach ($files as $f) {
+                $m = @filemtime($f);
+                if ($m !== false && ($now - $m > 300)) {
+                    @unlink($f);
+                } else {
+                    $count++;
+                }
+            }
+            if ($count > 500) {
+                $fileTimes = [];
+                foreach ($files as $f) {
+                    if (file_exists($f)) {
+                        $fileTimes[$f] = @filemtime($f) ?: 0;
+                    }
+                }
+                asort($fileTimes);
+                $toDelete = count($fileTimes) - 500;
+                foreach (array_slice(array_keys($fileTimes), 0, $toDelete) as $delFile) {
+                    @unlink($delFile);
+                }
+            }
+        }
+    }
+    $file = $dir . '/' . $cacheKey . '.json';
+    @file_put_contents($file, json_encode($data), LOCK_EX);
+}
+
 if ($action === 'search' || $action === 'search2' || $action === 'search3') {
     $q = trim($_GET['query'] ?? ($input['query'] ?? ($_GET['q'] ?? ($input['q'] ?? ''))));
     $q = rtrim($q, '*');
 
-    if (strlen($q) < 2) {
+    if (mb_strlen($q) < 2) {
         echo json_encode([
             'status' => 'ok',
             'song' => [],
@@ -1509,16 +1799,8 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
             'subsonic-response' => [
                 'status' => 'ok',
                 'version' => '1.16.1',
-                'searchResult3' => [
-                    'song' => [],
-                    'album' => [],
-                    'artist' => []
-                ],
-                'searchResult2' => [
-                    'song' => [],
-                    'album' => [],
-                    'artist' => []
-                ]
+                'searchResult3' => ['song' => [], 'album' => [], 'artist' => []],
+                'searchResult2' => ['song' => [], 'album' => [], 'artist' => []]
             ]
         ]);
         exit;
@@ -1533,6 +1815,15 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
     $artistCount = intval($_GET['artistCount'] ?? ($input['artistCount'] ?? 20));
     if ($artistCount < 1 || $artistCount > 100) $artistCount = 20;
 
+    // Check fast SSD file cache (60s TTL)
+    $cacheKey = md5(mb_strtolower($q) . "_{$songCount}_{$albumCount}_{$artistCount}");
+    $cached = getAetherSearchCache($cacheKey);
+    if ($cached !== null) {
+        header('X-Aether-Cache: HIT');
+        echo json_encode($cached);
+        exit;
+    }
+
     $pdo = getProxyPdo();
     if (!$pdo) {
         http_response_code(500);
@@ -1545,26 +1836,62 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
         $exactQ = $q;
         $startQ = $q . '%';
 
-        // --- Boolean Fulltext Preparation ---
+        // Fulltext setup (InnoDB default min token size is 3; 2-letter inputs like 'Ye', 'U2' use B-tree LIKE)
         $useFulltext = (mb_strlen($q) >= 3);
         $ftsQuery = '';
         if ($useFulltext) {
-            // Sanitize boolean mode operator characters to prevent syntax errors
             $cleanQ = preg_replace('/[+\-><()~*\"@]/u', ' ', $q);
-            $words = array_filter(explode(' ', trim($cleanQ)), fn($w) => mb_strlen($w) >= 2);
+            $words = array_filter(explode(' ', trim($cleanQ)), function($w) { return mb_strlen($w) >= 2; });
             if (!empty($words)) {
-                $ftsQuery = implode(' ', array_map(fn($w) => '+' . $w . '*', $words));
+                $ftsQuery = implode(' ', array_map(function($w) { return '+' . $w . '*'; }, $words));
             } else {
                 $useFulltext = false;
             }
         }
 
         // =========================================================
-        // 1. Search Songs (Option A: Match BOTH Title and Artist)
+        // 1. Search Songs (Tiered: Prefix -> Fulltext -> Substring)
         // =========================================================
-        $songRows = [];
-        if ($useFulltext) {
-            $songStmt = $pdo->prepare("
+        $songMap = []; // id => song array
+
+        // Tier 1: Instant B-Tree Prefix Search (sub-10ms via idx_song_enabled_title)
+        $pfxStmt = $pdo->prepare("
+            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+                   s.total_count as playCount,
+                   COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
+                   COALESCE(alb.name, 'Unknown Album') as album, COALESCE(alb.id, 0) as albumId
+            FROM song s
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album alb ON s.album = alb.id
+            WHERE s.enabled = 1
+              AND (s.title LIKE :start1 OR art.name LIKE :start2)
+            ORDER BY 
+              CASE 
+                WHEN s.title = :exact1 THEN 0
+                WHEN s.title LIKE :start3 THEN 1
+                WHEN art.name LIKE :start4 THEN 2
+                ELSE 3 
+              END,
+              s.total_count DESC, s.title ASC
+            LIMIT :lim
+        ");
+        $pfxStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+        $pfxStmt->bindValue(':start2', $startQ, PDO::PARAM_STR);
+        $pfxStmt->bindValue(':start3', $startQ, PDO::PARAM_STR);
+        $pfxStmt->bindValue(':start4', $startQ, PDO::PARAM_STR);
+        $pfxStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+        $pfxStmt->bindValue(':lim', $songCount, PDO::PARAM_INT);
+        $pfxStmt->execute();
+        $pfxRows = $pfxStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($pfxRows as $r) {
+            $songMap[(int)$r['id']] = $r;
+        }
+
+        // Tier 2: FULLTEXT Search (if query >= 3 chars and we need more songs)
+        if ($useFulltext && count($songMap) < $songCount) {
+            $needed = $songCount - count($songMap);
+            $ftsStmt = $pdo->prepare("
                 SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
                        s.total_count as playCount,
                        COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
@@ -1574,28 +1901,30 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
                 LEFT JOIN album alb ON s.album = alb.id
                 WHERE s.enabled = 1
                   AND (MATCH(s.title) AGAINST(:fts IN BOOLEAN MODE) OR MATCH(art.name) AGAINST(:fts IN BOOLEAN MODE))
-                ORDER BY 
-                  CASE 
-                    WHEN s.title = :exact1 THEN 0
-                    WHEN s.title LIKE :start1 THEN 1
-                    WHEN art.name LIKE :start2 THEN 2
-                    ELSE 3 
-                  END,
-                  s.total_count DESC, s.title ASC
+                ORDER BY s.total_count DESC, s.title ASC
                 LIMIT :lim
             ");
-            $songStmt->bindValue(':fts', $ftsQuery, PDO::PARAM_STR);
-            $songStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':start2', $startQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':lim', $songCount, PDO::PARAM_INT);
-            $songStmt->execute();
-            $songRows = $songStmt->fetchAll(PDO::FETCH_ASSOC);
+            $ftsStmt->bindValue(':fts', $ftsQuery, PDO::PARAM_STR);
+            $ftsStmt->bindValue(':lim', $needed + count($songMap), PDO::PARAM_INT);
+            try {
+                $ftsStmt->execute();
+                $ftsRows = $ftsStmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($ftsRows as $r) {
+                    $sid = (int)$r['id'];
+                    if (!isset($songMap[$sid])) {
+                        $songMap[$sid] = $r;
+                        if (count($songMap) >= $songCount) break;
+                    }
+                }
+            } catch (\Exception $fe) {
+                // If fulltext index not yet built, skip gracefully to Tier 3
+            }
         }
 
-        // Graceful LIKE Fallback for Songs (if < 3 chars OR fulltext returned 0 rows)
-        if (empty($songRows)) {
-            $songStmt = $pdo->prepare("
+        // Tier 3: Substring LIKE Search (if still fewer than requested limit)
+        if (count($songMap) < $songCount) {
+            $needed = $songCount - count($songMap);
+            $likeStmt = $pdo->prepare("
                 SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
                        s.total_count as playCount,
                        COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
@@ -1605,32 +1934,32 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
                 LEFT JOIN album alb ON s.album = alb.id
                 WHERE s.enabled = 1
                   AND (s.title LIKE :q1 OR art.name LIKE :q2 OR alb.name LIKE :q3)
-                ORDER BY 
-                  CASE 
-                    WHEN s.title = :exact1 THEN 0
-                    WHEN s.title LIKE :start1 THEN 1
-                    WHEN art.name LIKE :start2 THEN 2
-                    ELSE 3 
-                  END,
-                  s.total_count DESC, s.title ASC
+                ORDER BY s.total_count DESC, s.title ASC
                 LIMIT :lim
             ");
-            $songStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':q3', $likeQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':start2', $startQ, PDO::PARAM_STR);
-            $songStmt->bindValue(':lim', $songCount, PDO::PARAM_INT);
-            $songStmt->execute();
-            $songRows = $songStmt->fetchAll(PDO::FETCH_ASSOC);
+            $likeStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
+            $likeStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
+            $likeStmt->bindValue(':q3', $likeQ, PDO::PARAM_STR);
+            $likeStmt->bindValue(':lim', $needed + count($songMap), PDO::PARAM_INT);
+            $likeStmt->execute();
+            $likeRows = $likeStmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($likeRows as $r) {
+                $sid = (int)$r['id'];
+                if (!isset($songMap[$sid])) {
+                    $songMap[$sid] = $r;
+                    if (count($songMap) >= $songCount) break;
+                }
+            }
         }
 
         $songs = [];
-        foreach ($songRows as $r) {
+        foreach ($songMap as $r) {
+            $cleanAlbId = (!empty($r['albumId']) && is_numeric($r['albumId'])) ? (int)$r['albumId'] : 0;
+            $cleanArtId = (!empty($r['artistId']) && is_numeric($r['artistId'])) ? (int)$r['artistId'] : 0;
             $subId = (string)(300000000 + (int)$r['id']);
-            $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
-            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+            $subAlbId = (string)(200000000 + $cleanAlbId);
+            $subArtId = (string)(100000000 + $cleanArtId);
+
             $songs[] = [
                 'id' => $subId,
                 'parent' => $subAlbId,
@@ -1654,62 +1983,56 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
         }
 
         // =========================================================
-        // 2. Search Albums (MATCH/AGAINST with LIKE Fallback)
+        // 2. Search Albums (Prefix First -> Fulltext -> Contains)
         // =========================================================
-        $albRows = [];
-        if ($useFulltext) {
-            $albStmt = $pdo->prepare("
-                SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
-                       COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
-                FROM album alb
-                LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
-                WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
-                  AND MATCH(alb.name) AGAINST(:fts IN BOOLEAN MODE)
-                ORDER BY 
-                  CASE 
-                    WHEN alb.name = :exact1 THEN 0
-                    WHEN alb.name LIKE :start1 THEN 1
-                    ELSE 2 
-                  END,
-                  alb.name ASC
-                LIMIT :lim
-            ");
-            $albStmt->bindValue(':fts', $ftsQuery, PDO::PARAM_STR);
-            $albStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-            $albStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-            $albStmt->bindValue(':lim', $albumCount, PDO::PARAM_INT);
-            $albStmt->execute();
-            $albRows = $albStmt->fetchAll(PDO::FETCH_ASSOC);
+        $albMap = [];
+        $albPfxStmt = $pdo->prepare("
+            SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
+                   COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
+            FROM album alb
+            LEFT JOIN artist art ON alb.album_artist = art.id
+            WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
+              AND alb.name LIKE :start1
+            ORDER BY 
+              CASE WHEN alb.name = :exact1 THEN 0 ELSE 1 END,
+              alb.name ASC
+            LIMIT :lim
+        ");
+        $albPfxStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+        $albPfxStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+        $albPfxStmt->bindValue(':lim', $albumCount, PDO::PARAM_INT);
+        $albPfxStmt->execute();
+        foreach ($albPfxStmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $albMap[(int)$r['id']] = $r;
         }
 
-        if (empty($albRows)) {
-            $albStmt = $pdo->prepare("
+        if (count($albMap) < $albumCount) {
+            $needed = $albumCount - count($albMap);
+            $albLikeStmt = $pdo->prepare("
                 SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
                        COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
                 FROM album alb
-                LEFT JOIN artist art ON (alb.album_artist = art.id OR (alb.album_artist = 0 AND art.id = (SELECT s2.artist FROM song s2 WHERE s2.album = alb.id LIMIT 1)))
+                LEFT JOIN artist art ON alb.album_artist = art.id
                 WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
                   AND (alb.name LIKE :q1 OR art.name LIKE :q2)
-                ORDER BY 
-                  CASE 
-                    WHEN alb.name = :exact1 THEN 0
-                    WHEN alb.name LIKE :start1 THEN 1
-                    ELSE 2 
-                  END,
-                  alb.name ASC
+                ORDER BY alb.name ASC
                 LIMIT :lim
             ");
-            $albStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
-            $albStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
-            $albStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-            $albStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-            $albStmt->bindValue(':lim', $albumCount, PDO::PARAM_INT);
-            $albStmt->execute();
-            $albRows = $albStmt->fetchAll(PDO::FETCH_ASSOC);
+            $albLikeStmt->bindValue(':q1', $likeQ, PDO::PARAM_STR);
+            $albLikeStmt->bindValue(':q2', $likeQ, PDO::PARAM_STR);
+            $albLikeStmt->bindValue(':lim', $needed + count($albMap), PDO::PARAM_INT);
+            $albLikeStmt->execute();
+            foreach ($albLikeStmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $aid = (int)$r['id'];
+                if (!isset($albMap[$aid])) {
+                    $albMap[$aid] = $r;
+                    if (count($albMap) >= $albumCount) break;
+                }
+            }
         }
 
         $albums = [];
-        foreach ($albRows as $r) {
+        foreach ($albMap as $r) {
             $subAlbId = (string)(200000000 + (int)$r['id']);
             $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
             $albums[] = [
@@ -1726,37 +2049,33 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
         }
 
         // =========================================================
-        // 3. Search Artists (MATCH/AGAINST with LIKE Fallback)
+        // 3. Search Artists (Prefix First -> Fulltext -> Contains)
         // =========================================================
-        $artRows = [];
-        if ($useFulltext) {
-            $artStmt = $pdo->prepare("
-                SELECT art.id, art.name,
-                       COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount
-                FROM artist art
-                LEFT JOIN album alb ON alb.album_artist = art.id
-                WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
-                  AND MATCH(art.name) AGAINST(:fts IN BOOLEAN MODE)
-                GROUP BY art.id, art.name, art.album_count
-                ORDER BY 
-                  CASE 
-                    WHEN art.name = :exact1 THEN 0
-                    WHEN art.name LIKE :start1 THEN 1
-                    ELSE 2 
-                  END,
-                  art.name ASC
-                LIMIT :lim
-            ");
-            $artStmt->bindValue(':fts', $ftsQuery, PDO::PARAM_STR);
-            $artStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-            $artStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-            $artStmt->bindValue(':lim', $artistCount, PDO::PARAM_INT);
-            $artStmt->execute();
-            $artRows = $artStmt->fetchAll(PDO::FETCH_ASSOC);
+        $artMap = [];
+        $artPfxStmt = $pdo->prepare("
+            SELECT art.id, art.name,
+                   COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount
+            FROM artist art
+            LEFT JOIN album alb ON alb.album_artist = art.id
+            WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
+              AND art.name LIKE :start1
+            GROUP BY art.id, art.name, art.album_count
+            ORDER BY 
+              CASE WHEN art.name = :exact1 THEN 0 ELSE 1 END,
+              art.name ASC
+            LIMIT :lim
+        ");
+        $artPfxStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
+        $artPfxStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
+        $artPfxStmt->bindValue(':lim', $artistCount, PDO::PARAM_INT);
+        $artPfxStmt->execute();
+        foreach ($artPfxStmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $artMap[(int)$r['id']] = $r;
         }
 
-        if (empty($artRows)) {
-            $artStmt = $pdo->prepare("
+        if (count($artMap) < $artistCount) {
+            $needed = $artistCount - count($artMap);
+            $artLikeStmt = $pdo->prepare("
                 SELECT art.id, art.name,
                        COALESCE(art.album_count, COUNT(DISTINCT alb.id)) as albumCount
                 FROM artist art
@@ -1764,25 +2083,23 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
                 WHERE art.name IS NOT NULL AND TRIM(art.name) != ''
                   AND art.name LIKE :q
                 GROUP BY art.id, art.name, art.album_count
-                ORDER BY 
-                  CASE 
-                    WHEN art.name = :exact1 THEN 0
-                    WHEN art.name LIKE :start1 THEN 1
-                    ELSE 2 
-                  END,
-                  art.name ASC
+                ORDER BY art.name ASC
                 LIMIT :lim
             ");
-            $artStmt->bindValue(':q', $likeQ, PDO::PARAM_STR);
-            $artStmt->bindValue(':exact1', $exactQ, PDO::PARAM_STR);
-            $artStmt->bindValue(':start1', $startQ, PDO::PARAM_STR);
-            $artStmt->bindValue(':lim', $artistCount, PDO::PARAM_INT);
-            $artStmt->execute();
-            $artRows = $artStmt->fetchAll(PDO::FETCH_ASSOC);
+            $artLikeStmt->bindValue(':q', $likeQ, PDO::PARAM_STR);
+            $artLikeStmt->bindValue(':lim', $needed + count($artMap), PDO::PARAM_INT);
+            $artLikeStmt->execute();
+            foreach ($artLikeStmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $arid = (int)$r['id'];
+                if (!isset($artMap[$arid])) {
+                    $artMap[$arid] = $r;
+                    if (count($artMap) >= $artistCount) break;
+                }
+            }
         }
 
         $artists = [];
-        foreach ($artRows as $r) {
+        foreach ($artMap as $r) {
             $subArtId = (string)(100000000 + (int)$r['id']);
             $artists[] = [
                 'id' => $subArtId,
@@ -1792,26 +2109,38 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
             ];
         }
 
-        // Typo-tolerant fallback: only runs when the exact/LIKE pass above found
-        // nothing, so normal (correctly-spelled) searches keep their fast path.
-        if (empty($songs) && empty($albums) && empty($artists)) {
+        // =========================================================
+        // 4. Bounded Typo-Tolerant Fallback (Runs ONLY if 0 matches)
+        // =========================================================
+        if (empty($songs) && empty($albums) && empty($artists) && mb_strlen($q) >= 3) {
             $qLower = mb_strtolower($q);
             $qLen = mb_strlen($qLower);
             $maxDist = $qLen <= 4 ? 1 : ($qLen <= 8 ? 2 : 3);
+            $candPfx = mb_substr($qLower, 0, 2) . '%';
 
-            $allArtists = $pdo->query("SELECT id, name, album_count FROM artist WHERE name IS NOT NULL AND TRIM(name) != ''")->fetchAll(PDO::FETCH_ASSOC);
-            $fuzzyArtistMatches = [];
-            foreach ($allArtists as $a) {
+            // Fetch candidate artists matching first 2 characters (bounded to 40)
+            $candArtStmt = $pdo->prepare("
+                SELECT id, name, album_count 
+                FROM artist 
+                WHERE name IS NOT NULL AND name LIKE :pfx
+                LIMIT 40
+            ");
+            $candArtStmt->bindValue(':pfx', $candPfx);
+            $candArtStmt->execute();
+            $candArtists = $candArtStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $fuzzyArtists = [];
+            foreach ($candArtists as $a) {
                 $dist = levenshtein($qLower, mb_strtolower($a['name']));
                 if ($dist <= $maxDist) {
                     $a['_dist'] = $dist;
-                    $fuzzyArtistMatches[] = $a;
+                    $fuzzyArtists[] = $a;
                 }
             }
-            usort($fuzzyArtistMatches, fn($x, $y) => $x['_dist'] <=> $y['_dist']);
-            $fuzzyArtistMatches = array_slice($fuzzyArtistMatches, 0, $artistCount);
+            usort($fuzzyArtists, function($x, $y) { return $x['_dist'] - $y['_dist']; });
+            $fuzzyArtists = array_slice($fuzzyArtists, 0, $artistCount);
 
-            foreach ($fuzzyArtistMatches as $r) {
+            foreach ($fuzzyArtists as $r) {
                 $subArtId = (string)(100000000 + (int)$r['id']);
                 $artists[] = [
                     'id' => $subArtId,
@@ -1821,25 +2150,31 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
                 ];
             }
 
-            $allAlbums = $pdo->query("
+            // Fetch candidate albums matching first 2 characters (bounded to 40)
+            $candAlbStmt = $pdo->prepare("
                 SELECT alb.id, alb.name, alb.year, alb.song_count, alb.total_count as playCount,
                        COALESCE(art.name, 'Various Artists') as artist, COALESCE(art.id, 0) as artistId
                 FROM album alb
                 LEFT JOIN artist art ON alb.album_artist = art.id
-                WHERE alb.name IS NOT NULL AND TRIM(alb.name) != ''
-            ")->fetchAll(PDO::FETCH_ASSOC);
-            $fuzzyAlbumMatches = [];
-            foreach ($allAlbums as $a) {
+                WHERE alb.name IS NOT NULL AND alb.name LIKE :pfx
+                LIMIT 40
+            ");
+            $candAlbStmt->bindValue(':pfx', $candPfx);
+            $candAlbStmt->execute();
+            $candAlbums = $candAlbStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $fuzzyAlbums = [];
+            foreach ($candAlbums as $a) {
                 $dist = levenshtein($qLower, mb_strtolower($a['name']));
                 if ($dist <= $maxDist) {
                     $a['_dist'] = $dist;
-                    $fuzzyAlbumMatches[] = $a;
+                    $fuzzyAlbums[] = $a;
                 }
             }
-            usort($fuzzyAlbumMatches, fn($x, $y) => $x['_dist'] <=> $y['_dist']);
-            $fuzzyAlbumMatches = array_slice($fuzzyAlbumMatches, 0, $albumCount);
+            usort($fuzzyAlbums, function($x, $y) { return $x['_dist'] - $y['_dist']; });
+            $fuzzyAlbums = array_slice($fuzzyAlbums, 0, $albumCount);
 
-            foreach ($fuzzyAlbumMatches as $r) {
+            foreach ($fuzzyAlbums as $r) {
                 $subAlbId = (string)(200000000 + (int)$r['id']);
                 $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
                 $albums[] = [
@@ -1855,22 +2190,8 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
                 ];
             }
 
-            // Narrow song candidates via SOUNDEX + matched fuzzy artists first, so we
-            // never run a full Levenshtein pass over the entire library.
-            // Cast to int: PDO returns numeric columns as strings, and the
-            // in_array(..., true) strict check below would otherwise never
-            // match against the int artistId pulled from the song rows.
-            $matchedArtistIds = array_map('intval', array_column($fuzzyArtistMatches, 'id'));
-            $soundexParams = [':sdx' => $qLower];
-            $artistIdPlaceholders = [];
-            foreach ($matchedArtistIds as $idx => $aid) {
-                $ph = ":aid{$idx}";
-                $artistIdPlaceholders[] = $ph;
-                $soundexParams[$ph] = $aid;
-            }
-            $artistIdClause = $artistIdPlaceholders ? (' OR s.artist IN (' . implode(',', $artistIdPlaceholders) . ')') : '';
-
-            $songCandStmt = $pdo->prepare("
+            // Fetch candidate songs matching first 2 characters (bounded to 80)
+            $candSongStmt = $pdo->prepare("
                 SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
                        s.total_count as playCount,
                        COALESCE(art.name, 'Unknown Artist') as artist, COALESCE(art.id, 0) as artistId,
@@ -1879,33 +2200,40 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
                 LEFT JOIN artist art ON s.artist = art.id
                 LEFT JOIN album alb ON s.album = alb.id
                 WHERE s.enabled = 1
-                  AND (SOUNDEX(s.title) = SOUNDEX(:sdx){$artistIdClause})
-                LIMIT 500
+                  AND (s.title LIKE :pfx OR SOUNDEX(s.title) = SOUNDEX(:sdx))
+                LIMIT 80
             ");
-            $songCandStmt->execute($soundexParams);
-            $songCandidates = $songCandStmt->fetchAll(PDO::FETCH_ASSOC);
+            $candSongStmt->bindValue(':pfx', $candPfx);
+            $candSongStmt->bindValue(':sdx', $qLower);
+            $candSongStmt->execute();
+            $candSongs = $candSongStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $fuzzySongMatches = [];
-            foreach ($songCandidates as $r) {
+            $fuzzySongs = [];
+            foreach ($candSongs as $r) {
                 $title = $r['title'] ?? '';
                 $dist = levenshtein($qLower, mb_strtolower($title));
-                foreach (preg_split('/\s+/', $title) as $word) {
-                    if ($word === '') continue;
-                    $dist = min($dist, levenshtein($qLower, mb_strtolower($word)));
+                $words = preg_split('/\s+/', $title);
+                if (is_array($words)) {
+                    foreach ($words as $word) {
+                        if ($word === '') continue;
+                        $dist = min($dist, levenshtein($qLower, mb_strtolower($word)));
+                    }
                 }
-                $artistMatched = in_array((int)$r['artistId'], $matchedArtistIds, true);
-                if ($dist <= $maxDist || $artistMatched) {
-                    $r['_dist'] = $artistMatched ? min($dist, $maxDist) : $dist;
-                    $fuzzySongMatches[] = $r;
+                if ($dist <= $maxDist) {
+                    $r['_dist'] = $dist;
+                    $fuzzySongs[] = $r;
                 }
             }
-            usort($fuzzySongMatches, fn($x, $y) => $x['_dist'] <=> $y['_dist']);
-            $fuzzySongMatches = array_slice($fuzzySongMatches, 0, $songCount);
+            usort($fuzzySongs, function($x, $y) { return $x['_dist'] - $y['_dist']; });
+            $fuzzySongs = array_slice($fuzzySongs, 0, $songCount);
 
-            foreach ($fuzzySongMatches as $r) {
+            foreach ($fuzzySongs as $r) {
+                $cleanAlbId = (!empty($r['albumId']) && is_numeric($r['albumId'])) ? (int)$r['albumId'] : 0;
+                $cleanArtId = (!empty($r['artistId']) && is_numeric($r['artistId'])) ? (int)$r['artistId'] : 0;
                 $subId = (string)(300000000 + (int)$r['id']);
-                $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
-                $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
+                $subAlbId = (string)(200000000 + $cleanAlbId);
+                $subArtId = (string)(100000000 + $cleanArtId);
+
                 $songs[] = [
                     'id' => $subId,
                     'parent' => $subAlbId,
@@ -1929,7 +2257,7 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
             }
         }
 
-        echo json_encode([
+        $payload = [
             'status' => 'ok',
             'song' => $songs,
             'album' => $albums,
@@ -1948,7 +2276,14 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
                     'artist' => $artists
                 ]
             ]
-        ]);
+        ];
+
+        // Store in short-TTL search file cache if any items found
+        if (!empty($songs) || !empty($albums) || !empty($artists)) {
+            setAetherSearchCache($cacheKey, $payload);
+        }
+
+        echo json_encode($payload);
         exit;
     } catch (\Exception $e) {
         http_response_code(500);

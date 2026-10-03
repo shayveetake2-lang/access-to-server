@@ -1,6 +1,6 @@
 import { Search, Volume2, ListPlus, Plus } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePlayer } from '../context/PlayerContext';
 import { useAuth } from '../context/AuthContext';
 import { usePlaylistModal } from '../context/PlaylistModalContext';
@@ -15,7 +15,8 @@ export default function SearchBar({ onResultClick, className = '' }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const dropdownRef = useRef(null);
-  const debouncedQuery = useDebounce(query, 300);
+  const debouncedQuery = useDebounce(query, 150);
+  const navigate = useNavigate();
 
   const { playSong, addToQueue, currentTrack, isPlaying } = usePlayer();
   const { user, getAuthParams } = useAuth();
@@ -36,7 +37,7 @@ export default function SearchBar({ onResultClick, className = '' }) {
     let isMounted = true;
     setLoading(true);
 
-    searchSubsonic(trimmed, user)
+    searchSubsonic(trimmed, user, { songCount: 8, albumCount: 4, artistCount: 4 })
       .then((data) => {
         if (isMounted) {
           setResults(data);
@@ -103,6 +104,13 @@ export default function SearchBar({ onResultClick, className = '' }) {
               setShowDropdown(true);
             }
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && query.trim().length >= 2) {
+              setShowDropdown(false);
+              navigate(`/songs?tab=library&q=${encodeURIComponent(query.trim())}`);
+              if (onResultClick) onResultClick();
+            }
+          }}
           className="w-full bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 rounded-full py-2 pl-10 pr-9 text-xs sm:text-sm text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
         />
         {isSearching && (
@@ -148,6 +156,8 @@ export default function SearchBar({ onResultClick, className = '' }) {
                               src={getCoverArtUrl(song.coverArt || song.id, getAuthParams(user))} 
                               className="w-full h-full object-cover" 
                               alt="" 
+                              loading="lazy"
+                              decoding="async"
                               onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
                             />
                             {isCurrent && (
@@ -213,6 +223,8 @@ export default function SearchBar({ onResultClick, className = '' }) {
                         src={getCoverArtUrl(album.coverArt || album.id, getAuthParams(user))} 
                         className="w-10 h-10 rounded bg-slate-100 dark:bg-slate-800 object-cover shrink-0" 
                         alt="" 
+                        loading="lazy"
+                        decoding="async"
                         onError={(e) => { if (e.currentTarget.src !== DEFAULT_COVER_ART) { e.currentTarget.src = DEFAULT_COVER_ART; } }}
                       />
                       <div className="min-w-0 flex-1">
