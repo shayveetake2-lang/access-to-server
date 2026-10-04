@@ -1,6 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
-import { Volume2, Headphones, Radio, Tv, Laptop, Smartphone, Speaker, Check, ChevronDown, Cast, Sparkles } from 'lucide-react';
+import { Volume2, Headphones, Radio, Tv, Laptop, Smartphone, Speaker, Check, ChevronDown, Cast } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
+
+const checkSinkSupport = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  const testAudio = document.createElement('audio');
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  return typeof testAudio.setSinkId === 'function' || (AudioContextClass && typeof AudioContextClass.prototype.setSinkId === 'function');
+};
+const IS_SINK_SUPPORTED = checkSinkSupport();
+
+const checkAirPlaySupport = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  const testAudio = document.createElement('audio');
+  return Boolean(window.WebKitPlaybackTargetAvailabilityEvent || 'webkitCurrentPlaybackTargetIsWireless' in testAudio);
+};
 
 /**
  * OutputMenu Component
@@ -18,15 +32,13 @@ export default function OutputMenu({ compact = false }) {
     return 'default';
   });
   const [isOpen, setIsOpen] = useState(false);
-  const [isSinkSupported, setIsSinkSupported] = useState(true);
-  const [hasAirPlay, setHasAirPlay] = useState(false);
-  const [hasPermission, setHasPermission] = useState(false);
+  const isSinkSupported = IS_SINK_SUPPORTED;
+  const [hasAirPlay, setHasAirPlay] = useState(checkAirPlaySupport);
   const dropdownRef = useRef(null);
 
   // Helper to determine the device category, label, and appropriate icon
-  const getDeviceMeta = (device, isCurrent = false) => {
+  const getDeviceMeta = (device) => {
     const label = (device?.label || '').toLowerCase();
-    const id = device?.deviceId || 'default';
 
     if (label.includes('airplay') || label.includes('apple tv') || label.includes('homepod')) {
       return {
@@ -89,18 +101,12 @@ export default function OutputMenu({ compact = false }) {
 
   const refreshDevices = async () => {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.enumerateDevices) {
-      setIsSinkSupported(false);
       return;
     }
 
     try {
       const allDevices = await navigator.mediaDevices.enumerateDevices();
       const audioOutputs = allDevices.filter(d => d.kind === 'audiooutput');
-      
-      const namedOutputs = audioOutputs.filter(d => Boolean(d.label));
-      if (namedOutputs.length > 0) {
-        setHasPermission(true);
-      }
 
       // If no explicit audiooutput returned (e.g. mobile Safari), create a synthetic default device
       if (audioOutputs.length === 0) {
@@ -119,17 +125,6 @@ export default function OutputMenu({ compact = false }) {
   };
 
   useEffect(() => {
-    // Check if HTMLAudioElement or AudioContext supports setSinkId
-    const testAudio = document.createElement('audio');
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    const sinkSupported = typeof testAudio.setSinkId === 'function' || (AudioContextClass && typeof AudioContextClass.prototype.setSinkId === 'function');
-    setIsSinkSupported(sinkSupported);
-
-    // Check Apple AirPlay WebKit availability
-    if (window.WebKitPlaybackTargetAvailabilityEvent || 'webkitCurrentPlaybackTargetIsWireless' in testAudio) {
-      setHasAirPlay(true);
-    }
-
     // Ensure the live <audio> element always exposes the WebKit AirPlay fallback attribute
     if (audioRef?.current) {
       audioRef.current.setAttribute('x-webkit-airplay', 'allow');
@@ -143,7 +138,7 @@ export default function OutputMenu({ compact = false }) {
         navigator.mediaDevices.removeEventListener('devicechange', refreshDevices);
       };
     }
-  }, []);
+  }, [audioRef]);
 
   // Listen to AirPlay availability on current audio element
   useEffect(() => {
@@ -160,7 +155,7 @@ export default function OutputMenu({ compact = false }) {
         audio.removeEventListener('webkitplaybacktargetavailabilitychanged', handleAirPlayAvailability);
       };
     }
-  }, [audioRef?.current]);
+  }, [audioRef]);
 
   // Apply setSinkId when selected device changes or audio element updates
   useEffect(() => {
@@ -180,7 +175,7 @@ export default function OutputMenu({ compact = false }) {
     if (ctx && typeof ctx.setSinkId === 'function') {
       ctx.setSinkId(sinkId).catch((e) => reportSinkError('AudioContext', e));
     }
-  }, [selectedDeviceId, audioRef?.current, isSinkSupported]);
+  }, [selectedDeviceId, audioRef, isSinkSupported]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
