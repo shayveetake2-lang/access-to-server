@@ -29,8 +29,8 @@ export default function SearchBar({ onResultClick, className = '' }) {
   useEffect(() => {
     const trimmed = debouncedQuery.trim();
     if (trimmed.length < 2) {
-      setResults(null);
-      setLoading(false);
+      setResults((prev) => (prev !== null ? null : prev));
+      setLoading((prev) => (prev ? false : prev));
       return;
     }
 

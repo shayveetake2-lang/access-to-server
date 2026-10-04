@@ -26,6 +26,17 @@ async function resolveIsAdmin(username, authParams) {
   return isAdmin;
 }
 
+async function verifyToken(credentials) {
+  try {
+    const authParams = getSubsonicAuthParams(credentials);
+    const res = await fetch(getAmpacheUrl(`action=ping&${authParams}`));
+    const data = await res.json();
+    return data?.['subsonic-response']?.status === 'ok';
+  } catch (err) {
+    return false;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,17 +78,6 @@ export function AuthProvider({ children }) {
 
   const getAuthParams = (credentials, forceNew = false) => {
     return getSubsonicAuthParams(credentials || user, forceNew);
-  };
-
-  const verifyToken = async (credentials) => {
-    try {
-      const authParams = getSubsonicAuthParams(credentials);
-      const res = await fetch(getAmpacheUrl(`action=ping&${authParams}`));
-      const data = await res.json();
-      return data?.['subsonic-response']?.status === 'ok';
-    } catch (err) {
-      return false;
-    }
   };
 
   const login = async (username, password) => {

@@ -153,7 +153,7 @@ export function getCoverArtUrl(coverArtId) {
   return `${getApiProxyUrl()}?action=getCoverArt&id=${encodeURIComponent(normalizedId)}`;
 }
 
-export function getStreamUrl(trackId) {
+export function getStreamUrl(trackId, authParams = null) {
   if (!trackId) return '';
   
   const raw = String(trackId).trim();
@@ -167,7 +167,18 @@ export function getStreamUrl(trackId) {
     normalizedId = num < 100000000 ? String(600000000 + num) : (num >= 600000000 && num < 400000000 ? String(num) : String(600000000 + (num % 100000000)));
   }
 
-  return `${getApiProxyUrl()}?action=stream&id=${encodeURIComponent(normalizedId)}`;
+  let auth = '';
+  if (typeof authParams === 'string' && authParams.trim().length > 0) {
+    auth = authParams.startsWith('&') || authParams.startsWith('?') ? authParams : `&${authParams}`;
+  } else if (authParams && typeof authParams === 'object') {
+    const p = getSubsonicAuthParams(authParams);
+    if (p) auth = `&${p}`;
+  } else {
+    const p = getSubsonicAuthParams();
+    if (p) auth = `&${p}`;
+  }
+
+  return `${getApiProxyUrl()}?action=stream&id=${encodeURIComponent(normalizedId)}${auth}`;
 }
 
 function getSearchVariants(query) {
@@ -266,7 +277,9 @@ export function searchSubsonic(query, user = null, options = {}) {
 
       // 1. Primary: Direct high-performance MySQL pipeline via api_proxy.php
       try {
-        const proxyUrl = `${getApiProxyUrl()}?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=${songCount}&albumCount=${albumCount}&artistCount=${artistCount}`;
+        const auth = getSubsonicAuthParams(user);
+        const authSuffix = auth ? (auth.startsWith('&') || auth.startsWith('?') ? auth : `&${auth}`) : '';
+        const proxyUrl = `${getApiProxyUrl()}?action=search3&query=${encodeURIComponent(trimmedQuery)}&songCount=${songCount}&albumCount=${albumCount}&artistCount=${artistCount}${authSuffix}`;
         const proxyRes = await fetch(proxyUrl, { cache: 'default', signal });
         const proxyData = await proxyRes.json();
         if (proxyData?.status === 'ok') {

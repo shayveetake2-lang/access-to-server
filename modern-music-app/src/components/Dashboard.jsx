@@ -112,7 +112,7 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, getAuthParams]);
 
   // Group albums by genre categories
   const genreSections = useMemo(() => {
@@ -171,7 +171,7 @@ export default function Dashboard() {
       } else {
         showToast(data?.message || 'Failed to submit request', 'error');
       }
-    } catch (error) {
+    } catch {
       showToast('Network error while submitting request', 'error');
     } finally {
       setIsSubmittingRequest(false);
@@ -195,7 +195,7 @@ export default function Dashboard() {
           showToast('No tracks available for Quick Listen', 'warning');
         }
       }
-    } catch (err) {
+    } catch {
       showToast('Quick Listen failed to start', 'error');
     } finally {
       setIsQuickListening(false);
@@ -225,7 +225,7 @@ export default function Dashboard() {
       } else {
         showToast(`No tracks in "${album.name || album.title}"`, 'warning');
       }
-    } catch (err) {
+    } catch {
       showToast('Failed to play album', 'error');
     } finally {
       setPlayingAlbumId(null);
@@ -262,7 +262,7 @@ export default function Dashboard() {
       } else {
         showToast('Failed to save playlist', 'error');
       }
-    } catch (err) {
+    } catch {
       showToast('Network error saving playlist', 'error');
     } finally {
       setSavingPlaylistId(null);
@@ -288,7 +288,7 @@ export default function Dashboard() {
           showToast(`Playlist is empty`, 'warning');
         }
       }
-    } catch (err) {
+    } catch {
       showToast('Failed to play playlist', 'error');
     }
   };

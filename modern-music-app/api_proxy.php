@@ -68,6 +68,8 @@ if ($corsOrigin !== null) {
     header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
 }
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, Range, X-Requested-With');
 header('Access-Control-Expose-Headers: Content-Range, Accept-Ranges, Content-Length');
@@ -259,6 +261,138 @@ function getEmbeddedArtwork($pdo, string $objectType, int $objectId): ?array {
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $_GET['action'] ?? ($input['action'] ?? '');
 
+// ── Shared Stateless Authentication Helpers ─────────────────────────────────
+require_once __DIR__ . '/../api/auth/jwt_utils.php';
+
+function getProxyAuthorizationHeader() {
+    $candidates = [];
+    if (function_exists('getallheaders')) {
+        foreach ((array)getallheaders() as $name => $value) {
+            if (strtolower($name) === 'authorization') {
+                $candidates[] = $value;
+            }
+        }
+    }
+    if (!empty($_SERVER['HTTP_AUTHORIZATION'])) $candidates[] = $_SERVER['HTTP_AUTHORIZATION'];
+    if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) $candidates[] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+    foreach ($candidates as $c) {
+        if (is_string($c) && trim($c) !== '') return trim($c);
+    }
+    return '';
+}
+
+function getVerifiedProxyUser() {
+    static $resolved = false;
+    static $payload = null;
+    if ($resolved) return $payload;
+    $resolved = true;
+
+    $authHeader = getProxyAuthorizationHeader();
+    $jwt = '';
+    if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
+        $jwt = trim($m[1]);
+    } elseif (!empty($_POST['token'])) {
+        $jwt = trim($_POST['token']);
+    }
+    if ($jwt === '') return null;
+    $payload = verifyAndDecodeJwt($jwt);
+    return $payload;
+}
+
+function resolveProxyAmpacheUser($pdo) {
+    static $cache = false;
+    if ($cache !== false) return $cache;
+    $cache = null;
+
+    $payload = getVerifiedProxyUser();
+    if (!$payload || !$pdo) return null;
+    $username = trim((string)($payload['username'] ?? ''));
+    if ($username === '') return null;
+
+    try {
+        $stmt = $pdo->prepare("SELECT id, username FROM user WHERE LOWER(username) = LOWER(:u) LIMIT 1");
+        $stmt->execute([':u' => $username]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && (int)$row['id'] > 0) {
+            $cache = [
+                'id' => (int)$row['id'],
+                'username' => $row['username'],
+                'role' => (isset($payload['role']) && $payload['role'] === 'admin') ? 'admin' : 'user'
+            ];
+        }
+    } catch (\Exception $e) {
+        error_log('[Aether] resolveProxyAmpacheUser failed: ' . $e->getMessage());
+    }
+    return $cache;
+}
+
+/**
+ * Fast stateless authentication for media streaming and search.
+ * Validates via Bearer JWT, URL token parameter, or Subsonic token parameters (u, t, s).
+ */
+function verifyMediaProxyAuth($pdo) {
+    // 1. Authorization header (Bearer JWT)
+    $jwtUser = getVerifiedProxyUser();
+    if ($jwtUser) return $jwtUser;
+
+    // 2. Query param JWT token (?token=... or ?jwt=...)
+    $queryToken = $_GET['token'] ?? ($_GET['jwt'] ?? '');
+    if (!empty($queryToken)) {
+        $verified = verifyAndDecodeJwt($queryToken);
+        if ($verified) return $verified;
+    }
+
+    // 3. Subsonic token params (u, t, s, p)
+    $u = trim($_GET['u'] ?? ($_POST['u'] ?? ''));
+    $t = trim($_GET['t'] ?? ($_POST['t'] ?? ''));
+    $s = trim($_GET['s'] ?? ($_POST['s'] ?? ''));
+    $p = trim($_GET['p'] ?? ($_POST['p'] ?? ''));
+
+    if (!empty($p) && strpos($p, '.') !== false) {
+        $verified = verifyAndDecodeJwt($p);
+        if ($verified) return $verified;
+    }
+
+    if (!empty($u) && (!empty($t) || !empty($p))) {
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("SELECT id, username, apikey, password FROM user WHERE LOWER(username) = LOWER(:u) LIMIT 1");
+                $stmt->execute([':u' => $u]);
+                $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($userRow) {
+                    $apiKey = $userRow['apikey'] ?? '';
+                    $pass = $userRow['password'] ?? '';
+                    if (!empty($t) && !empty($s)) {
+                        if (!empty($apiKey) && hash_equals(md5($apiKey . $s), $t)) {
+                            return ['user_id' => $userRow['id'], 'username' => $userRow['username']];
+                        }
+                        if (!empty($pass) && hash_equals(md5($pass . $s), $t)) {
+                            return ['user_id' => $userRow['id'], 'username' => $userRow['username']];
+                        }
+                    }
+                    $adminApiKey = getenv('AMPACHE_ADMIN_API_KEY') ?: '18e499b984c75ad09e233f6d8fe0228d';
+                    if (!empty($t) && !empty($s) && hash_equals(md5($adminApiKey . $s), $t)) {
+                        return ['user_id' => $userRow['id'], 'username' => $userRow['username']];
+                    }
+                }
+            } catch (\Exception $e) {
+                error_log('[Aether] verifyMediaProxyAuth error: ' . $e->getMessage());
+            }
+        }
+    }
+
+    // 4. Session fallback
+    if (isset($_SESSION['auth_token'])) {
+        $verified = verifyAndDecodeJwt($_SESSION['auth_token']);
+        if ($verified) return $verified;
+    }
+    if (isset($_SESSION['username'])) {
+        return ['username' => $_SESSION['username'], 'user_id' => $_SESSION['user_id'] ?? 0];
+    }
+
+    return null;
+}
+
 // ── Audio Streaming Endpoint (Hardware-Accelerated Seekable Stream with HTTP 206) ──
 if ($action === 'stream' || $action === 'download') {
     $rawSongId = $_GET['id'] ?? ($input['id'] ?? ($_GET['songId'] ?? ($input['songId'] ?? 0)));
@@ -279,6 +413,14 @@ if ($action === 'stream' || $action === 'download') {
     if (!$pdo) {
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    // SECURITY: Authenticate streaming requests statelessly
+    $authUser = verifyMediaProxyAuth($pdo);
+    if (!$authUser) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Authentication required for media playback.']);
         exit;
     }
 
@@ -482,80 +624,6 @@ if ($action === 'getCoverArt' || $action === 'coverArt') {
 }
 
 // ── Starred Items Retrieval Endpoint (Subsonic getStarred2 Compatibility) ───
-// ── Shared JWT Authentication Helpers ────────────────────────────────────────
-// Loaded here (after the media endpoints, which never need auth) so every
-// user-scoped endpoint below can identify the caller from a signed JWT instead
-// of trusting a spoofable `u=` query parameter.
-require_once __DIR__ . '/../api/auth/jwt_utils.php';
-
-function getProxyAuthorizationHeader() {
-    $candidates = [];
-    if (function_exists('getallheaders')) {
-        foreach ((array)getallheaders() as $name => $value) {
-            if (strtolower($name) === 'authorization') {
-                $candidates[] = $value;
-            }
-        }
-    }
-    if (!empty($_SERVER['HTTP_AUTHORIZATION'])) $candidates[] = $_SERVER['HTTP_AUTHORIZATION'];
-    if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) $candidates[] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
-    foreach ($candidates as $c) {
-        if (is_string($c) && trim($c) !== '') return trim($c);
-    }
-    return '';
-}
-
-function getVerifiedProxyUser() {
-    static $resolved = false;
-    static $payload = null;
-    if ($resolved) return $payload;
-    $resolved = true;
-
-    $authHeader = getProxyAuthorizationHeader();
-    $jwt = '';
-    if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
-        $jwt = trim($m[1]);
-    } elseif (!empty($_POST['token'])) {
-        // POST body token only — never accept JWTs in the query string (leaks into logs/history).
-        $jwt = trim($_POST['token']);
-    }
-    if ($jwt === '') return null;
-    $payload = verifyAndDecodeJwt($jwt);
-    return $payload;
-}
-
-/**
- * Maps the verified JWT (ServerFlow sys_users identity) to the matching Ampache
- * `user` row. The JWT `user_id` is a ServerFlow ID, NOT an Ampache ID, so the
- * username is the only reliable join key between the two databases.
- * Returns ['id' => int, 'username' => string, 'role' => string] or null.
- */
-function resolveProxyAmpacheUser($pdo) {
-    static $cache = false;
-    if ($cache !== false) return $cache;
-    $cache = null;
-
-    $payload = getVerifiedProxyUser();
-    if (!$payload || !$pdo) return null;
-    $username = trim((string)($payload['username'] ?? ''));
-    if ($username === '') return null;
-
-    try {
-        $stmt = $pdo->prepare("SELECT id, username FROM user WHERE LOWER(username) = LOWER(:u) LIMIT 1");
-        $stmt->execute([':u' => $username]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && (int)$row['id'] > 0) {
-            $cache = [
-                'id' => (int)$row['id'],
-                'username' => $row['username'],
-                'role' => (isset($payload['role']) && $payload['role'] === 'admin') ? 'admin' : 'user'
-            ];
-        }
-    } catch (\Exception $e) {
-        error_log('[Aether] resolveProxyAmpacheUser failed: ' . $e->getMessage());
-    }
-    return $cache;
-}
 
 // ── Auth Diagnostic (no secrets) ────────────────────────────────────────────
 // Lets the frontend / admin confirm the Authorization header survives
@@ -2154,6 +2222,21 @@ function setAetherSearchCache($cacheKey, array $data) {
 }
 
 if ($action === 'search' || $action === 'search2' || $action === 'search3') {
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    // SECURITY: Authenticate search requests statelessly
+    $authUser = verifyMediaProxyAuth($pdo);
+    if (!$authUser) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Authentication required for library search.']);
+        exit;
+    }
+
     $q = trim($_GET['query'] ?? ($input['query'] ?? ($_GET['q'] ?? ($input['q'] ?? ''))));
     $q = rtrim($q, '*');
 
@@ -2188,13 +2271,6 @@ if ($action === 'search' || $action === 'search2' || $action === 'search3') {
     if ($cached !== null) {
         header('X-Aether-Cache: HIT');
         echo json_encode($cached);
-        exit;
-    }
-
-    $pdo = getProxyPdo();
-    if (!$pdo) {
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
         exit;
     }
 

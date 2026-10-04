@@ -17,12 +17,7 @@ class ErrorBoundaryInner extends React.Component {
     this.setState({ errorInfo });
   }
 
-  componentDidUpdate(prevProps) {
-    // If the route location changes, automatically clear error state so navigation recovers
-    if (this.state.hasError && this.props.locationKey !== prevProps.locationKey) {
-      this.setState({ hasError: false, error: null, errorInfo: null });
-    }
-  }
+  // Removed componentDidUpdate setState in favor of key-based reset on location change
 
   handleReload = () => {
     window.location.reload();
@@ -79,13 +74,8 @@ class ErrorBoundaryInner extends React.Component {
 }
 
 export default function ErrorBoundary(props) {
-  let locationKey = '';
-  try {
-    const location = useLocation();
-    locationKey = (location.pathname || '') + (location.search || '');
-  } catch (e) {
-    // Rendered outside Router context
-  }
+  const location = useLocation();
+  const locationKey = (location.pathname || '') + (location.search || '');
 
-  return <ErrorBoundaryInner {...props} locationKey={locationKey} />;
+  return <ErrorBoundaryInner key={locationKey} {...props} locationKey={locationKey} />;
 }
