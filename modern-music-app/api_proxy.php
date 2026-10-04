@@ -50,12 +50,16 @@ if (!empty($origin)) {
         }
     }
     if (!$isAllowed && $originHost) {
-        if (strncmp($originHost, '10.', 3) === 0 ||
-            strncmp($originHost, '192.168.', 8) === 0 ||
-            strncmp($originHost, '172.', 4) === 0 ||
-            $originHost === 'localhost' ||
-            $originHost === '127.0.0.1') {
+        if ($originHost === 'localhost' || $originHost === '127.0.0.1') {
             $isAllowed = true;
+        } elseif (filter_var($originHost, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $ipLong = ip2long($originHost);
+            if (($ipLong >= 167772160 && $ipLong <= 184549375) ||      // 10.0.0.0/8
+                ($ipLong >= 2886729728 && $ipLong <= 2887778303) ||    // 172.16.0.0/12
+                ($ipLong >= 3232235520 && $ipLong <= 3232301055) ||    // 192.168.0.0/16
+                ($ipLong >= 2130706432 && $ipLong <= 2147483647)) {    // 127.0.0.0/8
+                $isAllowed = true;
+            }
         }
     }
     if ($isAllowed) {
@@ -370,8 +374,8 @@ function verifyMediaProxyAuth($pdo) {
                             return ['user_id' => $userRow['id'], 'username' => $userRow['username']];
                         }
                     }
-                    $adminApiKey = getenv('AMPACHE_ADMIN_API_KEY') ?: '18e499b984c75ad09e233f6d8fe0228d';
-                    if (!empty($t) && !empty($s) && hash_equals(md5($adminApiKey . $s), $t)) {
+                    $adminApiKey = getProxyEnv('AMPACHE_ADMIN_API_KEY', getProxyEnv('AMPACHE_ADMIN_PASS_HASH', '18e499b984c75ad09e233f6d8fe0228d'));
+                    if (!empty($adminApiKey) && !empty($t) && !empty($s) && hash_equals(md5($adminApiKey . $s), $t)) {
                         return ['user_id' => $userRow['id'], 'username' => $userRow['username']];
                     }
                 }
@@ -1238,12 +1242,24 @@ if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibil
         exit;
     }
 
+    // Verify playlist existence and ownership (protect against IDOR)
+    $q = $pdo->prepare("SELECT user, type FROM playlist WHERE id = :id LIMIT 1");
+    $q->execute([':id' => $cleanId]);
+    $row = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'Playlist not found.']);
+        exit;
+    }
+
+    if ($ampUser['role'] !== 'admin' && (int)$row['user'] !== (int)$ampUser['id']) {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Forbidden: You do not have permission to modify this playlist.']);
+        exit;
+    }
+
     $publicVal = $_GET['public'] ?? ($input['public'] ?? null);
     if ($publicVal === null) {
-        // Auto-toggle current database state
-        $q = $pdo->prepare("SELECT type FROM playlist WHERE id = :id LIMIT 1");
-        $q->execute([':id' => $cleanId]);
-        $row = $q->fetch(PDO::FETCH_ASSOC);
         $currentType = $row['type'] ?? 'private';
         $isPublic = ($currentType !== 'public');
     } else {
@@ -1264,8 +1280,9 @@ if ($action === 'togglePlaylistVisibility' || $action === 'updatePlaylistVisibil
         ]);
         exit;
     } catch (\Exception $e) {
+        error_log('[Aether] togglePlaylistVisibility error: ' . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update playlist visibility.']);
         exit;
     }
 }
@@ -1310,8 +1327,9 @@ if ($action === 'updateUserRole') {
         ]);
         exit;
     } catch (\Exception $e) {
+        error_log('[Aether] updateUserRole error: ' . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update user role.']);
         exit;
     }
 }
@@ -2838,13 +2856,20 @@ if ($action === 'register') {
     exit;
 }
 
-http_response_code(400);
-echo json_encode(['status' => 'error', 'message' => 'Invalid action specified.']);
-
 if ($action === 'debug_db') {
     $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+    requireProxyAdmin($pdo);
     $stmt = $pdo->query("SELECT * FROM object_count LIMIT 1");
     echo json_encode($stmt->fetch(PDO::FETCH_ASSOC));
     exit;
 }
+
+http_response_code(400);
+echo json_encode(['status' => 'error', 'message' => 'Invalid action specified.']);
+exit;
 

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePlayer } from '../context/PlayerContext';
 import { useToast } from '../context/ToastContext';
-import { fetchAllAlbums, fetchAlbumDetails, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART, fetchFeaturedLibrary } from '../utils/api';
+import { fetchAllAlbums, fetchAlbumDetails, getAmpacheUrl, getCoverArtUrl, DEFAULT_COVER_ART, fetchFeaturedLibrary, submitSongRequest, createSubsonicPlaylist } from '../utils/api';
 import LikedSongs from './LikedSongs';
 import RecentlyAdded from './RecentlyAdded';
 import FavoritesGrid from './FavoritesGrid';
@@ -533,6 +533,7 @@ export default function Dashboard() {
         onClick={() => setIsRequestModalOpen(true)}
         className="fixed bottom-44 right-4 md:bottom-32 md:right-8 w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-500 text-white shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-40 border border-purple-400/30"
         title="Request a Song"
+        aria-label="Request a Song"
       >
         <MessageSquare size={24} />
       </button>

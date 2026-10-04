@@ -164,7 +164,7 @@ export function getStreamUrl(trackId, authParams = null) {
   
   const num = parseInt(normalizedId, 10);
   if (!isNaN(num)) {
-    normalizedId = num < 100000000 ? String(600000000 + num) : (num >= 600000000 && num < 400000000 ? String(num) : String(600000000 + (num % 100000000)));
+    normalizedId = num < 100000000 ? String(600000000 + num) : (num >= 600000000 && num < 700000000 ? String(num) : String(600000000 + (num % 100000000)));
   }
 
   let auth = '';

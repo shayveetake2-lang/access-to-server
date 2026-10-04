@@ -25,7 +25,11 @@ class ErrorBoundaryInner extends React.Component {
 
   handleGoHome = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
-    window.location.hash = '#/';
+    if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#') {
+      window.location.reload();
+    } else {
+      window.location.hash = '#/';
+    }
   };
 
   render() {

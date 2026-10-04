@@ -53,6 +53,7 @@ try {
     }
     echo json_encode(['status' => 'success', 'message' => "Request #{$id} marked as {$status}.", 'rowsAffected' => $stmt->rowCount()]);
 } catch (Exception $e) {
+    error_log('[Aether Media] Update request status error: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Failed to update request: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to update request. Please try again.']);
 }

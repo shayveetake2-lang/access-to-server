@@ -56,6 +56,7 @@ try {
     ]);
     echo json_encode(['status' => 'success', 'message' => 'Request submitted successfully!', 'id' => (int)$pdo->lastInsertId()]);
 } catch (Exception $e) {
+    error_log('[Aether Media] Submit request error: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Failed to submit request: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to submit request. Please try again.']);
 }
