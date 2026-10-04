@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database, Music, X, Check } from 'lucide-react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { ShieldAlert, Users, KeyRound, ArrowUpCircle, Trash2, Sparkles, Database, Music, X, Check, Headphones } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getBaseUrl, getAmpacheUrl, getApiProxyUrl } from '../utils/api';
@@ -12,6 +12,7 @@ import MusicRequestsManager from '../components/admin/MusicRequestsManager';
 
 export default function AdminSettings() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialTab = searchParams.get('tab') || 'metadata';
   
   const { user: currentUser, getAuthParams } = useAuth();
@@ -280,7 +281,14 @@ export default function AdminSettings() {
                 {users.map((u) => (
                   <tr key={u.username} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-white">{u.username}</div>
+                      <Link
+                        to={`/admin/users/${encodeURIComponent(u.username)}`}
+                        className="font-semibold text-white hover:text-purple-400 transition-colors inline-flex items-center gap-2 group"
+                        title="Click to view listening history & favorites"
+                      >
+                        <span>{u.username}</span>
+                        <Headphones size={13} className="text-slate-500 group-hover:text-purple-400 transition-colors" />
+                      </Link>
                       <div className="text-xs text-slate-400">{u.email || 'No email'}</div>
                     </td>
                     <td className="px-6 py-4">
@@ -295,6 +303,13 @@ export default function AdminSettings() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
+                      <button 
+                        onClick={() => navigate(`/admin/users/${encodeURIComponent(u.username)}`)}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 hover:bg-purple-900/40 text-slate-300 hover:text-purple-300 transition-colors"
+                        title="View Listening History & Favorites"
+                      >
+                        <Headphones size={16} />
+                      </button>
                       <button 
                         onClick={() => handleOpenResetPassword(u.username)}
                         className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"

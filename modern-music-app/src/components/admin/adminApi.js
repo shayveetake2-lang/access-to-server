@@ -42,3 +42,39 @@ export async function adminPost(action, payload = {}) {
   return data;
 }
 
+export async function fetchUserHistory(username, { limit = 50, offset = 0 } = {}) {
+  const user = getStoredCredentials();
+  const token = user?.token || user?.jwt || '';
+  const url = `${getBaseUrl()}/modern-music-app/api_proxy.php?action=adminGetUserHistory&username=${encodeURIComponent(username)}&limit=${limit}&offset=${offset}&_t=${Date.now()}`;
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  if (data.status !== 'ok') throw new Error(data.message || 'Failed to fetch user history');
+  return data;
+}
+
+export async function fetchUserFavorites(username) {
+  const user = getStoredCredentials();
+  const token = user?.token || user?.jwt || '';
+  const url = `${getBaseUrl()}/modern-music-app/api_proxy.php?action=adminGetUserFavorites&username=${encodeURIComponent(username)}&_t=${Date.now()}`;
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  if (data.status !== 'ok') throw new Error(data.message || 'Failed to fetch user favorites');
+  return data;
+}
+

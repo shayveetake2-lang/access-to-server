@@ -6,8 +6,12 @@
 // With 100+ concurrent getCoverArt requests, they serialize and queue for minutes
 // on the 2011 MacBook Pro. Media endpoints don't need sessions at all.
 $_action = $_GET['action'] ?? '';
-$_mediaActions = ['getCoverArt', 'coverArt', 'stream', 'download', 'search', 'search2', 'search3'];
-if (!in_array($_action, $_mediaActions)) {
+$_statelessActions = [
+    'getCoverArt', 'coverArt', 'stream', 'download',
+    'search', 'search2', 'search3',
+    'adminGetUserHistory', 'adminGetUserFavorites'
+];
+if (!in_array($_action, $_statelessActions)) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -94,6 +98,7 @@ function getProxyEnv($key, $default = null) {
 // Only load heavyweight config.php for non-media requests.
 // Media requests (getCoverArt, stream) only need getProxyPdo() which reads
 // ampache.cfg.php directly — skipping config.php avoids SQLite setup overhead.
+$_mediaActions = ['getCoverArt', 'coverArt', 'stream', 'download', 'search', 'search2', 'search3'];
 if (!in_array($_action, $_mediaActions)) {
     require_once __DIR__ . '/../config/config.php';
 }
@@ -106,11 +111,25 @@ function getProxyPdo() {
     static $cachedUser = null;
     static $cachedPass = null;
 
+    // Test-only override: honoured exclusively under the CLI SAPI (never via web requests).
+    $testDb = (PHP_SAPI === 'cli') ? getenv('TEST_PROXY_SQLITE') : false;
+    if (!empty($testDb)) {
+        try {
+            $pdo = new PDO('sqlite:' . $testDb, null, null, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]);
+            return $pdo;
+        } catch (\Exception $e) {}
+    }
+
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_TIMEOUT => 2,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+        PDO::ATTR_TIMEOUT => 2
     ];
+    if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+        @$options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES utf8mb4";
+    }
 
     if ($cachedDsn !== null) {
         try {
@@ -554,6 +573,152 @@ if ($action === 'whoami') {
     exit;
 }
 
+function requireProxyAdmin($pdo) {
+    $ampUser = resolveProxyAmpacheUser($pdo);
+    if (!$ampUser || $ampUser['role'] !== 'admin') {
+        http_response_code($ampUser ? 403 : 401);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Admin Bearer JWT required.'
+        ]);
+        exit;
+    }
+    return $ampUser;
+}
+
+function resolveAmpacheUserByUsername($pdo, $username) {
+    if (!$pdo || empty($username)) return null;
+    try {
+        $stmt = $pdo->prepare("SELECT id, username, access, email FROM user WHERE LOWER(username) = LOWER(:u) LIMIT 1");
+        $stmt->execute([':u' => trim($username)]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && (int)$row['id'] > 0) {
+            return [
+                'id' => (int)$row['id'],
+                'username' => $row['username'],
+                'access' => (int)($row['access'] ?? 25),
+                'email' => $row['email'] ?? null,
+                'role' => ((int)($row['access'] ?? 0) >= 100) ? 'admin' : 'member'
+            ];
+        }
+    } catch (\Exception $e) {
+        error_log('[Aether] resolveAmpacheUserByUsername error: ' . $e->getMessage());
+    }
+    return null;
+}
+
+function fetchStarredForUserId($pdo, int $userId) {
+    // 1. Starred Songs
+    $sStmt = $pdo->prepare("
+        SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
+               s.total_count as playCount,
+               art.name as artist, art.id as artistId,
+               alb.name as album, alb.id as albumId,
+               uf.date as starredDate
+        FROM user_flag uf
+        JOIN song s ON uf.object_id = s.id
+        LEFT JOIN artist art ON s.artist = art.id
+        LEFT JOIN album alb ON s.album = alb.id
+        WHERE uf.object_type = 'song' AND uf.user = :uid AND s.enabled = 1
+        ORDER BY uf.date DESC
+    ");
+    $sStmt->execute([':uid' => $userId]);
+    $sRows = $sStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $songs = [];
+    foreach ($sRows as $r) {
+        $cleanAlbId = (!empty($r['albumId']) && is_numeric($r['albumId'])) ? (int)$r['albumId'] : 0;
+        $cleanArtId = (!empty($r['artistId']) && is_numeric($r['artistId'])) ? (int)$r['artistId'] : 0;
+        $subId = (string)(300000000 + (int)$r['id']);
+        $subAlbId = (string)(200000000 + $cleanAlbId);
+        $subArtId = (string)(100000000 + $cleanArtId);
+        $songs[] = [
+            'id' => $subId,
+            'parent' => $subAlbId,
+            'title' => $r['title'] ?: 'Unknown Track',
+            'isDir' => false,
+            'isVideo' => false,
+            'type' => 'music',
+            'albumId' => $subAlbId,
+            'album' => $r['album'] ?: 'Unknown Album',
+            'artistId' => $subArtId,
+            'artist' => $r['artist'] ?: 'Unknown Artist',
+            'coverArt' => 'al-' . $subAlbId,
+            'duration' => (int)$r['duration'],
+            'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
+            'track' => (int)$r['track'],
+            'size' => (int)$r['size'],
+            'playCount' => (int)$r['playCount'],
+            'starred' => date('c', (int)$r['starredDate']),
+            'contentType' => 'audio/mpeg',
+            'suffix' => 'mp3'
+        ];
+    }
+
+    // 2. Starred Albums
+    $aStmt = $pdo->prepare("
+        SELECT alb.id, alb.name, alb.year, alb.song_count as songCount,
+               art.name as artist, art.id as artistId,
+               uf.date as starredDate
+        FROM user_flag uf
+        JOIN album alb ON uf.object_id = alb.id
+        LEFT JOIN artist art ON alb.album_artist = art.id
+        WHERE uf.object_type = 'album' AND uf.user = :uid
+        ORDER BY uf.date DESC
+    ");
+    $aStmt->execute([':uid' => $userId]);
+    $aRows = $aStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $albums = [];
+    foreach ($aRows as $r) {
+        $cleanAlbId = (int)$r['id'];
+        $cleanArtId = (!empty($r['artistId']) && is_numeric($r['artistId'])) ? (int)$r['artistId'] : 0;
+        $subAlbId = (string)(200000000 + $cleanAlbId);
+        $subArtId = (string)(100000000 + $cleanArtId);
+        $albums[] = [
+            'id' => $subAlbId,
+            'name' => $r['name'] ?: 'Unknown Album',
+            'title' => $r['name'] ?: 'Unknown Album',
+            'artist' => $r['artist'] ?: 'Unknown Artist',
+            'artistId' => $subArtId,
+            'coverArt' => 'al-' . $subAlbId,
+            'songCount' => (int)($r['songCount'] ?? 0),
+            'year' => (int)($r['year'] ?? 0),
+            'starred' => date('c', (int)$r['starredDate'])
+        ];
+    }
+
+    // 3. Starred Artists
+    $arStmt = $pdo->prepare("
+        SELECT art.id, art.name,
+               uf.date as starredDate
+        FROM user_flag uf
+        JOIN artist art ON uf.object_id = art.id
+        WHERE uf.object_type = 'artist' AND uf.user = :uid
+        ORDER BY uf.date DESC
+    ");
+    $arStmt->execute([':uid' => $userId]);
+    $arRows = $arStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $artists = [];
+    foreach ($arRows as $r) {
+        $cleanArtId = (int)$r['id'];
+        $subArtId = (string)(100000000 + $cleanArtId);
+        $artists[] = [
+            'id' => $subArtId,
+            'name' => $r['name'] ?: 'Unknown Artist',
+            'coverArt' => 'ar-' . $subArtId,
+            'starred' => date('c', (int)$r['starredDate'])
+        ];
+    }
+
+    return [
+        'songs' => $songs,
+        'albums' => $albums,
+        'artists' => $artists
+    ];
+}
+
 if ($action === 'getStarred' || $action === 'getStarred2' || $action === 'getStarredSongs') {
     $pdo = getProxyPdo();
     if (!$pdo) {
@@ -571,104 +736,10 @@ if ($action === 'getStarred' || $action === 'getStarred2' || $action === 'getSta
     $userId = $ampUser['id'];
 
     try {
-        // 1. Starred Songs
-        $sStmt = $pdo->prepare("
-            SELECT s.id, s.title, s.time as duration, s.track, s.size, s.bitrate,
-                   s.total_count as playCount,
-                   art.name as artist, art.id as artistId,
-                   alb.name as album, alb.id as albumId,
-                   uf.date as starredDate
-            FROM user_flag uf
-            JOIN song s ON uf.object_id = s.id
-            LEFT JOIN artist art ON s.artist = art.id
-            LEFT JOIN album alb ON s.album = alb.id
-            WHERE uf.object_type = 'song' AND uf.user = :uid AND s.enabled = 1
-            ORDER BY uf.date DESC
-        ");
-        $sStmt->execute([':uid' => $userId]);
-        $sRows = $sStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $songs = [];
-        foreach ($sRows as $r) {
-            $subId = (string)(300000000 + (int)$r['id']);
-            $subAlbId = (string)(200000000 + (int)($r['albumId'] ?? 0));
-            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
-            $songs[] = [
-                'id' => $subId,
-                'parent' => $subAlbId,
-                'title' => $r['title'] ?: 'Unknown Track',
-                'isDir' => false,
-                'isVideo' => false,
-                'type' => 'music',
-                'albumId' => $subAlbId,
-                'album' => $r['album'] ?: 'Unknown Album',
-                'artistId' => $subArtId,
-                'artist' => $r['artist'] ?: 'Unknown Artist',
-                'coverArt' => 'al-' . $subAlbId,
-                'duration' => (int)$r['duration'],
-                'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
-                'track' => (int)$r['track'],
-                'size' => (int)$r['size'],
-                'playCount' => (int)$r['playCount'],
-                'starred' => date('c', (int)$r['starredDate']),
-                'contentType' => 'audio/mpeg',
-                'suffix' => 'mp3'
-            ];
-        }
-
-        // 2. Starred Albums
-        $aStmt = $pdo->prepare("
-            SELECT alb.id, alb.name, alb.year, alb.song_count as songCount,
-                   art.name as artist, art.id as artistId,
-                   uf.date as starredDate
-            FROM user_flag uf
-            JOIN album alb ON uf.object_id = alb.id
-            LEFT JOIN artist art ON alb.album_artist = art.id
-            WHERE uf.object_type = 'album' AND uf.user = :uid
-            ORDER BY uf.date DESC
-        ");
-        $aStmt->execute([':uid' => $userId]);
-        $aRows = $aStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $albums = [];
-        foreach ($aRows as $r) {
-            $subAlbId = (string)(200000000 + (int)$r['id']);
-            $subArtId = (string)(100000000 + (int)($r['artistId'] ?? 0));
-            $albums[] = [
-                'id' => $subAlbId,
-                'name' => $r['name'] ?: 'Unknown Album',
-                'title' => $r['name'] ?: 'Unknown Album',
-                'artist' => $r['artist'] ?: 'Unknown Artist',
-                'artistId' => $subArtId,
-                'coverArt' => 'al-' . $subAlbId,
-                'songCount' => (int)($r['songCount'] ?? 0),
-                'year' => (int)($r['year'] ?? 0),
-                'starred' => date('c', (int)$r['starredDate'])
-            ];
-        }
-
-        // 3. Starred Artists
-        $arStmt = $pdo->prepare("
-            SELECT art.id, art.name,
-                   uf.date as starredDate
-            FROM user_flag uf
-            JOIN artist art ON uf.object_id = art.id
-            WHERE uf.object_type = 'artist' AND uf.user = :uid
-            ORDER BY uf.date DESC
-        ");
-        $arStmt->execute([':uid' => $userId]);
-        $arRows = $arStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $artists = [];
-        foreach ($arRows as $r) {
-            $subArtId = (string)(100000000 + (int)$r['id']);
-            $artists[] = [
-                'id' => $subArtId,
-                'name' => $r['name'] ?: 'Unknown Artist',
-                'coverArt' => 'ar-' . $subArtId,
-                'starred' => date('c', (int)$r['starredDate'])
-            ];
-        }
+        $starred = fetchStarredForUserId($pdo, $userId);
+        $songs = $starred['songs'];
+        $albums = $starred['albums'];
+        $artists = $starred['artists'];
 
         echo json_encode([
             'status' => 'ok',
@@ -687,6 +758,294 @@ if ($action === 'getStarred' || $action === 'getStarred2' || $action === 'getSta
             'albums' => $albums,
             'artists' => $artists,
             'count' => count($songs)
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Admin: Get Target User Favorites ─────────────────────────────────────────
+if ($action === 'adminGetUserFavorites') {
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $adminUser = requireProxyAdmin($pdo);
+    $targetUsername = trim((string)($_GET['username'] ?? ($input['username'] ?? '')));
+
+    if ($targetUsername === '') {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Username parameter required.']);
+        exit;
+    }
+
+    error_log("[Aether Audit] Admin '{$adminUser['username']}' viewed adminGetUserFavorites for user '{$targetUsername}'");
+
+    // Look up target role from sys_users
+    $targetRole = 'member';
+    try {
+        if (function_exists('getDBConnection')) {
+            $sysDb = getDBConnection();
+            if ($sysDb) {
+                $sysStmt = $sysDb->prepare("SELECT role FROM sys_users WHERE LOWER(username) = LOWER(:u) LIMIT 1");
+                $sysStmt->execute([':u' => $targetUsername]);
+                $sysRole = $sysStmt->fetchColumn();
+                if ($sysRole) $targetRole = $sysRole;
+            }
+        }
+    } catch (\Exception $e) {}
+
+    $targetAmpUser = resolveAmpacheUserByUsername($pdo, $targetUsername);
+    if (!$targetAmpUser) {
+        echo json_encode([
+            'status' => 'ok',
+            'user' => [
+                'username' => $targetUsername,
+                'role' => $targetRole,
+                'ampacheLinked' => false
+            ],
+            'songs' => [],
+            'albums' => [],
+            'artists' => [],
+            'counts' => [
+                'songs' => 0,
+                'albums' => 0,
+                'artists' => 0
+            ]
+        ]);
+        exit;
+    }
+
+    if ($targetAmpUser['role'] === 'admin') {
+        $targetRole = 'admin';
+    }
+
+    try {
+        $starred = fetchStarredForUserId($pdo, $targetAmpUser['id']);
+        echo json_encode([
+            'status' => 'ok',
+            'user' => [
+                'username' => $targetAmpUser['username'],
+                'role' => $targetRole,
+                'ampacheLinked' => true
+            ],
+            'songs' => $starred['songs'],
+            'albums' => $starred['albums'],
+            'artists' => $starred['artists'],
+            'counts' => [
+                'songs' => count($starred['songs']),
+                'albums' => count($starred['albums']),
+                'artists' => count($starred['artists'])
+            ]
+        ]);
+        exit;
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        exit;
+    }
+}
+
+// ── Admin: Get Target User Listening History & Top Songs ─────────────────────
+if ($action === 'adminGetUserHistory') {
+    $pdo = getProxyPdo();
+    if (!$pdo) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+        exit;
+    }
+
+    $adminUser = requireProxyAdmin($pdo);
+    $targetUsername = trim((string)($_GET['username'] ?? ($input['username'] ?? '')));
+    $limit = max(1, min(200, intval($_GET['limit'] ?? ($input['limit'] ?? 50))));
+    $offset = max(0, intval($_GET['offset'] ?? ($input['offset'] ?? 0)));
+
+    if ($targetUsername === '') {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Username parameter required.']);
+        exit;
+    }
+
+    error_log("[Aether Audit] Admin '{$adminUser['username']}' viewed adminGetUserHistory for user '{$targetUsername}'");
+
+    // Look up target role from sys_users
+    $targetRole = 'member';
+    try {
+        if (function_exists('getDBConnection')) {
+            $sysDb = getDBConnection();
+            if ($sysDb) {
+                $sysStmt = $sysDb->prepare("SELECT role FROM sys_users WHERE LOWER(username) = LOWER(:u) LIMIT 1");
+                $sysStmt->execute([':u' => $targetUsername]);
+                $sysRole = $sysStmt->fetchColumn();
+                if ($sysRole) $targetRole = $sysRole;
+            }
+        }
+    } catch (\Exception $e) {}
+
+    $targetAmpUser = resolveAmpacheUserByUsername($pdo, $targetUsername);
+    if (!$targetAmpUser) {
+        echo json_encode([
+            'status' => 'ok',
+            'user' => [
+                'username' => $targetUsername,
+                'role' => $targetRole,
+                'ampacheLinked' => false
+            ],
+            'summary' => [
+                'totalPlays' => 0,
+                'uniqueSongs' => 0,
+                'lastPlayedAt' => null
+            ],
+            'history' => [],
+            'topSongs' => [],
+            'hasMore' => false,
+            'offset' => $offset,
+            'limit' => $limit
+        ]);
+        exit;
+    }
+
+    if ($targetAmpUser['role'] === 'admin') {
+        $targetRole = 'admin';
+    }
+    $targetUid = $targetAmpUser['id'];
+
+    try {
+        // 1. Summary stats (Total stream plays, distinct songs played, last played timestamp)
+        // INNER JOIN song s ON s.id = oc.object_id with s.enabled = 1 prunes deleted/disabled songs
+        $sumStmt = $pdo->prepare("
+            SELECT COUNT(*) AS totalPlays,
+                   COUNT(DISTINCT oc.object_id) AS uniqueSongs,
+                   MAX(oc.date) AS lastPlayedAt
+            FROM object_count oc
+            INNER JOIN song s ON s.id = oc.object_id
+            WHERE oc.object_type = 'song' AND oc.count_type = 'stream' AND oc.user = :uid AND s.enabled = 1
+        ");
+        $sumStmt->execute([':uid' => $targetUid]);
+        $sumRow = $sumStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $totalPlays = (int)($sumRow['totalPlays'] ?? 0);
+        $uniqueSongs = (int)($sumRow['uniqueSongs'] ?? 0);
+        $lastPlayedAt = !empty($sumRow['lastPlayedAt']) ? (int)$sumRow['lastPlayedAt'] : null;
+
+        // 2. Top Songs (only fetched when offset === 0 to save processing on load-more)
+        $topSongs = [];
+        if ($offset === 0) {
+            $topStmt = $pdo->prepare("
+                SELECT oc.object_id AS songId, COUNT(*) AS plays,
+                       s.id, s.title, s.time AS duration, s.track, s.size, s.bitrate,
+                       art.name AS artist, art.id AS artistId,
+                       alb.name AS album, alb.id AS albumId
+                FROM object_count oc
+                INNER JOIN song s ON s.id = oc.object_id
+                LEFT JOIN artist art ON s.artist = art.id
+                LEFT JOIN album  alb ON s.album  = alb.id
+                WHERE oc.object_type = 'song' AND oc.count_type = 'stream' AND oc.user = :uid AND s.enabled = 1
+                GROUP BY oc.object_id, s.id, s.title, s.time, s.track, s.size, s.bitrate,
+                         art.name, art.id, alb.name, alb.id
+                ORDER BY plays DESC, MAX(oc.date) DESC
+                LIMIT 10
+            ");
+            $topStmt->execute([':uid' => $targetUid]);
+            $topRows = $topStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($topRows as $r) {
+                $cleanAlbId = (!empty($r['albumId']) && is_numeric($r['albumId'])) ? (int)$r['albumId'] : 0;
+                $cleanArtId = (!empty($r['artistId']) && is_numeric($r['artistId'])) ? (int)$r['artistId'] : 0;
+                $subId = (string)(300000000 + (int)$r['id']);
+                $subAlbId = (string)(200000000 + $cleanAlbId);
+                $subArtId = (string)(100000000 + $cleanArtId);
+                $topSongs[] = [
+                    'id' => $subId,
+                    'parent' => $subAlbId,
+                    'title' => $r['title'] ?: 'Unknown Track',
+                    'albumId' => $subAlbId,
+                    'album' => $r['album'] ?: 'Unknown Album',
+                    'artistId' => $subArtId,
+                    'artist' => $r['artist'] ?: 'Unknown Artist',
+                    'coverArt' => 'al-' . $subAlbId,
+                    'duration' => (int)$r['duration'],
+                    'plays' => (int)$r['plays']
+                ];
+            }
+        }
+
+        // 3. Paginated History (Most recent plays first)
+        $histStmt = $pdo->prepare("
+            SELECT oc.id AS eventId, oc.date AS playedAt,
+                   s.id, s.title, s.time AS duration, s.track, s.size, s.bitrate,
+                   s.total_count AS playCount,
+                   art.name AS artist, art.id AS artistId,
+                   alb.name AS album, alb.id AS albumId
+            FROM object_count oc
+            INNER JOIN song s ON s.id = oc.object_id
+            LEFT JOIN artist art ON s.artist = art.id
+            LEFT JOIN album  alb ON s.album  = alb.id
+            WHERE oc.object_type = 'song' AND oc.count_type = 'stream' AND oc.user = :uid AND s.enabled = 1
+            ORDER BY oc.date DESC, oc.id DESC
+            LIMIT :lim OFFSET :off
+        ");
+        $histStmt->bindValue(':uid', $targetUid, PDO::PARAM_INT);
+        $histStmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+        $histStmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $histStmt->execute();
+        $histRows = $histStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $history = [];
+        foreach ($histRows as $r) {
+            $cleanAlbId = (!empty($r['albumId']) && is_numeric($r['albumId'])) ? (int)$r['albumId'] : 0;
+            $cleanArtId = (!empty($r['artistId']) && is_numeric($r['artistId'])) ? (int)$r['artistId'] : 0;
+            $subId = (string)(300000000 + (int)$r['id']);
+            $subAlbId = (string)(200000000 + $cleanAlbId);
+            $subArtId = (string)(100000000 + $cleanArtId);
+            $history[] = [
+                'eventId' => (int)$r['eventId'],
+                'playedAt' => (int)$r['playedAt'],
+                'id' => $subId,
+                'parent' => $subAlbId,
+                'title' => $r['title'] ?: 'Unknown Track',
+                'isDir' => false,
+                'isVideo' => false,
+                'type' => 'music',
+                'albumId' => $subAlbId,
+                'album' => $r['album'] ?: 'Unknown Album',
+                'artistId' => $subArtId,
+                'artist' => $r['artist'] ?: 'Unknown Artist',
+                'coverArt' => 'al-' . $subAlbId,
+                'duration' => (int)$r['duration'],
+                'bitRate' => (int)($r['bitrate'] ? round($r['bitrate'] / 1000) : 320),
+                'track' => (int)$r['track'],
+                'size' => (int)$r['size'],
+                'playCount' => (int)$r['playCount'],
+                'contentType' => 'audio/mpeg',
+                'suffix' => 'mp3'
+            ];
+        }
+
+        $hasMore = ($offset + count($history)) < $totalPlays;
+
+        echo json_encode([
+            'status' => 'ok',
+            'user' => [
+                'username' => $targetAmpUser['username'],
+                'role' => $targetRole,
+                'ampacheLinked' => true
+            ],
+            'summary' => [
+                'totalPlays' => $totalPlays,
+                'uniqueSongs' => $uniqueSongs,
+                'lastPlayedAt' => $lastPlayedAt
+            ],
+            'history' => $history,
+            'topSongs' => $topSongs,
+            'hasMore' => $hasMore,
+            'offset' => $offset,
+            'limit' => $limit
         ]);
         exit;
     } catch (\Exception $e) {

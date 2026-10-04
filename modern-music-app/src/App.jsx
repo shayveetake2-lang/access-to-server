@@ -19,6 +19,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
 import AdminSettings from './pages/AdminSettings';
+import AdminUserActivity from './pages/AdminUserActivity';
 import AdminRoute from './components/AdminRoute';
 
 import MobileNav from './components/MobileNav';
@@ -58,6 +59,7 @@ function ProtectedLayout() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<AdminRoute><AdminSettings /></AdminRoute>} />
               <Route path="/admin/metadata" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+              <Route path="/admin/users/:username" element={<AdminRoute><AdminUserActivity /></AdminRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </ErrorBoundary>
